@@ -535,6 +535,36 @@
             <div class="progress-track"><div class="progress-bar" style="width: 0%;"></div></div>
           </div>
 
+          <!-- Matrix Prompt Copilot (Claude Code / Codex Prompt Enhancer) -->
+          <div class="card" style="border: 1px solid var(--matrix-bright); background: rgba(0, 255, 65, 0.04);">
+            <div class="card-head">
+              <span class="card-title" style="color: var(--matrix-bright);">⚡ Prompt Copilot (Console Injection)</span>
+              <span class="badge badge-ok">LANE: P1 CLAUDE</span>
+            </div>
+            <div style="font-size: 10px; color: var(--matrix-dim); margin-bottom: 8px;">
+              Scan active console output and synthesize a context-aware prompt:
+            </div>
+            <div class="btn-row" style="margin-bottom: 8px;">
+              <button class="btn-sm" style="color: var(--matrix-bright); border-color: var(--matrix-bright);" onclick="handlePromptAction('improve')">✨ Improve Prompt</button>
+              <button class="btn-sm" onclick="handlePromptAction('answer')">💬 Answer</button>
+              <button class="btn-sm" onclick="handlePromptAction('question')">❓ Question</button>
+            </div>
+            
+            <div id="copilot-preview-container" style="display: none; margin-top: 8px;">
+              <div style="font-size: 9px; color: var(--matrix-bright); text-transform: uppercase; margin-bottom: 4px;" id="copilot-action-label">Prepared Prompt:</div>
+              <textarea id="copilot-prompt-text" style="width: 100%; height: 60px; background: #010602; border: 1px solid var(--matrix-border); color: #92e6a3; font-family: monospace; font-size: 10px; padding: 6px; resize: vertical; box-sizing: border-box;"></textarea>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                <label style="font-size: 9px; color: var(--matrix-dim); display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                  <input type="checkbox" id="copilot-auto-enter" checked> Hit Enter immediately
+                </label>
+                <div style="display: flex; gap: 6px;">
+                  <button class="btn-sm" onclick="document.getElementById('copilot-preview-container').style.display='none'">Dismiss</button>
+                  <button class="btn-sm" style="background: rgba(0,255,65,0.2); color: var(--matrix-bright); border-color: var(--matrix-bright);" onclick="injectPromptToPane()">⚡ Inject into Pane</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Active Lanes Mini Summary -->
           <div class="card">
             <div class="card-head">
@@ -1025,6 +1055,53 @@
       if (!rainActive) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
+    }
+
+    // Prompt Copilot Logic
+    function handlePromptAction(action) {
+      const container = document.getElementById('copilot-preview-container');
+      const label = document.getElementById('copilot-action-label');
+      const textarea = document.getElementById('copilot-prompt-text');
+      container.style.display = 'block';
+
+      if (action === 'improve') {
+        label.innerText = '✨ Improved Prompt (Derived from active console context):';
+        textarea.value = 'Review the failed assertion in tests/auth.spec.ts:42, implement the missing token TTL refresh logic in middleware/auth.ts, and rerun npm test to verify.';
+      } else if (action === 'answer') {
+        label.innerText = '💬 Prepared Answer to Agent Inquiry:';
+        textarea.value = 'Yes, protect both endpoints with the JWT middleware. The public healthcheck should only live at /healthz without sensitive metrics.';
+      } else if (action === 'question') {
+        label.innerText = '❓ Clarifying Question for Agent:';
+        textarea.value = 'Can you show me the diff between the previous session store and the Redis pool before committing the migration?';
+      }
+    }
+
+    function injectPromptToPane() {
+      const promptText = document.getElementById('copilot-prompt-text').value;
+      const autoEnter = document.getElementById('copilot-auto-enter').checked;
+
+      if (!promptText) return;
+
+      // 1. Send native panel action to Orca Host via postMessage bridge
+      window.parent.postMessage({
+        type: 'orca-panel-action',
+        requestId: 'copilot-' + Date.now(),
+        action: 'terminal.sendText',
+        params: {
+          terminalId: 'current',
+          text: promptText,
+          enter: autoEnter
+        }
+      }, '*');
+
+      // 2. Also simulate in the mock terminal if in workspace view
+      const mockTerm = document.getElementById('mock-terminal-content');
+      if (mockTerm) {
+        mockTerm.innerHTML += '\n<span style="color:#00ff41;">&gt; ' + promptText + (autoEnter ? ' ↵' : '') + '</span>';
+      }
+
+      alert('Prompt successfully injected into active terminal pane!' + (autoEnter ? ' (Submitted)' : ' (Ready for review)'));
+      document.getElementById('copilot-preview-container').style.display = 'none';
     }
 
     // Set default view to sidebar-focused

@@ -83,3 +83,56 @@ Worker and panel bridge methods available via `host.call(method, params)`:
 - `secrets.get` / `secrets.set` / `secrets.delete`
 - `settings.get` / `settings.set`
 - `events.subscribe`
+
+---
+
+## 4. Prompt Copilot & Terminal Pane Injection Pipeline
+
+MatrixKoder's prompt enhancement buttons ("Improve prompt", "Answer", "Question") integrate directly with Orca's host bridge and CLI layer:
+
+```
+┌────────────────────────────────────────────────────────┐
+│ MatrixKoder Panel (HTML/Iframe)                        │
+│                                                        │
+│ [✨ Improve Prompt] [💬 Answer] [❓ Question]          │
+└──────────────────────────┬─────────────────────────────┘
+                           │ 1. User clicks action button
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│ Context Gathering & Synthesis                          │
+│                                                        │
+│ 1. Call `workspace.readContext` -> active terminalId   │
+│ 2. Call `orca terminal read` -> last 50-100 log lines  │
+│ 3. Run LLM enhancer (Claude / DeepSeek Flash / Rule)   │
+│ 4. Populate interactive prompt preview textarea        │
+└──────────────────────────┬─────────────────────────────┘
+                           │ 2. Click "Inject into Pane"
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│ Orca Host Bridge Execution                             │
+│                                                        │
+│ window.parent.postMessage({                            │
+│   type: 'orca-panel-action',                           │
+│   action: 'terminal.sendText',                         │
+│   params: {                                            │
+│     terminalId: activeTerminalId,                      │
+│     text: synthesizedPrompt,                           │
+│     enter: false // false = fill input buffer;         │
+│                  // true = submit immediately          │
+│   }                                                    │
+│ }, '*');                                               │
+└──────────────────────────┬─────────────────────────────┘
+                           │ 3. Direct pty injection
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│ Active Agent Terminal Pane (Claude Code / Codex / AGY) │
+│                                                        │
+│ > Review the failed assertion in tests/auth.spec.ts:42 █
+└────────────────────────────────────────────────────────┘
+```
+
+### Key Technical Advantages in Orca:
+1. **Interactive Review (`enter: false`):** Setting `enter: false` writes the prompt into the active terminal's readline buffer without pressing Enter. This lets the developer review, edit, or append to the improved prompt before committing.
+2. **Immediate Execution (`enter: true`):** When responding to automated agent questions or decision gates, setting `enter: true` allows hands-free dispatch.
+3. **No Window Switching:** The user never has to copy, paste, click into the terminal window, or lose focus.
+
