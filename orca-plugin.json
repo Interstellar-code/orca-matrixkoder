@@ -3,7 +3,7 @@
   "id": "matrixkoder",
   "publisher": "interstellar",
   "name": "MatrixKoder",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Multi-agent orchestration dashboard and lane supervisor for Orca",
   "repository": "https://github.com/Interstellar-code/orca-matrixkoder",
   "engines": {
