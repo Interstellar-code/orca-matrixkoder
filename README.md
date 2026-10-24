@@ -1,0 +1,85 @@
+# Orca MatrixKoder
+
+**MatrixKoder** is a visual multi-agent orchestration dashboard and lane supervisor plugin for the **Orca IDE** (`orca.dev`).
+
+It connects your lead coordinator agent to parallel worker lanes across Git worktrees (Claude Code, Codex, AGY, OpenCode), rendering a real-time cyberpunk HUD sidebar with live wave progression, verification gates, and human approval inboxes.
+
+![Orca IDE with MatrixKoder Sidebar](docs/assets/matrixkoder_orca_ui_mockup.jpg)
+
+---
+
+## Features
+
+- **Cyberpunk Matrix HUD Panel:** Sandboxed HTML/CSS/Canvas sidebar styled with Orca theme design tokens and an ambient digital rain animation.
+- **8 Dedicated Workspaces:**
+  1. **Overview:** High-level stage progress, active wave meters, and fleet status summary.
+  2. **Lanes:** Deep worker inspection with branch details, live diff links, and the 3-Gate Verification Matrix (Build / Test / Review).
+  3. **Plan / DAG:** Wave-by-wave hierarchical task tracking with dependency gates.
+  4. **Waiting on You:** Single-click approval inbox for blocking agent decisions and security checks.
+  5. **Events:** Live streaming audit log of inter-agent bus messages and commits.
+  6. **Inbox:** Staged plan importer with automatic template validation.
+  7. **Bugs & Todo:** Integrated issue tracking with risk scoring and persistent session checklists.
+  8. **Settings:** Orchestrator/Solo mode selection, safety tripwires, and animation controls.
+- **Native Orca Engine Integration:** Directly leverages Orca's `orchestration.db` and live events (`agent.status.changed`, `worktree.created`).
+- **Lean Architecture:** Completely offloads redundant file browsing and cron polling to Orca's built-in file tree and automations engine.
+
+---
+
+## Installation in Orca
+
+1. Open **Orca Settings** (`Cmd+,`).
+2. Navigate to the **Plugins (EXPERIMENTAL)** tab.
+3. Scroll to the **Development** section at the bottom.
+4. Enter the path to this folder:
+   ```text
+   /Users/rohits/Development/orca-matrixkoder
+   ```
+5. Click **Add path** and accept the requested capabilities (`workspace:read`, `terminal:send`, `notifications:show`, `events:subscribe`, `storage`).
+6. The **MatrixKoder** icon (`layers`) will appear in your right sidebar activity bar!
+
+---
+
+## Development & Upstream Sync
+
+This repository tracks the official Orca IDE repository (`https://github.com/stablyai/orca.git`) as an `upstream` remote.
+
+To check for upstream Orca plugin API updates:
+```bash
+npm run sync:orca
+```
+
+To build TypeScript worker changes:
+```bash
+npm run build
+```
+
+---
+
+## Project Structure
+
+```text
+orca-matrixkoder/
+├── orca-plugin.json         # Plugin manifest (ID, capabilities, panels, events)
+├── package.json             # Build scripts & dev dependencies
+├── tsconfig.json
+├── src/
+│   └── worker.ts            # Out-of-process Node.js background worker
+├── out/
+│   └── worker.js            # Compiled worker entrypoint
+├── web/
+│   └── index.html           # 8-tab interactive Matrix HUD sidebar panel
+├── skills/
+│   └── matrixkoder/         # Bundled agent orchestration skill
+├── scripts/
+│   └── sync-orca-upstream.sh# Upstream Orca sync script
+└── docs/
+    ├── assets/              # UI mockups and screenshot assets
+    ├── mockups/             # Design specification documents
+    └── research/            # Reverse-engineered Orca architecture & bus docs
+```
+
+---
+
+## License
+
+MIT © Interstellar-code
