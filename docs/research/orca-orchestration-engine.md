@@ -86,3 +86,77 @@ Unlike file-based message queues that require lock files, cursor files, or tempo
   Formal work items tracked in the DAG (`orchestration.db`).
 - **Bug Tracking Strategy:**
   Bugs are managed as an ongoing/ephemeral project in Orca. When a bug requires engineering effort, it is promoted from an informal note or issue directly into a formal orchestration task wave.
+
+---
+
+## 5. Cross-Host & SSH Multi-Agent Federation (`--on`, `orca serve`)
+
+Orca natively supports multi-machine orchestration across local and remote instances (e.g. Mac mini coordinator + remote Linux server).
+
+### Architecture
+
+```
+┌────────────────────────────────────────────────────────┐
+│ Local Host (macOS / Primary Desktop)                   │
+│                                                        │
+│  MatrixKoder Coordinator (Run Home / DAG Master)       │
+│  ├─ Task A: Worker (Local Codex / Worktree)            │
+│  │                                                     │
+│  └─ Task B: Worker (Remote Linux Claude) ─────────┐    │
+│            via `orchestration.federation.v1`       │    │
+└────────────────────────────────────────────────────┼───┘
+                                                     │ Secure Pairing Transport
+                                                     │ (LAN / Tailscale / SSH)
+┌────────────────────────────────────────────────────┼───┐
+│ Remote Linux Host (Headless Server / GPU Box)      ▼   │
+│                                                        │
+│  `orca serve --port 6768 --pairing-address <ip>`       │
+│  └─ Supervised Worker Worktrees & Terminals            │
+│     (Execution host for heavy builds, tests, GPUs)     │
+└────────────────────────────────────────────────────────┘
+```
+
+### 1. Setting Up the Remote Linux Runtime
+On the remote Linux machine, start a headless runtime daemon without a GUI window:
+```bash
+# Run headless Orca daemon on Linux (or manage via systemd --supervise)
+orca serve --port 6768 --pairing-address 192.168.0.58
+```
+This prints an advertised pairing code:
+`orca://pair?code=...`
+
+### 2. Pairing with the Local Mac Orca
+On your local machine, save the remote environment:
+```bash
+orca environment add --name linux-box --pairing-code "orca://pair?code=..."
+```
+Orca also automatically discovers and lists targets configured in `~/.ssh/config` via `orca host list`.
+
+### 3. Cross-Host Orchestration in the Same DAG
+The coordinator (MatrixKoder on Mac) initiates a Run and dispatches tasks across both environments seamlessly:
+
+- **Launch Local Worker (Mac):**
+  ```bash
+  orca orchestration worker-start \
+    --run <run_id> \
+    --task task_frontend \
+    --agent codex \
+    --worktree new-child
+  ```
+
+- **Launch Remote Worker (Linux) via `--on`:**
+  ```bash
+  orca orchestration worker-start \
+    --run <run_id> \
+    --task task_heavy_backend \
+    --on linux-box \
+    --agent claude \
+    --repo id:backend_repo \
+    --worktree new-top-level
+  ```
+
+### Federation Guarantees:
+- **Unified Run Namespace:** `--on` selects only the execution worker server; the Run, DAG status, dependencies (`--deps`), and coordinator stay on the local home Orca.
+- **Identical Control Verbs:** All orchestration commands (`orca orchestration send`, `check`, `ask`, `worker-read`, `worker-show`) operate identically on local and remote worker handles.
+- **Inter-Worker Messaging Across Machines:** Workers on Mac and Linux exchange messages transparently through the coordinator's message bus without any manual network glue or shared NFS mounts.
+
