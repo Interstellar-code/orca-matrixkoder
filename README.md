@@ -76,6 +76,11 @@ orca-matrixkoder/
     ├── assets/              # UI mockups and screenshot assets
     ├── mockups/             # Design specification documents
     └── research/            # Reverse-engineered Orca architecture & bus docs
+        ├── orca-plugin-architecture.md
+        ├── orca-orchestration-engine.md
+        ├── orca-automations-and-commands.md
+        ├── claude-code-to-orca-migration.md
+        └── local-first-architecture-and-matrix-theme.md
 ```
 
 ---
