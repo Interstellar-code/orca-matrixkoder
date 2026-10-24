@@ -4,7 +4,7 @@
 
 It connects your lead coordinator agent to parallel worker lanes across Git worktrees (Claude Code, Codex, AGY, OpenCode), rendering a real-time cyberpunk HUD sidebar with live wave progression, verification gates, and human approval inboxes.
 
-![Orca IDE with MatrixKoder Sidebar](docs/assets/matrixkoder_orca_ui_mockup.jpg)
+![Orca IDE with MatrixKoder Sidebar](.matrixkoder/inbox/assets/matrixkoder_orca_ui_mockup.jpg)
 
 ---
 
@@ -87,15 +87,10 @@ orca-matrixkoder/
 ├── scripts/
 │   ├── build-panel.mjs      # Builds web/index.html from panel/
 │   └── sync-orca-upstream.sh# Upstream Orca sync script
-└── docs/
-    ├── assets/              # UI mockups and screenshot assets
-    ├── mockups/             # Design specification documents
-    └── research/            # Reverse-engineered Orca architecture & bus docs
-        ├── orca-plugin-architecture.md
-        ├── orca-orchestration-engine.md
-        ├── orca-automations-and-commands.md
-        ├── claude-code-to-orca-migration.md
-        └── local-first-architecture-and-matrix-theme.md
+└── .matrixkoder/            # MK data folder, same layout as upstream ~/.matrixkoder
+    └── inbox/               # Plan .md files waiting to be imported
+        ├── research/        # Orca plugin API, CLI, bus and settings research
+        └── assets/          # UI mockups and screenshots
 ```
 
 ---

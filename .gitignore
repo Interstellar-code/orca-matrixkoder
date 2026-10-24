@@ -4,3 +4,15 @@ node_modules/
 .codegraph/
 plugin/
 .serena/
+
+# MatrixKoder data folder: plans and research are shared, machine-local state is not
+.matrixkoder/**/*.db
+.matrixkoder/**/*.db-wal
+.matrixkoder/**/*.db-shm
+.matrixkoder/**/*.lock
+.matrixkoder/**/runs/
+.matrixkoder/**/legacy/
+.matrixkoder/bus/
+.matrixkoder/backups/
+.matrixkoder/usage.json
+.matrixkoder/inbox/.deleted/
