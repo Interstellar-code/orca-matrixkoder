@@ -1,12 +1,8 @@
-"use strict";
 /**
  * MatrixKoder Plugin Worker for Orca IDE
  * Runs out-of-process in Node.js, coordinating Orca worktrees, events, and terminals.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = activate;
-exports.deactivate = deactivate;
-async function activate(context) {
+export default async function activate(context) {
     const { commands, events, host, log } = context;
     log('[MatrixKoder] Initializing MatrixKoder Orchestration Worker...');
     // 1. Subscribe to Orca's live agent lifecycle transitions
@@ -42,6 +38,6 @@ async function activate(context) {
     });
     log('[MatrixKoder] Worker ready and listening to orchestration events.');
 }
-async function deactivate() {
+export async function deactivate() {
     console.log('[MatrixKoder] Deactivating MatrixKoder worker.');
 }
