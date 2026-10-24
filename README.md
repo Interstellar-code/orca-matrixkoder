@@ -11,7 +11,7 @@ It connects your lead coordinator agent to parallel worker lanes across Git work
 ## Features
 
 - **Cyberpunk Matrix HUD Panel:** Sandboxed HTML/CSS/Canvas sidebar styled with Orca theme design tokens and an ambient digital rain animation.
-- **8 Dedicated Workspaces:**
+- **Panel screens:**
   1. **Overview:** High-level stage progress, active wave meters, and fleet status summary.
   2. **Lanes:** Deep worker inspection with branch details, live diff links, and the 3-Gate Verification Matrix (Build / Test / Review).
   3. **Plan / DAG:** Wave-by-wave hierarchical task tracking with dependency gates.
@@ -76,11 +76,16 @@ orca-matrixkoder/
 │   └── worker.ts            # Out-of-process Node.js background worker
 ├── out/
 │   └── worker.js            # Compiled worker entrypoint
+├── panel/
+│   ├── screens/*.dc.html    # One file per panel screen, from the design canvas (mock data inside)
+│   ├── runtime.js           # Renders the screens; no framework, CSP-safe
+│   └── fonts/               # Geist + Geist Mono (OFL), inlined at build
 ├── web/
-│   └── index.html           # 8-tab interactive Matrix HUD sidebar panel
+│   └── index.html           # Generated panel Orca loads (npm run build:panel)
 ├── skills/
 │   └── matrixkoder/         # Bundled agent orchestration skill
 ├── scripts/
+│   ├── build-panel.mjs      # Builds web/index.html from panel/
 │   └── sync-orca-upstream.sh# Upstream Orca sync script
 └── docs/
     ├── assets/              # UI mockups and screenshot assets

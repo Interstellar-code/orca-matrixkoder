@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Settings · General</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;background:#000}
+a{color:#4fd1c5}a:hover{color:#7fe3d9}
+.mk{font-family:'Geist',system-ui,sans-serif;color:#b9e8c4;-webkit-font-smoothing:antialiased}
+.mono{font-family:'Geist Mono',ui-monospace,Menlo,monospace}
+.ib{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:1px solid #143d22;background:#06150b;color:#8bbf9a;cursor:pointer;padding:0;text-decoration:none;box-sizing:border-box}
+.ib:hover{background:#0c2414;color:#b9e8c4}
+.btn{font-family:'Geist',system-ui,sans-serif;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:9px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #143d22;background:#06150b;color:#b9e8c4;text-decoration:none;box-sizing:border-box;white-space:nowrap}
+.btn:hover{background:#0c2414;color:#b9e8c4}
+.rain{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.rcol{position:absolute;top:0;width:14px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;line-height:15px;text-align:center;white-space:pre-line;color:#19e35a;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 85%,#000 100%);mask-image:linear-gradient(to bottom,transparent 0%,#000 85%,#000 100%);animation-name:fall;animation-timing-function:linear;animation-iteration-count:infinite}
+@keyframes fall{from{transform:translateY(-110%)}to{transform:translateY(1300px)}}
+.stab{font-family:'Geist',system-ui,sans-serif;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;border-radius:7px;color:#7fae8c;font-size:9.5px;font-weight:500;text-decoration:none;white-space:nowrap}
+.stab:hover{color:#b9e8c4;background:#06150b}
+.stab.on{background:#0d2a16;color:#e6fff0}
+.card{border-radius:14px;background:rgba(4,17,10,.86);backdrop-filter:blur(3px);border:1px solid #0f2a17;padding:4px 14px}
+.sec{margin:0;padding:12px 0 6px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8bbf9a}
+.row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #0d2414}
+.sec + .row{border-top:0}
+.lbl{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.lbl span:first-child{font-size:13px;color:#e6fff0}
+.lbl span:last-child{font-size:11.5px;line-height:16px;color:#7fae8c}
+.val{font-family:'Geist Mono',ui-monospace,monospace;font-size:11.5px;color:#b9e8c4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.segc{display:flex;padding:3px;border-radius:10px;background:#040e07;border:1px solid #0f2a17}
+.segc button{font-family:'Geist',system-ui,sans-serif;flex:1;height:32px;border:0;border-radius:8px;background:transparent;color:#8bbf9a;font-size:12.5px;font-weight:500;cursor:pointer}
+.segc button.on{background:#0d2a16;color:#e6fff0}
+.search{font-family:'Geist',system-ui,sans-serif;width:100%;height:36px;box-sizing:border-box;padding:0 12px 0 34px;border-radius:9px;border:1px solid #1c4a2b;background:#020a05;color:#e6fff0;font-size:13px;outline:none}
+.search:focus{border-color:#19e35a}
+.search::placeholder{color:#5f9a70}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</helmet>
+<div class="mk" style="width: 440px; height: 1240px; box-sizing: border-box; background: #020604; display: flex; flex-direction: column; border-left: 1px solid #0f2a17; position: relative; overflow: hidden">
+
+  <div class="rain" aria-hidden="true">
+    <sc-for list="{{rain}}" as="c" hint-placeholder-count="0">
+      <div class="rcol" style="{{c.style}}">{{c.glyphs}}</div>
+    </sc-for>
+  </div>
+
+  <header style="position: relative; z-index: 1; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 14px; border-bottom: 1px solid #0f2a17; background: rgba(3,10,6,.92)">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <a class="ib" href="Main.dc.html" aria-label="Back to Overview"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></a>
+      <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
+        <h1 style="margin: 0; font-size: 15px; font-weight: 600; color: #e6fff0">Settings</h1>
+        <span style="font-size: 12px; color: #8bbf9a">MatrixKoder · acme-api</span>
+      </div>
+    </div>
+    <div style="position: relative">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7fae8c" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="position: absolute; left: 12px; top: 11px"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <label for="ss" class="sr">Search settings</label>
+      <input id="ss" class="search" placeholder="Search all settings">
+    </div>
+    <nav aria-label="Settings sections" style="display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(4,14,7,.86); border: 1px solid #0f2a17">
+      <sc-for list="{{stabs}}" as="s" hint-placeholder-count="7"><a class="{{s.cls}}" href="{{s.href}}" aria-current="{{s.cur}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg><span>{{s.label}}</span></a></sc-for>
+    </nav>
+  </header>
+
+  <main style="position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 20px; overflow: hidden">
+
+    <section class="card" aria-labelledby="g-mode">
+      <h2 id="g-mode" class="sec">Mode</h2>
+      <div class="segc" role="group" aria-label="Mode" style="margin-bottom: 8px">
+        <button class="{{orchCls}}" aria-pressed="{{orchP}}" onClick="{{toOrch}}">Orchestrator</button>
+        <button class="{{soloCls}}" aria-pressed="{{soloP}}" onClick="{{toSolo}}">Solo</button>
+      </div>
+      <p style="margin: 0 0 12px; font-size: 12px; line-height: 17px; color: #8bbf9a">{{modeHint}}</p>
+    </section>
+
+    <section class="card" aria-labelledby="g-proj">
+      <h2 id="g-proj" class="sec">Project</h2>
+      <div class="row"><div class="lbl"><span>Repo</span><span>The Orca project this panel follows</span></div><span class="val">acme-api</span></div>
+      <div class="row"><div class="lbl"><span>Default base branch</span><span>New lane worktrees branch from here</span></div><span class="val">main</span><button class="btn">Change</button></div>
+      <div class="row"><div class="lbl"><span>Open on start</span><span>The tab the panel opens on</span></div><span class="val">Projects</span><button class="btn">Change</button></div>
+    </section>
+
+    <section class="card" aria-labelledby="g-data">
+      <h2 id="g-data" class="sec">Data</h2>
+      <div class="row"><div class="lbl"><span>MK data folder</span><span>Plans, runs and briefs</span></div><span class="val">~/.matrixkoder</span><button class="btn">Change</button></div>
+      <div class="row"><div class="lbl"><span>Plan inbox</span><span>Where the Inbox tab looks</span></div><span class="val">~/.matrixkoder/inbox</span><button class="btn">Change</button></div>
+      <div class="row"><div class="lbl"><span>Settings file</span><span>Back up or move to another machine</span></div><button class="btn">Export</button><button class="btn">Import</button></div>
+    </section>
+
+    <section class="card" aria-labelledby="g-about">
+      <h2 id="g-about" class="sec">About</h2>
+      <div class="row"><div class="lbl"><span>MatrixKoder for Orca 0.1.1</span><span>Follows MatrixKoder upstream v0.7.5</span></div><button class="btn">Check for updates</button></div>
+      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Reset all settings</span><span>Back to defaults; plans and runs are kept</span></div><button class="btn" style="color: #ff9b8a">Reset</button></div>
+    </section>
+
+  </main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
+const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
+function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
+function makeRain(seed) {
+  const R = rng(seed), out = [];
+  for (let i = 0; i < 30; i++) {
+    const n = 14 + Math.floor(R() * 26), g = [];
+    for (let k = 0; k < n; k++) g.push(GLYPHS[Math.floor(R() * GLYPHS.length)]);
+    const dur = 7 + R() * 9, delay = -R() * dur, op = 0.16 + R() * 0.22;
+    out.push({ glyphs: g.join('\n'), style: 'left:' + (i * 14.6 + R() * 4).toFixed(1) + 'px;opacity:' + op.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's' });
+  }
+  return out;
+}
+const RAIN = makeRain(71);
+const STABS = [
+  ['general', 'General', 'Settings.dc.html', 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'],
+  ['agents', 'Agents', 'SettingsAgents.dc.html', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8'],
+  ['routing', 'Routing', 'SettingsRouting.dc.html', 'M12 3v18M5 5h11l3 3-3 3H5zM19 13H8l-3 3 3 3h11'],
+  ['safety', 'Safety', 'SettingsSafety.dc.html', 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'],
+  ['alerts', 'Alerts', 'SettingsAlerts.dc.html', 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0'],
+  ['look', 'Theme', 'SettingsLook.dc.html', 'M12 3a9 9 0 1 0 9 9c0-1-1-1.5-2-1.5h-2a2 2 0 0 1-2-2V7c0-2-1.5-4-3-4zM7.5 10.5h.01M10.5 7h.01M15 8h.01'],
+  ['shortcuts', 'Shortcuts', 'SettingsShortcuts.dc.html', 'M13 2 3 14h9l-1 8 10-12h-9z'],
+];
+function stabs(active) { return STABS.map(([id, label, href, icon]) => ({ label, href, icon, cls: 'stab' + (id === active ? ' on' : ''), cur: id === active ? 'page' : 'false' })); }
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { mode: 'orch' }; }
+  renderVals() {
+    const orch = this.state.mode === 'orch';
+    return {
+      rain: RAIN,
+      stabs: stabs('general'),
+      orchCls: orch ? 'on' : '', soloCls: orch ? '' : 'on',
+      orchP: String(orch), soloP: String(!orch),
+      toOrch: () => this.setState({ mode: 'orch' }),
+      toSolo: () => this.setState({ mode: 'solo' }),
+      modeHint: orch ? 'MK plans the work and hands tasks to lanes in their own worktrees. You approve at the gates.' : 'Everything runs in this session, one task at a time. No lanes or worktrees.',
+    };
+  }
+}
+</script>
+</body>
+</html>

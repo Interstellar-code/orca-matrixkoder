@@ -1,12 +1,13 @@
 {
   "name": "orca-matrixkoder",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Multi-agent orchestration dashboard and lane supervisor for Orca IDE",
   "author": "Interstellar-code",
   "license": "MIT",
   "scripts": {
-    "build": "tsc && node scripts/stage-plugin.mjs",
+    "build": "tsc && node scripts/build-panel.mjs && node scripts/stage-plugin.mjs",
+    "build:panel": "node scripts/build-panel.mjs",
     "watch": "tsc -w",
     "sync:orca": "bash scripts/sync-orca-upstream.sh"
   },

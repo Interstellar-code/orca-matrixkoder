@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.1 - 2026-10-24
+
+Redesigned panel, rebuilt from the design canvas with mock data.
+
+- 16 screens: Projects, Overview, Lanes, Plan (phase → task → subtask tree), Waiting, Events, Inbox, Bugs, Todo, and Settings with 7 sub-tabs.
+- New Waiting screen for decision gates and agent questions.
+- Footer shortcuts: Improve and Ask Jev; Matrix rain behind every screen.
+- Geist and Geist Mono inlined, so fonts load under the panel CSP.
+- Screens live in `panel/screens/`; `npm run build:panel` generates `web/index.html`.
+- `upstream` remote now points at MatrixKoder; `npm run sync:orca` checks both remotes.
+
 ## 0.1.0 - 2026-10-24
 
 First installable version.

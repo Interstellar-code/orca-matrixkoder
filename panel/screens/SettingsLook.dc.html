@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Settings · Theme</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;background:#000}
+a{color:#4fd1c5}a:hover{color:#7fe3d9}
+.mk{font-family:'Geist',system-ui,sans-serif;color:#b9e8c4;-webkit-font-smoothing:antialiased}
+.mono{font-family:'Geist Mono',ui-monospace,Menlo,monospace}
+.ib{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:1px solid #143d22;background:#06150b;color:#8bbf9a;cursor:pointer;padding:0;text-decoration:none;box-sizing:border-box}
+.ib:hover{background:#0c2414;color:#b9e8c4}
+.rain{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.rcol{position:absolute;top:0;width:14px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;line-height:15px;text-align:center;white-space:pre-line;color:#19e35a;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 85%,#000 100%);mask-image:linear-gradient(to bottom,transparent 0%,#000 85%,#000 100%);animation-name:fall;animation-timing-function:linear;animation-iteration-count:infinite}
+@keyframes fall{from{transform:translateY(-110%)}to{transform:translateY(1300px)}}
+.stab{font-family:'Geist',system-ui,sans-serif;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;border-radius:7px;color:#7fae8c;font-size:9.5px;font-weight:500;text-decoration:none;white-space:nowrap}
+.stab:hover{color:#b9e8c4;background:#06150b}
+.stab.on{background:#0d2a16;color:#e6fff0}
+.card{border-radius:14px;background:rgba(4,17,10,.86);backdrop-filter:blur(3px);border:1px solid #0f2a17;padding:4px 14px}
+.sec{margin:0;padding:12px 0 6px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8bbf9a}
+.row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #0d2414}
+.lbl{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.lbl span:first-child{font-size:13px;color:#e6fff0}
+.lbl span:last-child{font-size:11.5px;line-height:16px;color:#7fae8c}
+.search{font-family:'Geist',system-ui,sans-serif;width:100%;height:36px;box-sizing:border-box;padding:0 12px 0 34px;border-radius:9px;border:1px solid #1c4a2b;background:#020a05;color:#e6fff0;font-size:13px;outline:none}
+.search:focus{border-color:#19e35a}
+.search::placeholder{color:#5f9a70}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.sw{width:44px;height:26px;border-radius:13px;border:1px solid #1c4a2b;background:#0b1c10;position:relative;cursor:pointer;padding:0;flex-shrink:0}
+.sw .kn{position:absolute;top:4px;left:4px;width:16px;height:16px;border-radius:50%;background:#5f9a70;transition:left .15s}
+.sw.on{background:#19e35a;border-color:#19e35a}
+.sw.on .kn{left:22px;background:#021006}
+.segc{display:flex;padding:3px;border-radius:9px;background:#040e07;border:1px solid #0f2a17}
+.segc button{font-family:'Geist',system-ui,sans-serif;height:26px;padding:0 10px;border:0;border-radius:7px;background:transparent;color:#8bbf9a;font-size:12px;font-weight:500;cursor:pointer}
+.segc button.on{background:#0d2a16;color:#e6fff0}
+input[type=range]{accent-color:#19e35a;width:110px}
+.swatch{display:flex;flex-direction:column;gap:4px;align-items:center;font-size:10.5px;color:#8bbf9a}
+.swatch span:first-child{width:36px;height:24px;border-radius:6px;border:1px solid #143d22}
+</style>
+</helmet>
+<div class="mk" style="width: 440px; height: 1240px; box-sizing: border-box; background: #020604; display: flex; flex-direction: column; border-left: 1px solid #0f2a17; position: relative; overflow: hidden">
+
+  <sc-if value="{{rainOn}}" hint-placeholder-val="{{true}}">
+  <div class="rain" aria-hidden="true" style="{{rainStyle}}">
+    <sc-for list="{{rain}}" as="c" hint-placeholder-count="0">
+      <div class="rcol" style="{{c.style}}">{{c.glyphs}}</div>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <header style="position: relative; z-index: 1; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 14px; border-bottom: 1px solid #0f2a17; background: rgba(3,10,6,.92)">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <a class="ib" href="Main.dc.html" aria-label="Back to Overview"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></a>
+      <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
+        <h1 style="margin: 0; font-size: 15px; font-weight: 600; color: #e6fff0">Settings</h1>
+        <span style="font-size: 12px; color: #8bbf9a">MatrixKoder · acme-api</span>
+      </div>
+    </div>
+    <div style="position: relative">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7fae8c" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="position: absolute; left: 12px; top: 11px"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <label for="ss" class="sr">Search settings</label>
+      <input id="ss" class="search" placeholder="Search all settings">
+    </div>
+    <nav aria-label="Settings sections" style="display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(4,14,7,.86); border: 1px solid #0f2a17">
+      <sc-for list="{{stabs}}" as="s" hint-placeholder-count="7"><a class="{{s.cls}}" href="{{s.href}}" aria-current="{{s.cur}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg><span>{{s.label}}</span></a></sc-for>
+    </nav>
+  </header>
+
+  <main style="position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 20px; overflow: hidden">
+
+    <section class="card" aria-labelledby="l-rain">
+      <h2 id="l-rain" class="sec">Matrix rain</h2>
+      <div class="row"><div class="lbl"><span>Show rain</span><span>Falling glyphs behind every screen</span></div><button class="{{rainCls}}" aria-pressed="{{rainP}}" aria-label="Show rain" onClick="{{flipRain}}"><span class="kn"></span></button></div>
+      <div class="row"><div class="lbl"><span>Brightness</span><span>Keep it low so cards stay readable</span></div><label for="rb" class="sr">Rain brightness</label><input id="rb" type="range" min="20" max="100" step="10" value="{{bright}}" onChange="{{setBright}}"><span class="mono" style="font-size: 12px; color: #e6fff0; width: 36px; text-align: right">{{bright}}%</span></div>
+      <div class="row"><div class="lbl"><span>Speed</span><span>How fast the columns fall</span></div>
+        <div class="segc" role="group" aria-label="Rain speed"><sc-for list="{{speeds}}" as="o" hint-placeholder-count="3"><button class="{{o.cls}}" aria-pressed="{{o.p}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div>
+      </div>
+      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Reduce motion</span><span>Stops the rain and all animation</span></div><button class="{{calmCls}}" aria-pressed="{{calmP}}" aria-label="Reduce motion" onClick="{{flipCalm}}"><span class="kn"></span></button></div>
+    </section>
+
+    <section class="card" aria-labelledby="l-col">
+      <h2 id="l-col" class="sec">Colours</h2>
+      <div class="row"><div class="lbl"><span>Follow Orca theme</span><span>Use Orca's colour tokens instead of the Matrix palette</span></div><button class="{{orcaCls}}" aria-pressed="{{orcaP}}" aria-label="Follow Orca theme" onClick="{{flipOrca}}"><span class="kn"></span></button></div>
+      <div style="display: flex; justify-content: space-between; padding: 8px 0 14px; border-top: 1px solid #0d2414">
+        <span class="swatch"><span style="background: #020604"></span><span>ground</span></span>
+        <span class="swatch"><span style="background: #04110a"></span><span>card</span></span>
+        <span class="swatch"><span style="background: #19e35a"></span><span>done</span></span>
+        <span class="swatch"><span style="background: #4fd1c5"></span><span>live</span></span>
+        <span class="swatch"><span style="background: #e8b04a"></span><span>you</span></span>
+        <span class="swatch"><span style="background: #ff7a66"></span><span>error</span></span>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="l-text">
+      <h2 id="l-text" class="sec">Layout</h2>
+      <div class="row"><div class="lbl"><span>Text size</span><span>Panel text only</span></div>
+        <div class="segc" role="group" aria-label="Text size"><sc-for list="{{sizes}}" as="o" hint-placeholder-count="3"><button class="{{o.cls}}" aria-pressed="{{o.p}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div>
+      </div>
+      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Density</span><span>Space between rows and cards</span></div>
+        <div class="segc" role="group" aria-label="Density"><sc-for list="{{dens}}" as="o" hint-placeholder-count="2"><button class="{{o.cls}}" aria-pressed="{{o.p}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div>
+      </div>
+    </section>
+
+  </main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
+const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
+function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
+function makeRain(seed, k) {
+  const R = rng(seed), out = [];
+  for (let i = 0; i < 30; i++) {
+    const n = 14 + Math.floor(R() * 26), g = [];
+    for (let j = 0; j < n; j++) g.push(GLYPHS[Math.floor(R() * GLYPHS.length)]);
+    const dur = (7 + R() * 9) * k, delay = -R() * dur, op = 0.16 + R() * 0.22;
+    out.push({ glyphs: g.join('\n'), style: 'left:' + (i * 14.6 + R() * 4).toFixed(1) + 'px;opacity:' + op.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's' });
+  }
+  return out;
+}
+const SPEED = { slow: 1.8, normal: 1, fast: 0.55 };
+const RAINS = { slow: makeRain(101, SPEED.slow), normal: makeRain(101, 1), fast: makeRain(101, SPEED.fast) };
+const STABS = [
+  ['general', 'General', 'Settings.dc.html', 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'],
+  ['agents', 'Agents', 'SettingsAgents.dc.html', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8'],
+  ['routing', 'Routing', 'SettingsRouting.dc.html', 'M12 3v18M5 5h11l3 3-3 3H5zM19 13H8l-3 3 3 3h11'],
+  ['safety', 'Safety', 'SettingsSafety.dc.html', 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'],
+  ['alerts', 'Alerts', 'SettingsAlerts.dc.html', 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0'],
+  ['look', 'Theme', 'SettingsLook.dc.html', 'M12 3a9 9 0 1 0 9 9c0-1-1-1.5-2-1.5h-2a2 2 0 0 1-2-2V7c0-2-1.5-4-3-4zM7.5 10.5h.01M10.5 7h.01M15 8h.01'],
+  ['shortcuts', 'Shortcuts', 'SettingsShortcuts.dc.html', 'M13 2 3 14h9l-1 8 10-12h-9z'],
+];
+function stabs(active) { return STABS.map(([id, label, href, icon]) => ({ label, href, icon, cls: 'stab' + (id === active ? ' on' : ''), cur: id === active ? 'page' : 'false' })); }
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { rain: true, bright: 60, speed: 'normal', calm: false, orca: false, size: 'M', dens: 'comfy' }; }
+  seg(key, opts) { const s = this.state; return opts.map(([id, label]) => ({ label, cls: s[key] === id ? 'on' : '', p: String(s[key] === id), pick: () => this.setState({ [key]: id }) })); }
+  sw(key) { const v = this.state[key]; return { cls: 'sw' + (v ? ' on' : ''), p: String(v), flip: () => this.setState({ [key]: !v }) }; }
+  renderVals() {
+    const s = this.state, r = this.sw('rain'), c = this.sw('calm'), o = this.sw('orca');
+    return {
+      stabs: stabs('look'),
+      rain: RAINS[s.speed],
+      rainOn: s.rain && !s.calm,
+      rainStyle: 'opacity:' + (s.bright / 60).toFixed(2),
+      rainCls: r.cls, rainP: r.p, flipRain: r.flip,
+      calmCls: c.cls, calmP: c.p, flipCalm: c.flip,
+      orcaCls: o.cls, orcaP: o.p, flipOrca: o.flip,
+      bright: s.bright,
+      setBright: (e) => this.setState({ bright: Number(e.target.value) }),
+      speeds: this.seg('speed', [['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast']]),
+      sizes: this.seg('size', [['S', 'S'], ['M', 'M'], ['L', 'L']]),
+      dens: this.seg('dens', [['compact', 'Compact'], ['comfy', 'Comfortable']]),
+    };
+  }
+}
+</script>
+</body>
+</html>

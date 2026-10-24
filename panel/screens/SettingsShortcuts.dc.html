@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Settings · Shortcuts</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;background:#000}
+a{color:#4fd1c5}a:hover{color:#7fe3d9}
+.mk{font-family:'Geist',system-ui,sans-serif;color:#b9e8c4;-webkit-font-smoothing:antialiased}
+.mono{font-family:'Geist Mono',ui-monospace,Menlo,monospace}
+.ib{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:1px solid #143d22;background:#06150b;color:#8bbf9a;cursor:pointer;padding:0;text-decoration:none;box-sizing:border-box}
+.ib:hover{background:#0c2414;color:#b9e8c4}
+.ib[disabled]{opacity:.35;cursor:default}
+.btn{font-family:'Geist',system-ui,sans-serif;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:9px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #143d22;background:#06150b;color:#b9e8c4;text-decoration:none;box-sizing:border-box;white-space:nowrap}
+.btn:hover{background:#0c2414;color:#b9e8c4}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.fbtn{font-family:'Geist',system-ui,sans-serif;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:9px;font-size:12.5px;font-weight:500;border:1px solid #143d22;background:#06150b;color:#b9e8c4;white-space:nowrap}
+.fbtn.pri{background:#19e35a;border-color:#19e35a;color:#021006;font-weight:600}
+.slot{font-family:'Geist',system-ui,sans-serif;display:inline-flex;align-items:center;height:36px;padding:0 12px;border-radius:9px;border:1px dashed #1c4a2b;color:#5f9a70;font-size:12px}
+.kbd{font-family:'Geist Mono',ui-monospace,monospace;font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(0,0,0,.18)}
+.rain{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.rcol{position:absolute;top:0;width:14px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;line-height:15px;text-align:center;white-space:pre-line;color:#19e35a;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 85%,#000 100%);mask-image:linear-gradient(to bottom,transparent 0%,#000 85%,#000 100%);animation-name:fall;animation-timing-function:linear;animation-iteration-count:infinite}
+@keyframes fall{from{transform:translateY(-110%)}to{transform:translateY(1300px)}}
+.stab{font-family:'Geist',system-ui,sans-serif;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;border-radius:7px;color:#7fae8c;font-size:9.5px;font-weight:500;text-decoration:none;white-space:nowrap}
+.stab:hover{color:#b9e8c4;background:#06150b}
+.stab.on{background:#0d2a16;color:#e6fff0}
+.card{border-radius:14px;background:rgba(4,17,10,.86);backdrop-filter:blur(3px);border:1px solid #0f2a17;padding:4px 14px}
+.sec{margin:0;padding:12px 0 6px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8bbf9a;display:flex;align-items:center;gap:8px}
+.row{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid #0d2414}
+.lbl{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.lbl span:first-child{font-size:13px;color:#e6fff0}
+.lbl span:last-child{font-size:11.5px;line-height:16px;color:#7fae8c}
+.search{font-family:'Geist',system-ui,sans-serif;width:100%;height:36px;box-sizing:border-box;padding:0 12px 0 34px;border-radius:9px;border:1px solid #1c4a2b;background:#020a05;color:#e6fff0;font-size:13px;outline:none}
+.search:focus{border-color:#19e35a}
+.search::placeholder{color:#5f9a70}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</helmet>
+<div class="mk" style="width: 440px; height: 1240px; box-sizing: border-box; background: #020604; display: flex; flex-direction: column; border-left: 1px solid #0f2a17; position: relative; overflow: hidden">
+
+  <div class="rain" aria-hidden="true">
+    <sc-for list="{{rain}}" as="c" hint-placeholder-count="0">
+      <div class="rcol" style="{{c.style}}">{{c.glyphs}}</div>
+    </sc-for>
+  </div>
+
+  <header style="position: relative; z-index: 1; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 14px; border-bottom: 1px solid #0f2a17; background: rgba(3,10,6,.92)">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <a class="ib" href="Main.dc.html" aria-label="Back to Overview"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></a>
+      <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
+        <h1 style="margin: 0; font-size: 15px; font-weight: 600; color: #e6fff0">Settings</h1>
+        <span style="font-size: 12px; color: #8bbf9a">MatrixKoder · acme-api</span>
+      </div>
+    </div>
+    <div style="position: relative">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7fae8c" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="position: absolute; left: 12px; top: 11px"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <label for="ss" class="sr">Search settings</label>
+      <input id="ss" class="search" placeholder="Search all settings">
+    </div>
+    <nav aria-label="Settings sections" style="display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(4,14,7,.86); border: 1px solid #0f2a17">
+      <sc-for list="{{stabs}}" as="s" hint-placeholder-count="7"><a class="{{s.cls}}" href="{{s.href}}" aria-current="{{s.cur}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg><span>{{s.label}}</span></a></sc-for>
+    </nav>
+  </header>
+
+  <main style="position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 20px; overflow: hidden">
+
+    <section class="card" aria-labelledby="k-bar">
+      <h2 id="k-bar" class="sec">In the footer<span class="mono" style="font-weight: 500; letter-spacing: 0; color: #7fae8c">{{used}}/4</span></h2>
+      <sc-for list="{{slots}}" as="s" hint-placeholder-count="2">
+        <div class="row">
+          <div class="lbl"><span>{{s.label}}</span><span>{{s.desc}}</span></div>
+          <span class="kbd" style="color: #b9e8c4">{{s.key}}</span>
+          <button class="ib" style="width: 28px; height: 28px" aria-label="Move {{s.label}} left" disabled="{{s.first}}" onClick="{{s.up}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"></path></svg></button>
+          <button class="ib" style="width: 28px; height: 28px" aria-label="Move {{s.label}} right" disabled="{{s.last}}" onClick="{{s.down}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+          <button class="ib" style="width: 28px; height: 28px; color: #ff9b8a" aria-label="Remove {{s.label}}" onClick="{{s.remove}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+        </div>
+      </sc-for>
+      <div style="height: 4px"></div>
+    </section>
+
+    <section class="card" aria-labelledby="k-lib">
+      <h2 id="k-lib" class="sec">Add from library</h2>
+      <sc-for list="{{library}}" as="l" hint-placeholder-count="5">
+        <div class="row">
+          <div class="lbl"><span>{{l.label}}</span><span>{{l.desc}}</span></div>
+          <button class="btn" disabled="{{l.full}}" onClick="{{l.add}}">Add</button>
+        </div>
+      </sc-for>
+      <div class="row" style="padding-bottom: 12px"><button class="btn" style="border-style: dashed; color: #8bbf9a">+ Custom: MK command or Orca automation</button></div>
+    </section>
+
+    <section aria-label="Footer preview" style="display: flex; flex-direction: column; gap: 6px">
+      <span style="font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #8bbf9a; padding: 0 2px">Preview</span>
+      <div style="border-radius: 12px; border: 1px solid #0f2a17; background: rgba(3,10,6,.92); padding: 12px; display: flex; gap: 8px; flex-wrap: wrap">
+        <sc-for list="{{preview}}" as="b" hint-placeholder-count="2"><span class="{{b.cls}}">{{b.label}}<span class="kbd">{{b.key}}</span></span></sc-for>
+        <sc-for list="{{empties}}" as="e" hint-placeholder-count="2"><span class="slot">+</span></sc-for>
+      </div>
+    </section>
+
+  </main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
+const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
+function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
+function makeRain(seed) {
+  const R = rng(seed), out = [];
+  for (let i = 0; i < 30; i++) {
+    const n = 14 + Math.floor(R() * 26), g = [];
+    for (let k = 0; k < n; k++) g.push(GLYPHS[Math.floor(R() * GLYPHS.length)]);
+    const dur = 7 + R() * 9, delay = -R() * dur, op = 0.16 + R() * 0.22;
+    out.push({ glyphs: g.join('\n'), style: 'left:' + (i * 14.6 + R() * 4).toFixed(1) + 'px;opacity:' + op.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's' });
+  }
+  return out;
+}
+const RAIN = makeRain(107);
+const STABS = [
+  ['general', 'General', 'Settings.dc.html', 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'],
+  ['agents', 'Agents', 'SettingsAgents.dc.html', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8'],
+  ['routing', 'Routing', 'SettingsRouting.dc.html', 'M12 3v18M5 5h11l3 3-3 3H5zM19 13H8l-3 3 3 3h11'],
+  ['safety', 'Safety', 'SettingsSafety.dc.html', 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'],
+  ['alerts', 'Alerts', 'SettingsAlerts.dc.html', 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0'],
+  ['look', 'Theme', 'SettingsLook.dc.html', 'M12 3a9 9 0 1 0 9 9c0-1-1-1.5-2-1.5h-2a2 2 0 0 1-2-2V7c0-2-1.5-4-3-4zM7.5 10.5h.01M10.5 7h.01M15 8h.01'],
+  ['shortcuts', 'Shortcuts', 'SettingsShortcuts.dc.html', 'M13 2 3 14h9l-1 8 10-12h-9z'],
+];
+function stabs(active) { return STABS.map(([id, label, href, icon]) => ({ label, href, icon, cls: 'stab' + (id === active ? ' on' : ''), cur: id === active ? 'page' : 'false' })); }
+const ALL = {
+  improve: ['Improve', 'Rewrites the prompt before it is sent', '⌃I'],
+  jev: ['Ask Jev', 'A judgment on the current run', '⌃J'],
+  sweep: ['Sweep lanes', 'Check every lane for stalls now', '⌃S'],
+  next: ['Run next phase', 'Start the next phase when the current one merged', '⌃N'],
+  verify: ['Re-verify all', 'Rerun build and test gates on every lane', '⌃R'],
+  pr: ['Open PR', 'Open the plan PR in Orca', '⌃P'],
+  todo: ['New todo', 'Add to Todo without leaving the screen', '⌃T'],
+};
+const MAX = 4;
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { slots: ['improve', 'jev'] }; }
+  renderVals() {
+    const slots = this.state.slots, full = slots.length >= MAX;
+    const set = (next) => this.setState({ slots: next });
+    const move = (i, d) => { const n = slots.slice(); const t = n[i]; n[i] = n[i + d]; n[i + d] = t; set(n); };
+    return {
+      rain: RAIN,
+      stabs: stabs('shortcuts'),
+      used: slots.length,
+      slots: slots.map((id, i) => ({
+        label: ALL[id][0], desc: ALL[id][1], key: ALL[id][2],
+        first: i === 0, last: i === slots.length - 1,
+        up: () => move(i, -1), down: () => move(i, 1),
+        remove: () => set(slots.filter((x) => x !== id)),
+      })),
+      library: Object.keys(ALL).filter((id) => slots.indexOf(id) < 0).map((id) => ({
+        label: ALL[id][0], desc: ALL[id][1], full,
+        add: () => { if (!full) set([...slots, id]); },
+      })),
+      preview: slots.map((id, i) => ({ label: ALL[id][0], key: ALL[id][2], cls: i === 0 ? 'fbtn pri' : 'fbtn' })),
+      empties: Array.from({ length: MAX - slots.length }, (_, i) => i),
+    };
+  }
+}
+</script>
+</body>
+</html>
