@@ -1,0 +1,20 @@
+{
+  "manifestVersion": 1,
+  "id": "matrixkoder-spike",
+  "publisher": "interstellar",
+  "name": "MatrixKoder Spike (throwaway)",
+  "version": "0.0.1",
+  "description": "Throwaway SPIKE probes for the dashboard wiring plan. Remove after the spike.",
+  "engines": { "orca": ">=1.4.0" },
+  "pluginApi": 1,
+  "main": "out/worker.mjs",
+  "contributes": {
+    "commands": [
+      { "id": "spike-start", "title": "MK Spike: Start probes" },
+      { "id": "spike-keepalive-off", "title": "MK Spike: Stop keep-alive" },
+      { "id": "spike-status", "title": "MK Spike: Status" }
+    ],
+    "events": [{ "on": "agent.status.changed" }, { "on": "worktree.created" }]
+  },
+  "capabilities": [{ "kind": "workspace:read" }, { "kind": "events:subscribe" }]
+}

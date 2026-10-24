@@ -1,0 +1,16 @@
+import { startHost } from './host-harness.mjs';
+import { mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+const here = dirname(fileURLToPath(import.meta.url));
+const tmp = join(here, 'tmp'); mkdirSync(tmp, { recursive: true });
+const db = join(tmp, 'probe.db'), out = join(tmp, 'probe.json');
+for (const f of [db, db + '-wal', db + '-shm', out]) rmSync(f, { force: true });
+const h = startHost();
+const r = await h.ready; console.log('host ready msg:', JSON.stringify(r));
+const res = await h.invoke('probe', { db, out });
+console.log('commandResult ok:', res.ok, res.error ?? '');
+console.log(readFileSync(out, 'utf8'));
+console.log('host stdout:', JSON.stringify(h.log.stdout), 'stderr:', JSON.stringify(h.log.stderr));
+console.log('host msgs types:', h.log.msgs.map((m) => m.type + (m.level ? ':' + m.level : '')).join(','));
+await h.stop();

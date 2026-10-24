@@ -13,7 +13,7 @@ pushed = false
 ## Summary
 - Phases: 6 — SPIKE: prove the worker can do what the plan needs; STORE: mk-data.db, settings file and the mk CLI; ORCA: read Orca and run its actions; SERVE: the local dashboard server; WIRE: screens read live data; LAUNCH: open the dashboard, agent skill, release
 - Method: waves · subagents mixed
-- Lanes: SPIKE (own lane); STORE (own lane); ORCA (own lane); SERVE (own lane); WIRE (own lane); LAUNCH (own lane)
+- Lanes: SPIKE (main checkout, orchestrator); lane A: STORE, SERVE, LAUNCH; lane B: ORCA, WIRE — at most 2 lanes at once, builders claude sonnet medium
 - Delivery: main · pushed: no
 - Gates: unit = npm test; types = npx tsc --noEmit; bundle = npm run build
 /+++
@@ -142,7 +142,10 @@ manual = "the orchestrator reads spike-report.md and confirms each line has evid
 id = "SPIKE.2"
 title = "test runner"
 covers = []
-acceptance = ["`npm test` runs node --test over test/ and passes with one smoke test"]
+acceptance = [
+  "`npm test` runs node --test over test/ and passes with one smoke test",
+  "package.json already has everything later phases need: `bin.mk = bin/mk.mjs` and the test script, so no later phase edits package.json",
+]
 risk = 1
 /+++
 
@@ -164,6 +167,8 @@ owned = ["src/store/", "bin/", "test/store/"]
 commit = "feat(store): mk-data.db, mk-settings.json and the mk CLI"
 deps = ["SPIKE"]
 size = "complex"
+route = "claude sonnet medium"
+reviewer = "claude opus"
 subagents = true
 /+++
 
@@ -219,17 +224,19 @@ owned = ["bin/", "test/store/cli.test.mjs"]
 - Needs first: SPIKE, for the PATH result and the fixtures.
 - Build order: ORCA.1 then ORCA.2; read `orca-cli-reference.md` and `orca-orchestration-bus.md` §2 first.
 - Hazards: K4, K5
-- Carries: C5, T4, A5
+- Carries: C5, C6, T4, A5
 /+++
 
 +++ 5.3.0 ORCA settings [toml]
 id = "ORCA"
 title = "read Orca and run its actions"
 wave = 2
-owned = ["src/orca/", "test/orca/"]
+owned = ["src/orca/", "test/orca/", "test/fixtures/snapshot.json"]
 commit = "feat(orca): Orca CLI adapter with projections and an action allowlist"
 deps = ["SPIKE"]
 size = "standard"
+route = "claude sonnet medium"
+reviewer = "claude sonnet"
 subagents = false
 /+++
 
@@ -259,6 +266,19 @@ gate = "node --test test/orca/adapter.test.mjs"
 deps = ["ORCA.1"]
 /+++
 
++++ 5.3.3 ORCA.3 — sample snapshot for the screens [toml]
+id = "ORCA.3"
+title = "sample snapshot for the screens"
+description = "Writes test/fixtures/snapshot.json, a full C6 state snapshot built from the recorded SPIKE fixtures, so WIRE can build every screen before SERVE exists. The orchestrator checks it against screen-data-map.md section 4 before WIRE starts."
+covers = ["C6"]
+acceptance = [
+  "test/fixtures/snapshot.json has every C6 key with realistic values from the recorded Orca data, under 64 KB",
+  "it includes at least one empty list, one failed task and one long name, so screens meet real edge cases",
+]
+risk = 2
+deps = ["ORCA.1"]
+/+++
+
 +++ 5.4 SERVE — the local dashboard server
 ### SERVE — the local dashboard server
 - Goal: the worker serves the dashboard and the C6/C7 API on 127.0.0.1 with a token, refreshed by a poll loop and by Orca events.
@@ -277,6 +297,8 @@ owned = ["src/server/", "src/worker.ts", "test/server/"]
 commit = "feat(server): local dashboard server, state snapshot and actions"
 deps = ["STORE", "ORCA"]
 size = "complex"
+route = "claude sonnet medium"
+reviewer = "claude opus"
 subagents = false
 /+++
 
@@ -315,6 +337,7 @@ acceptance = [
   "Orca reads are cached and refreshed every 10 s, and at once on agent.status.changed, worktree.created and worktree.removed",
   "event_log is filled from inbox using the message sequence as cursor, heartbeats skipped",
   "worker commands mk.state and mk.action return the same data as the HTTP API",
+  "src/worker.ts registers every module in out/commands/ at start, so LAUNCH adds commands without editing src/worker.ts",
 ]
 risk = 3
 gate = "node --test test/server/"
@@ -325,8 +348,8 @@ deps = ["SERVE.1"]
 ### WIRE — screens read live data
 - Goal: every screen renders from the snapshot, with no mock constants left, and its buttons call /api/action.
 - Serves: G1, G2, G3, G4
-- Needs first: SERVE, for the API.
-- Build order: WIRE.1 (data layer), then the screens in WIRE.2, then WIRE.3; read `screen-data-map.md` §2 and §3 first.
+- Needs first: ORCA, for the sample snapshot (ORCA.3); its live check WIRE.4 also waits for SERVE.
+- Build order: WIRE.1 (data layer, against scripts/dev-snapshot-server.mjs serving the sample snapshot), then the screens in WIRE.2, then WIRE.3, then WIRE.4 once SERVE is merged; read `screen-data-map.md` §2 and §3 first.
 - Hazards: K6
 - Carries: T7
 /+++
@@ -334,11 +357,13 @@ deps = ["SERVE.1"]
 +++ 5.5.0 WIRE settings [toml]
 id = "WIRE"
 title = "screens read live data"
-wave = 4
-owned = ["panel/", "scripts/build-panel.mjs", "web/", "test/panel/"]
+wave = 3
+owned = ["panel/", "scripts/build-panel.mjs", "scripts/dev-snapshot-server.mjs", "web/", "test/panel/"]
 commit = "feat(panel): screens render live data from the worker"
-deps = ["SERVE"]
+deps = ["ORCA"]
 size = "complex"
+route = "claude sonnet medium"
+reviewer = "claude sonnet"
 subagents = true
 qa = ["dashboard-live"]
 /+++
@@ -374,7 +399,7 @@ deps = ["WIRE.1"]
 +++ 5.5.2.1 WIRE.2.1 — Overview, Lanes, Waiting [toml]
 id = "WIRE.2.1"
 title = "Overview, Lanes, Waiting"
-acceptance = ["the three screens render from the snapshot and their actions work against a throwaway run"]
+acceptance = ["the three screens render from the sample snapshot and their buttons send the right /api/action calls"]
 subagent = false
 owned = ["panel/screens/Main.dc.html", "panel/screens/Lanes.dc.html", "panel/screens/Waiting.dc.html"]
 /+++
@@ -402,6 +427,19 @@ risk = 2
 deps = ["WIRE.1"]
 /+++
 
++++ 5.5.4 WIRE.4 — live check against the real server [toml]
+id = "WIRE.4"
+title = "live check against the real server"
+covers = []
+acceptance = [
+  "every screen renders from the real /api/state of the merged SERVE worker",
+  "approve, answer, import, bug fix and todo actions work against a throwaway Orca run",
+]
+risk = 3
+manual = "the orchestrator opens the dashboard tab and runs each action on a throwaway run"
+deps = ["WIRE.2", "SERVE"]
+/+++
+
 +++ 5.6 LAUNCH — open the dashboard, agent skill, release
 ### LAUNCH — open the dashboard, agent skill, release
 - Goal: one command or shortcut opens the dashboard tab, agents can file bugs through the skill, and 0.2.0 is tagged with docs.
@@ -420,6 +458,8 @@ owned = ["orca-plugin.json", "src/commands/", "skills/", "README.md", "CHANGELOG
 commit = "feat(launch): open dashboard command, bug skill, 0.2.0"
 deps = ["SERVE"]
 size = "standard"
+route = "claude sonnet medium"
+reviewer = "claude sonnet"
 subagents = false
 /+++
 
@@ -507,4 +547,7 @@ bundle = "npm run build"
 - 2026-10-24 — decision — Orca is the source of truth; upstream MK stores are not used; MK-only data in ~/.matrixkoder/mk-data.db, settings in ~/.matrixkoder/mk-settings.json — user
 - 2026-10-24 — decision — bugs live only in the bug table (no .md files), one table with fix fields, created by agents through the mk CLI — user
 - 2026-10-24 — answer — Q1 to Q8 accepted as picked: lane = dispatch else worktree with agent; Undo with 10 s delay; agents report checks via send --type status; Ask Jev hidden; Safety/Routing advisory; no bug attachments; Follow Orca theme dropped; release 0.2.0 — user
+- 2026-10-24 — decision — 2 lanes plus the main checkout; builders claude sonnet medium; reviews opus for STORE and SERVE, sonnet otherwise; WIRE moves to wave 3 against a sample snapshot (ORCA.3) with a live check WIRE.4; SPIKE owns package.json edits; LAUNCH adds commands as modules loaded by src/worker.ts — user
+- 2026-10-24 — decision — plans in this repo no longer need to pass upstream mk-plan.py check — user
+- 2026-10-24 — parked — SPIKE paused: A1 passed, A2/A3 passed in the harness; live-app proofs (A2-A4, A6) need the throwaway plugin loaded on the Mac, not over a remote connection — user
 /+++

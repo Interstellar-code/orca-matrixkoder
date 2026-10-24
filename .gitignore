@@ -2,7 +2,7 @@ node_modules/
 .DS_Store
 *.log
 .codegraph/
-plugin/
+/plugin/
 .serena/
 
 # MatrixKoder data folder: plans and research are shared, machine-local state is not
@@ -16,3 +16,6 @@ plugin/
 .matrixkoder/backups/
 .matrixkoder/usage.json
 .matrixkoder/inbox/.deleted/
+
+# Spike scratch output (test databases, extracted Orca code)
+spike/tmp/
