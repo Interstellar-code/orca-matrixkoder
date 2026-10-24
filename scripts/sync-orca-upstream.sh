@@ -1,13 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "==> Fetching latest tags and branches from upstream (stablyai/orca)..."
-git fetch upstream --tags --prune
+# Remotes: `upstream` = Interstellar-code/matrixkoder (the MK logic this plugin follows),
+# `orca` = stablyai/orca (the host IDE's plugin API). Both have unrelated histories,
+# so they are fetched for reference only, never merged.
 
-LATEST_TAG=$(git tag -l "v*" --sort=-v:refname | head -n 1 || echo "main")
-echo "==> Latest detected upstream release: ${LATEST_TAG}"
+latest_tag() {
+  git ls-remote --tags --refs "$1" 'v*' | awk -F/ '{print $NF}' | sort -V | tail -n 1
+}
+
+echo "==> Fetching upstream (Interstellar-code/matrixkoder)..."
+git fetch upstream --prune --no-tags
+echo "==> Latest upstream MatrixKoder release: $(latest_tag upstream || echo none)"
+git log -n 5 --oneline upstream/main 2>/dev/null || echo "No upstream/main branch found."
+
+echo "==> Fetching orca (stablyai/orca)..."
+git fetch orca --prune --no-tags
+echo "==> Latest Orca release: $(latest_tag orca || echo none)"
 
 echo "==> Inspecting Orca plugin contracts & API changes..."
-git log -n 5 --oneline upstream/main -- resources/plugins/ shared/plugins/ 2>/dev/null || echo "Checked upstream main."
+git log -n 5 --oneline orca/main -- resources/plugins/ shared/plugins/ 2>/dev/null || echo "Checked orca main."
 
 echo "==> Upstream sync check complete."

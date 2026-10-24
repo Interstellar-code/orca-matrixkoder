@@ -42,9 +42,18 @@ It connects your lead coordinator agent to parallel worker lanes across Git work
 
 ## Development & Upstream Sync
 
-This repository tracks the official Orca IDE repository (`https://github.com/stablyai/orca.git`) as an `upstream` remote.
+This repository tracks two reference remotes (both have unrelated histories, so they are fetched, never merged):
 
-To check for upstream Orca plugin API updates:
+1. `upstream`: MatrixKoder itself (`https://github.com/Interstellar-code/matrixkoder.git`), the orchestration logic this plugin follows.
+2. `orca`: the official Orca IDE repository (`https://github.com/stablyai/orca.git`), for plugin API changes.
+
+To set them up in a fresh clone:
+```bash
+git remote add upstream https://github.com/Interstellar-code/matrixkoder.git
+git remote add orca https://github.com/stablyai/orca.git
+```
+
+To check both for updates:
 ```bash
 npm run sync:orca
 ```
