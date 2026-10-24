@@ -21,7 +21,7 @@ By migrating MatrixKoder from a terminal CLI mod into a native Orca plugin, we s
 
 ### High-Fidelity Orca IDE & MatrixKoder Panel Mockup
 
-![Orca IDE with MatrixKoder Sidebar](/Users/rohits/.gemini/antigravity-cli/brain/095a318a-e8cd-4a55-a0b3-a4c02daf2d51/matrixkoder_orca_ui_mockup_1792833161294.jpg)
+![Orca IDE with MatrixKoder Sidebar](../assets/matrixkoder_orca_ui_mockup.jpg)
 
 ---
 
@@ -72,7 +72,7 @@ The MatrixKoder Orca side panel is organized into **8 dedicated tabs**:
 ### Interactive Multi-Tab Prototype
 
 The interactive HTML application allows clicking through all 8 tabs and toggling between **"Sidebar Only (440px)"** and **"Full Orca Workspace"** view modes:
-- **File**: [matrixkoder_panel_preview.html](file:///Users/rohits/.gemini/antigravity-cli/brain/095a318a-e8cd-4a55-a0b3-a4c02daf2d51/matrixkoder_panel_preview.html)
+- **File**: `web/index.html` (the live panel in this repo)
 
 
 ```

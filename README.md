@@ -33,7 +33,7 @@ It connects your lead coordinator agent to parallel worker lanes across Git work
 4. Run `npm install && npm run build`, then enter the path to the staged `plugin/` folder
    (Orca refuses symlinks, so it cannot install the repo root):
    ```text
-   /Users/rohits/Development/orca-matrixkoder/plugin
+   <path-to-your-clone>/orca-matrixkoder/plugin
    ```
 5. Click **Add path** and accept the requested capabilities (`workspace:read`, `terminal:send`, `notifications:show`, `events:subscribe`, `storage`).
 6. The **MatrixKoder** icon (`layers`) will appear in your right sidebar activity bar!
