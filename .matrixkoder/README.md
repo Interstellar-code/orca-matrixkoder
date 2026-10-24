@@ -23,6 +23,7 @@ The plugin does not read or write upstream MatrixKoder's stores (`mk-overview.db
     │   ├── README.md         index of the research files and key findings
     │   ├── orca-*.md         Orca plugin API, CLI, orchestration bus, settings
     │   ├── screen-data-map.md   every dashboard field → its real source
+    │   ├── mk-data-schema.md    mk-data.db tables, sync rules, screen → table map
     │   └── ...               older notes, kept for history
     └── assets/               mockups and screenshots
 ```
@@ -49,14 +50,17 @@ The plugin does not read or write upstream MatrixKoder's stores (`mk-overview.db
 ├── config.json, mk-settings.yaml, usage.json
 ```
 
-1. `mk-data.db` holds todos, bugs, plan phases and subtasks that Orca tasks cannot express,
-   inbox import records, Waiting history and undo, and shortcut slots. Its tables are drafted
-   in `inbox/research/screen-data-map.md`, and the plan finalises them.
+1. `mk-data.db` holds what Orca lacks (plans with phases, tasks and subtasks, inbox files, bugs,
+   todos, check results, decisions) plus a cached copy of Orca state (repos, worktrees, panes,
+   runs, lanes, asks). The dashboard reads only this file; a sync loop in the worker fills the
+   cached part from Orca. Tasks and bugs link to Orca tasks by id only. The full schema is in
+   `inbox/research/mk-data-schema.md`.
 2. `mk-settings.json` holds the keys behind the 7 Settings tabs. Settings Orca already owns
    (agents, notifications, theme mode, OS keybindings) are not copied. The Settings screen
    links to Orca for those. Draft keys are in `inbox/research/orca-settings.md`.
-3. The plugin worker is the only process that writes either file. The dashboard asks the
-   worker to make every change.
+3. Only two programs write `mk-data.db`: the plugin worker (sync loop and dashboard actions)
+   and the `mk` CLI that agents run (`mk bug add`, `mk todo`). Both use WAL mode with a 5 s
+   busy timeout. Only the worker writes `mk-settings.json`.
 
 ## Where each kind of data lives
 

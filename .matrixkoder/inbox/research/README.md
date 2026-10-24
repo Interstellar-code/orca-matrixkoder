@@ -11,6 +11,9 @@ Collected 2026-10-24 against Orca 1.4.239 (installed) and Orca source `orca/main
 | `orca-orchestration-bus.md` | `orchestration.db` tables, messages, tasks, gates, CLI JSON shapes, screen-to-source map |
 | `orca-settings.md` | Where Orca keeps settings, theme tokens, plugin data folder, draft `mk-settings.json` keys |
 | `orca-cli-reference.md` | Every `orca` command (1.4.239) with flags; JSON shapes of the read-only list commands |
+| `screen-data-map.md` | Every dashboard field and button → its Orca source, missing data, risks |
+| `mk-data-schema.md` | `mk-data.db` schema v1, lifecycles, sync rules, screen → table map |
+| `spike-report.md` | SPIKE proofs: node:sqlite passed; live-app proofs pending |
 | `mk-upstream-data-model.md` | Upstream `~/.matrixkoder` layout, SQLite schemas, inbox rules, settings keys |
 
 Older notes, kept for history (each new file lists what they got wrong):

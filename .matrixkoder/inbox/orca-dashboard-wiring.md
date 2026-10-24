@@ -27,7 +27,7 @@ pushed = false
   - G4 — an agent files a bug with one command, starts its fix as an Orca task, and the Bugs screen shows the task's live state
 - Why: the 0.1.1 panel is a faithful design with mock data; the plugin is useful only once it shows and drives the real work
 - From: the user, 2026-10-24, after the 0.1.1 release and the research round
-- Sources: `.matrixkoder/README.md`; `.matrixkoder/inbox/research/` — `README.md`, `screen-data-map.md`, `orca-plugin-api.md`, `orca-orchestration-bus.md`, `orca-settings.md`, `orca-cli-reference.md`
+- Sources: `.matrixkoder/README.md`; `.matrixkoder/inbox/research/` — `README.md`, `screen-data-map.md`, `orca-plugin-api.md`, `orca-orchestration-bus.md`, `orca-settings.md`, `orca-cli-reference.md`, `mk-data-schema.md`
 /+++
 
 +++ 4 Design / context
@@ -53,17 +53,19 @@ File map:
 7. `orca-plugin.json`, `skills/matrixkoder/` → Open Dashboard command and shortcut; the agent skill for `mk bug` (LAUNCH).
 
 ### Contracts
-C1 — `mk-data.db` schema v1: tables `plan`, `plan_phase`, `plan_task`, `plan_subtask`, `task_link`, `lane`, `check_result`, `waiting_note`, `decision_log`, `event_log`, `cursor`, `bug`, `todo`, `inbox_file`, `alert_sent`, `schema_version`; drafted in `screen-data-map.md` §5, except `bug`, which is the single table below — written by STORE, read by SERVE and WIRE
-C2 — the `bug` table: `id` ('B-n'), `repo_id`, `title`, `details` (full write-up, no .md files), `file`, `line`, `risk` 1-5, `status` open|fixing|waiting|fixed|wontfix, `reported_by`, `orca_run_id`, `orca_task_id`, `attempts`, `past_task_ids` (JSON array), `last_state`, `created_at`, `updated_at`, `fixed_at`; a retry moves the current task id into `past_task_ids` — written by STORE, read by SERVE, WIRE and LAUNCH
+C1 — `mk-data.db` schema v1, defined in `.matrixkoder/inbox/research/mk-data-schema.md` §2: tables `schema_version, counter, kv, sync_state, repo, worktree, pane, run, lane, lane_activity, ask, quota, agent_cli, plan, plan_version, plan_phase, plan_task, plan_subtask, plan_item, inbox_file, bug, todo, check_result, event_log, decision_log, alert_sent` and views `v_orca_task_owner, v_phase, v_plan_counts`. Each column is an Orca id, cached Orca state (written only by the sync loop), or MK-owned. Plan tasks use the same light-link columns as bugs (`orca_run_id`, `orca_task_id`, `attempts`, `past_task_ids`, `last_state`, `last_state_at`); there is no `task_link` table — written by STORE, read by SERVE and WIRE
+C2 — the `bug` table: `id` ('B-n' from `counter('bug')`, unique across repos), `repo_id`, `title`, `details` (full write-up, no .md files), `file`, `line`, `risk` 1-5, `status` open|fixing|waiting|fixed|wontfix, `reported_by`, `orca_run_id`, `orca_task_id`, `attempts`, `past_task_ids` (JSON array), `last_state`, `last_state_at`, `created_at`, `updated_at`, `fixed_at`. Status follows `last_state`: ready or dispatched = fixing, a pending ask = waiting, completed = fixed, failed = open with attempts shown. `mk bug fix` creates the Orca task in the repo's bug run (`repo.bug_run_id`, created on first use); a retry moves the current task id into `past_task_ids` — written by STORE, read by SERVE, WIRE and LAUNCH
 C3 — `mk-settings.json` schema v1: keys per Settings tab from `orca-settings.md` §5, minus keys Orca owns (agents, notifications, theme mode, OS keybindings), with defaults and validation; unknown keys kept — written by STORE, read by SERVE and WIRE
-C4 — the `mk` CLI: subcommands above, `--json` output, exit 0 on success, opens `mk-data.db` with WAL and a 5 s busy timeout; `mk bug fix B-n` calls `orca orchestration task-create` with the bug's details as the spec — written by STORE, read by LAUNCH
-C5 — the Orca adapter: read functions (`worktreePs`, `runList`, `taskList`, `workerList`, `workerShow`, `gateList`, `inbox`, `accountList`) returning projections that never carry prompts or assistant text; an action allowlist (`reply`, `gate-resolve`, `task-create`, `worker-start`, `terminal send`, `tab create`) — `orchestration check` is never allowed — written by ORCA, read by SERVE
-C6 — the state snapshot: one JSON object with `meta`, `badges` and one key per screen, as in `screen-data-map.md` §4, under 64 KB, events paged — written by SERVE, read by WIRE
-C7 — the HTTP API: `GET /api/state`, `GET /api/events?before=`, `GET /api/event/<id>`, `POST /api/action {name, args}`; token in a header, Host must be `127.0.0.1:<port>` — written by SERVE, read by WIRE
+C4 — the `mk` CLI: subcommands above, `--json` output, exit 0 on success, opens `mk-data.db` with WAL and a 5 s busy timeout; `mk bug fix B-n` calls `orca orchestration task-create` with the bug's details as the spec; also `mk subtask set <code> <status> [--note]` and `mk ask note <ask-id> --text` (the only writer of `ask.recommendation`). Every Orca mutation passes `--retry-request` and starts the spec with an `mk-ref:` line, so a crash between the Orca call and the row update never leaves an orphan or a duplicate — written by STORE, read by LAUNCH
+C5 — the Orca adapter: read functions (`worktreePs`, `runList`, `taskList`, `workerList`, `workerShow`, `gateList`, `inbox`, `accountList`) returning projections that never carry prompts or assistant text; the reads `terminalList`, `repoList`, `worktreeList`, `hostList` too; an action allowlist (`run-create`, `task-create`, `task-update`, `worker-start`, `reply`, `gate-resolve`, `terminal send`, `tab create`, `repo set-base-ref`) — `orchestration check` is never allowed — written by ORCA, read by SERVE
+C6 — the state snapshot, built only from `mk-data.db` (never from a live Orca call): `meta` (with `stale` per source from `sync_state`), `badges`, and one key per screen with the fields in `mk-data-schema.md` §5, including the Failed task state and attempts. `GET /api/state?screen=<name>` sends that screen in full and counts for the rest, so every response stays under 64 KB (§7) — written by SERVE, read by WIRE
+C7 — the HTTP API: `GET /api/state?screen=`, `GET /api/events?before=`, `GET /api/event/<id>`, `POST /api/action {name, args}`; token in a header, Host must be `127.0.0.1:<port>` — written by SERVE, read by WIRE
 C8 — worker commands `mk.state`, `mk.action` registered with Orca, returning the same data as C6/C7, so the sidebar can use them once Orca supports `commands.invoke` — written by SERVE, read by LAUNCH
 
 ### Test plan
-T1 — schema migrates from empty and from v1, and two writers at once (CLI and worker) both succeed — unit — `test/store/db.test.mjs` — written by STORE.1
+T1 — schema creates every C1 table, index and view; migrates from empty and from v1; two writers at once (CLI and worker) both succeed; a plan import and a sync upsert run together without overwriting each other's columns; `v_orca_task_owner` returns current and past ids; deleting a plan cascades — unit — `test/store/db.test.mjs` — written by STORE.1
+T10 — plan import and re-import map blocks to rows as `mk-data-schema.md` §6 says, using `orca-dashboard-wiring.md` itself as the fixture (it has nested subtasks); a re-import keeps `orca_task_id`, `attempts`, `past_task_ids` and status of started tasks — unit — `test/store/import.test.mjs` — written by STORE.4
+T11 — sync maps recorded Orca JSON to cache rows, never writes a prompt field, and marks an object gone only after a complete pull — unit — `test/server/sync.test.mjs` — written by SERVE.3
 T2 — settings load defaults, reject bad values, keep unknown keys, round-trip to disk — unit — `test/store/settings.test.mjs` — written by STORE.2
 T3 — `mk bug add/fix/close` and `mk todo` change the rows as C2/C4 say; `fix` builds the right `task-create` call (orca stubbed) — unit — `test/store/cli.test.mjs` — written by STORE.3
 T4 — projections from recorded Orca JSON fixtures drop prompts and assistant text and keep the fields C6 needs; `check` is refused — unit — `test/orca/adapter.test.mjs` — written by ORCA.1
@@ -80,6 +82,8 @@ A3 — an Orca browser tab can load `http://127.0.0.1:<port>` from the worker �
 A4 — the worker stays alive while the dashboard is open (it is idle-reaped after 5 min) — if not, the server runs as a small user process the worker starts and watches
 A5 — Orca CLI JSON shapes stay as recorded on 1.4.239 — if not, the fixtures and projections are updated
 A6 — action commands (`reply`, `gate-resolve`, `task-create`) work from the worker with no bound terminal — if not, those actions are sent through a coordinator terminal with `terminal send`
+A7 — `orca ... --json` reads return complete lists at the sizes in use (`task-list`, `worker-list` paging unverified) — if not, sync pages them or caps the run size
+A8 — Orca keeps the first line of a task spec, so the `mk-ref:` tag survives — if not, only `--retry-request` guards against duplicates
 
 ### Rollout and undo
 R1 — ships by merging each phase to local `main`; undo = revert the phase's merge; `mk-data.db` is new, deleting it loses only MK data, Orca data is untouched — LAUNCH.3
@@ -154,9 +158,9 @@ risk = 1
 - Goal: `~/.matrixkoder/mk-data.db` and `mk-settings.json` are created and validated by `src/store/`, and agents can run `mk bug` and `mk todo`.
 - Serves: G2, G3, G4
 - Needs first: SPIKE, for the sqlite result (A1).
-- Build order: STORE.1, then STORE.2 and STORE.3; read `screen-data-map.md` §5 and `orca-settings.md` §5 first.
+- Build order: STORE.1, then STORE.2, STORE.3 and STORE.4; read `screen-data-map.md` §5 and `orca-settings.md` §5 first.
 - Hazards: K3
-- Carries: C1, C2, C3, C4, T1, T2, T3, A1
+- Carries: C1, C2, C3, C4, T1, T2, T3, T10, A1
 /+++
 
 +++ 5.2.0 STORE settings [toml]
@@ -177,7 +181,8 @@ id = "STORE.1"
 title = "mk-data.db schema and access"
 covers = ["C1", "C2", "T1", "A1"]
 acceptance = [
-  "opening the store creates ~/.matrixkoder/mk-data.db with every C1 table and the C2 bug table, WAL on, busy timeout 5 s",
+  "opening the store creates ~/.matrixkoder/mk-data.db with every table, index, view and CHECK in mk-data-schema.md §2; the PRAGMAs (WAL, busy timeout 5 s, foreign keys) apply on every open",
+  "a daily backup (VACUUM INTO) and the prune job of mk-data-schema.md §7 run without blocking writers",
   "a schema_version row drives migrations; re-opening is a no-op",
   "T1 passes, including two concurrent writers",
 ]
@@ -215,6 +220,21 @@ gate = "node --test test/store/cli.test.mjs"
 deps = ["STORE.1"]
 subagent = true
 owned = ["bin/", "test/store/cli.test.mjs"]
+/+++
+
++++ 5.2.4 STORE.4 — plan import into the database [toml]
+id = "STORE.4"
+title = "plan import into the database"
+description = "Reads a plan .md in <repo>/.matrixkoder/inbox/, sets its inbox_file status and fit (pass, partial, not_a_plan) per mk-data-schema.md §6.2, and on import loads plan, plan_version, plan_phase, plan_task, plan_subtask and plan_item rows, then moves the file to inbox/archive/. Re-import merges by column ownership (§6.4) so started tasks keep their Orca links."
+covers = ["T10"]
+acceptance = [
+  "importing orca-dashboard-wiring.md creates its 6 phases, every task and the nested WIRE.2 subtasks with deps, waves, lanes, risk and gates",
+  "a changed file shows as changed in the inbox; re-import adds a plan_version and never clears orca_task_id, attempts, past_task_ids or status",
+  "T10 passes",
+]
+risk = 4
+gate = "node --test test/store/import.test.mjs"
+deps = ["STORE.1"]
 /+++
 
 +++ 5.3 ORCA — read Orca and run its actions
@@ -286,7 +306,7 @@ deps = ["ORCA.1"]
 - Needs first: STORE and ORCA, for the store and adapter it calls.
 - Build order: SERVE.1, SERVE.2, SERVE.3; read `screen-data-map.md` §4 first.
 - Hazards: K1, K2, K4
-- Carries: C6, C7, C8, T5, T6, A6
+- Carries: C6, C7, C8, T5, T6, T11, A6
 /+++
 
 +++ 5.4.0 SERVE settings [toml]
@@ -321,7 +341,8 @@ id = "SERVE.2"
 title = "actions"
 covers = ["T6", "A6"]
 acceptance = [
-  "POST /api/action handles approve, rework, answer, import, archive, bug add/fix/close, todo add/done, settings save",
+  "POST /api/action handles approve, rework, answer, ask.snooze; plan.start, plan.park, plan.resume, plan.markMerged; task.start, task.retry, task.cancel; inbox import, reimport, archive, restore, delete; bug add, fix, close, reopen; todo add, done, makeTask; settings save",
+  "each action calls Orca first when it changes Orca state, then updates the row; Approve and Answer wait in decision_log for the 10 s Undo window",
   "each action returns ok or an error the screen can show; T6 passes",
 ]
 risk = 4
@@ -332,9 +353,11 @@ deps = ["SERVE.1"]
 +++ 5.4.3 SERVE.3 — refresh loop and worker commands [toml]
 id = "SERVE.3"
 title = "refresh loop and worker commands"
-covers = ["C8"]
+covers = ["C8", "T11"]
 acceptance = [
-  "Orca reads are cached and refreshed every 10 s, and at once on agent.status.changed, worktree.created and worktree.removed",
+  "the sync loop pulls per the cadence of mk-data-schema.md §4 (worktree ps, terminals, runs, tasks, workers, gates, inbox every 10 s; repos, quota, hosts every 60 s; git for tracked worktrees every 10 s) and at once on agent.status.changed, worktree.created and worktree.removed",
+  "it writes only cached columns, converts ISO times to ms, and marks an object gone only after a complete pull",
+  "on start it replays decision_log: pending rows whose commit_at passed within 10 minutes run, older ones become expired; T11 passes",
   "event_log is filled from inbox using the message sequence as cursor, heartbeats skipped",
   "worker commands mk.state and mk.action return the same data as the HTTP API",
   "src/worker.ts registers every module in out/commands/ at start, so LAUNCH adds commands without editing src/worker.ts",
@@ -519,6 +542,11 @@ bundle = "npm run build"
 - K8 — a settings save or CLI write corrupts a user file or row — level 3 — guard: T2 and T3 — STORE.2, STORE.3
 - K9 — an action or refresh fires the wrong Orca command or misses events — level 4 — guard: T6 — SERVE.2
 - K12 — the refresh loop misses an Orca event or re-reads the mailbox from the start — level 3 — guard: T6 refresh and cursor cases — SERVE.3
+- K13 — a partial worktree ps or terminal list pull (truncated, omitted hosts, CLI error) marks live lanes gone — level 3 — guard: complete-pull rule tested in T11 with a truncated fixture — SERVE.3
+- K14 — re-importing a running plan overwrites links or status of started tasks — level 4 — guard: T10 column-ownership merge — STORE.4
+- K15 — a crash between the Orca call and the row update leaves an orphan Orca task or a duplicate retry — level 3 — guard: --retry-request ids and the mk-ref adoption rule, tested in T3 and T6 — STORE.3
+- K16 — a pending Undo is lost when Orca reaps the idle worker — level 3 — guard: decision_log replay on start, tested in T11 — SERVE.3
+- K17 — a snapshot exceeds 64 KB on a busy repo — level 2 — guard: per-screen snapshot and T5 with the largest fixture — SERVE.1
 - K10 — the dashboard page loses the token or shows stale data as live — level 3 — guard: T7 stale-banner case — WIRE.1
 - K11 — the release ships with a broken live path — level 3 — guard: T8 end-to-end checklist — LAUNCH.3
 - K2 — another local process reads the dashboard or calls actions — level 4 — guard: T5 token and Host checks, loopback bind — SERVE.1
@@ -538,6 +566,9 @@ bundle = "npm run build"
 - [x] Q6 — can bugs carry screenshots? — blocks: none — pick: no attachments in v1
 - [x] Q7 — Follow Orca theme: a browser tab gets no Orca tokens — blocks: WIRE.2 — pick: drop it, keep the Matrix palette
 - [x] Q8 — release number — blocks: LAUNCH.3 — pick: 0.2.0
+- [x] Q9 — keep `bug.last_state_at` (when the cached Orca state was last seen)? — blocks: none — pick: yes, it drives the stale label
+- [x] Q10 — inbox fit rules: not_a_plan = no top block or no phase and task; partial = a required block or link missing; pass = everything present (mk-data-schema.md §6.2) — blocks: STORE.4 — pick: as proposed
+- [x] Q11 — bug ids global (`B-n` across all repos) or per repo? — blocks: STORE.1 — pick: global, since the primary key is `id` alone
 /+++
 
 +++ 9 Log
@@ -550,4 +581,6 @@ bundle = "npm run build"
 - 2026-10-24 — decision — 2 lanes plus the main checkout; builders claude sonnet medium; reviews opus for STORE and SERVE, sonnet otherwise; WIRE moves to wave 3 against a sample snapshot (ORCA.3) with a live check WIRE.4; SPIKE owns package.json edits; LAUNCH adds commands as modules loaded by src/worker.ts — user
 - 2026-10-24 — decision — plans in this repo no longer need to pass upstream mk-plan.py check — user
 - 2026-10-24 — parked — SPIKE paused: A1 passed, A2/A3 passed in the harness; live-app proofs (A2-A4, A6) need the throwaway plugin loaded on the Mac, not over a remote connection — user
+- 2026-10-24 — amended — mk-data.db schema v1 from mk-data-schema.md: panes, inbox files, plans with phases, light-link tasks like bugs; dashboard reads only the db, a sync loop fills it; new STORE.4 import, T10, T11, K13-K17, A7, A8, Q9-Q11 — user
+- 2026-10-24 — answer — Q9 keep bug.last_state_at; Q10 inbox fit rules as proposed; Q11 bug ids global across repos — user
 /+++
