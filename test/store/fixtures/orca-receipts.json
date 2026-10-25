@@ -1,0 +1,21 @@
+{
+  "_source": "Envelope {id, ok, result, _meta:{runtimeId}} is documented in .matrixkoder/inbox/research/orca-cli-reference.md line 22. The inner result of run-create and task-create is NOT shown in that reference (usage text only, lines 1762-1990), so result.run.id and result.task.id are modelled on the documented task and run fields in orca-orchestration-bus.md §1 (tasks.id, tasks.run_id, tasks.status). Replace with a recorded receipt after the first live call (SPIKE A6). The stub script derives ids from --retry-request, which models Orca replaying the same receipt for the same request id.",
+  "run-create": {
+    "id": "req_stub",
+    "ok": true,
+    "result": { "run": { "id": "@RUN_ID@", "objective": "@OBJECTIVE@", "status": "active", "created_at": "2026-10-25T09:00:00Z" } },
+    "_meta": { "runtimeId": "stub-runtime" }
+  },
+  "task-create": {
+    "id": "req_stub",
+    "ok": true,
+    "result": { "task": { "id": "@TASK_ID@", "run_id": "@RUN@", "task_title": "@TITLE@", "status": "pending", "deps": [] } },
+    "_meta": { "runtimeId": "stub-runtime" }
+  },
+  "repo-list": {
+    "id": "req_stub",
+    "ok": true,
+    "result": { "repos": [ { "id": "@REPO_ID@", "path": "@REPO_PATH@", "displayName": "stub-repo", "kind": "git" } ] },
+    "_meta": { "runtimeId": "stub-runtime" }
+  }
+}
