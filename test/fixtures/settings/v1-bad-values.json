@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "general": {
+    "mode": "chaos",
+    "openOnStart": "nowhere",
+    "activeRepo": 7
+  },
+  "agents": {
+    "claude": {
+      "routable": "yes",
+      "model": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "effort": "turbo"
+    }
+  },
+  "routing": {
+    "maxLanes": 99,
+    "tiers": {
+      "trivial": "ghost haiku low",
+      "standard": 5
+    },
+    "spareClaudeBelowPct": "lots",
+    "askBeforeDestructive": "no"
+  },
+  "safety": {
+    "protectedBranches": "main",
+    "askBeforePush": "maybe"
+  },
+  "alerts": {
+    "events": {
+      "ask": "yes"
+    },
+    "quietHours": {
+      "enabled": true,
+      "from": "25:99",
+      "to": "7am"
+    },
+    "stallMinutes": 0,
+    "usagePollMin": "soon"
+  },
+  "theme": {
+    "rain": {
+      "brightness": 150,
+      "speed": "warp"
+    },
+    "reduceMotion": "maybe",
+    "textSize": "XXL",
+    "density": 3
+  },
+  "shortcuts": 5
+}

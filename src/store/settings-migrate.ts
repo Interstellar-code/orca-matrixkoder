@@ -188,6 +188,15 @@ export function migrateV1(v1: Settings): Migrated {
   walk(v1, '');
   out.schema = SETTINGS_SCHEMA;
 
+  // An agent id v2 does not seed (for example "gemini") must carry all three fields to validate: fill the rest.
+  if (isObj(out.agents)) {
+    for (const [id, a] of Object.entries(out.agents)) {
+      if (isObj(a) && !(id in (defaultSettings().agents as Obj))) {
+        out.agents[id] = { routable: true, model: '', effort: '', ...a };
+      }
+    }
+  }
+
   // Final pass: anything that still fails the v2 rules (for example a model that is not in the seeded list, or an
   // unknown key that collided with a mapped one) falls back to the default.
   const defaults = defaultSettings();
