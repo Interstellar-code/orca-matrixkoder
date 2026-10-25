@@ -53,6 +53,12 @@ async function readCmd<T>(
   return read(built.argv, runner, project);
 }
 
+// A pull is incomplete when Orca cut the list (truncated) or left a host out (hostScope.omittedHostIds, for
+// example an SSH host that is down). The sync loop marks nothing gone from an incomplete pull.
+function incomplete(r: Json): boolean {
+  return bool(r.truncated) || arr(rec(r.hostScope).omittedHostIds).length > 0;
+}
+
 // ---- worktrees ----
 
 export function worktreePs(runner: Runner = execOrca, opts: { limit?: number } = {}): Promise<OrcaResult<WorktreePsProjection>> {
@@ -95,7 +101,7 @@ export function worktreePs(runner: Runner = execOrca, opts: { limit?: number } =
       };
     }),
     totalCount: num(r.totalCount, arr(r.worktrees).length),
-    truncated: bool(r.truncated),
+    truncated: incomplete(r),
   }));
 }
 
@@ -120,7 +126,7 @@ export function worktreeList(runner: Runner = execOrca): Promise<OrcaResult<Work
       };
     }),
     totalCount: num(r.totalCount, arr(r.worktrees).length),
-    truncated: bool(r.truncated),
+    truncated: incomplete(r),
   }));
 }
 
@@ -315,6 +321,7 @@ export function inbox(runner: Runner = execOrca, opts: { limit?: number } = {}):
         sequence: num(x.sequence),
         read: num(x.read) === 1 || x.read === true,
         createdAt: str(x.created_at),
+        threadId: strOrNull(x.thread_id),
         payload: {
           ...(typeof p.taskId === 'string' ? { taskId: p.taskId } : {}),
           ...(typeof p.dispatchId === 'string' ? { dispatchId: p.dispatchId } : {}),
@@ -380,7 +387,7 @@ export function terminalList(runner: Runner = execOrca): Promise<OrcaResult<Term
       };
     }),
     totalCount: num(r.totalCount, arr(r.terminals).length),
-    truncated: bool(r.truncated),
+    truncated: incomplete(r),
   }));
 }
 
