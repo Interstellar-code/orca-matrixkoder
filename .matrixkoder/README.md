@@ -71,3 +71,18 @@ The plugin does not read or write upstream MatrixKoder's stores (`mk-overview.db
 | Todos, bugs, plan detail | `~/.matrixkoder/mk-data.db` | plugin worker |
 | Settings | `~/.matrixkoder/mk-settings.json` | plugin worker |
 | Plans and research | `<repo>/.matrixkoder/inbox/` | you, agents |
+
+## How the plugin uses these folders (0.2.0)
+
+1. The sidebar panel is only a launcher. **MatrixKoder: Open Dashboard** (`Mod+Alt+D`, or `Cmd+J`
+   and the command name) opens the live dashboard in an Orca browser tab. The worker serves it on
+   `127.0.0.1` with a per-start token and reads `mk-data.db` for it; the command starts that server
+   first if it is down and reuses an open dashboard tab.
+2. Agents write bugs and to-dos with the `mk` CLI (`bin/mk.mjs` in the installed plugin copy,
+   `~/Library/Application Support/Orca/plugins/interstellar.matrixkoder/<current>/`). The skill
+   `skills/matrixkoder/SKILL.md` tells them when and how. `mk bug fix` asks Orca to create a task.
+3. `MK_DATA_DIR` overrides `~/.matrixkoder/` for the worker and the CLI (used by the tests and by
+   `test/manual/e2e.md`).
+4. Undo: `mk-data.db` is new in 0.1.2. Deleting it loses only MatrixKoder's own data (bugs, todos,
+   plans, history); Orca's data is untouched. To go back to an older plugin version, pin the
+   marketplace `ref` to the earlier tag and use **Check for update**.

@@ -70,6 +70,10 @@ export const ACTIONS: Readonly<Record<string, ActionSpec>> = {
     argv: ['tab', 'create'],
     flags: { url: s(true), worktree: s(), profile: s() },
   },
+  'tab switch': {
+    argv: ['tab', 'switch'],
+    flags: { page: s(true), worktree: s(), focus: b() },
+  },
   'repo set-base-ref': {
     argv: ['repo', 'set-base-ref'],
     flags: { repo: s(true), ref: s(true) },

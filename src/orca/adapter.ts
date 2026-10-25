@@ -7,7 +7,7 @@ import type { Json } from './sanitize.js';
 import type {
   AccountListProjection, DispatchFailure, GateInfo, GateListProjection, HostListProjection, InboxMessage, InboxProjection,
   OrcaError, OrcaResult, ProviderQuota, WorkerLiveness, WorkerObservation, WorkerStage, RateWindow, RepoListProjection, RunListProjection, Runner, TaskListProjection,
-  TerminalListProjection, WorkerInfo, WorkerListProjection, WorkerShowProjection, WorktreeListProjection,
+  TabListProjection, TerminalListProjection, WorkerInfo, WorkerListProjection, WorkerShowProjection, WorktreeListProjection,
   WorktreePsProjection,
 } from './types.js';
 
@@ -388,6 +388,28 @@ export function terminalList(runner: Runner = execOrca): Promise<OrcaResult<Term
     }),
     totalCount: num(r.totalCount, arr(r.terminals).length),
     truncated: incomplete(r),
+  }));
+}
+
+// The address of a tab without its query and fragment: a dashboard URL carries the session token there.
+function bareUrl(v: unknown): string {
+  const raw = str(v);
+  try {
+    const u = new URL(raw);
+    // about:blank and the like have an opaque origin ("null"): keep their address, minus query and fragment
+    return u.origin === 'null' ? `${u.protocol}${u.pathname}` : `${u.origin}${u.pathname}`;
+  } catch {
+    return raw;
+  }
+}
+
+/** Open browser tabs in every worktree: page id and bare address only. */
+export function tabList(runner: Runner = execOrca): Promise<OrcaResult<TabListProjection>> {
+  return readCmd(['tab', 'list'], { worktree: 'all' }, runner, (r) => ({
+    tabs: arr(r.tabs)
+      .map((t) => rec(t))
+      .filter((x) => str(x.browserPageId) !== '')
+      .map((x) => ({ browserPageId: str(x.browserPageId), url: bareUrl(x.url) })),
   }));
 }
 

@@ -284,6 +284,15 @@ export interface TerminalListProjection {
   truncated: boolean;
 }
 
+/** An open Orca browser tab: its page id and its address without the query and fragment (a dashboard URL carries a token). */
+export interface BrowserTab {
+  browserPageId: string;
+  url: string;
+}
+export interface TabListProjection {
+  tabs: BrowserTab[];
+}
+
 export interface RepoInfo {
   id: string;
   path: string;

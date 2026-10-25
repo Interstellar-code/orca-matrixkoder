@@ -311,12 +311,13 @@ const ALLOWED = [
   ['gate-resolve', { id: 'gate_1', resolution: 'approved', 'retry-request': 'rr3' }, ['orchestration', 'gate-resolve', '--id=gate_1', '--resolution=approved', '--retry-request=rr3', '--json']],
   ['terminal send', { terminal: 'term_1', text: 'hello', enter: true }, ['terminal', 'send', '--terminal=term_1', '--text=hello', '--enter', '--json']],
   ['tab create', { url: 'http://127.0.0.1:5173/', worktree: 'active' }, ['tab', 'create', '--url=http://127.0.0.1:5173/', '--worktree=active', '--json']],
+  ['tab switch', { page: 'page_1', worktree: 'active', focus: true }, ['tab', 'switch', '--page=page_1', '--worktree=active', '--focus', '--json']],
   ['repo set-base-ref', { repo: 'id:r1', ref: 'main' }, ['repo', 'set-base-ref', '--repo=id:r1', '--ref=main', '--json']],
 ];
 
-test('the allowlist is exactly the nine C5 actions', () => {
-  assert.deepEqual([...ACTION_NAMES].sort(), ['gate-resolve', 'reply', 'repo set-base-ref', 'run-create', 'tab create', 'task-create', 'task-update', 'terminal send', 'worker-start']);
-  assert.equal(ALLOWED.length, 9);
+test('the allowlist is exactly the ten C5 actions', () => {
+  assert.deepEqual([...ACTION_NAMES].sort(), ['gate-resolve', 'reply', 'repo set-base-ref', 'run-create', 'tab create', 'tab switch', 'task-create', 'task-update', 'terminal send', 'worker-start']);
+  assert.equal(ALLOWED.length, 10);
 });
 
 for (const [name, args, argv] of ALLOWED) {
@@ -404,7 +405,7 @@ test('finding 1: no flag name is ever a separate element before its value, for e
   for (const [name, args] of ALLOWED.map(([n, a]) => [n, a])) {
     const { argv } = buildActionArgv(name, args);
     const bare = argv.slice(argv.indexOf(argv.find((a) => a.startsWith('--'))));
-    for (const a of bare) assert.ok(a === '--json' || a === '--enter' || a.includes('='), `${name}: "${a}" is a bare value-less element`);
+    for (const a of bare) assert.ok(a === '--json' || a === '--enter' || a === '--focus' || a.includes('='), `${name}: "${a}" is a bare value-less element`);
   }
 });
 

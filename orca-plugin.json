@@ -3,7 +3,7 @@
   "id": "matrixkoder",
   "publisher": "interstellar",
   "name": "MatrixKoder",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Multi-agent orchestration dashboard and lane supervisor for Orca",
   "repository": "https://github.com/Interstellar-code/orca-matrixkoder",
   "engines": {
@@ -17,7 +17,7 @@
         "id": "matrixkoder-panel",
         "title": "MatrixKoder",
         "icon": "layers",
-        "entry": "web/index.html"
+        "entry": "web/launcher.html"
       }
     ],
     "commands": [
@@ -26,6 +26,11 @@
         "title": "MatrixKoder: Toggle Dashboard",
         "context": "global",
         "action": "sidebar.right.toggle"
+      },
+      {
+        "id": "open-dashboard",
+        "title": "MatrixKoder: Open Dashboard",
+        "context": "global"
       },
       {
         "id": "sweep-lanes",
@@ -37,6 +42,11 @@
       {
         "command": "toggle-dashboard",
         "key": "Mod+Alt+M",
+        "when": "global"
+      },
+      {
+        "command": "open-dashboard",
+        "key": "Mod+Alt+D",
         "when": "global"
       }
     ],

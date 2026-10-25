@@ -345,6 +345,27 @@ export function terminalList(runner = execOrca) {
         truncated: incomplete(r),
     }));
 }
+// The address of a tab without its query and fragment: a dashboard URL carries the session token there.
+function bareUrl(v) {
+    const raw = str(v);
+    try {
+        const u = new URL(raw);
+        // about:blank and the like have an opaque origin ("null"): keep their address, minus query and fragment
+        return u.origin === 'null' ? `${u.protocol}${u.pathname}` : `${u.origin}${u.pathname}`;
+    }
+    catch {
+        return raw;
+    }
+}
+/** Open browser tabs in every worktree: page id and bare address only. */
+export function tabList(runner = execOrca) {
+    return readCmd(['tab', 'list'], { worktree: 'all' }, runner, (r) => ({
+        tabs: arr(r.tabs)
+            .map((t) => rec(t))
+            .filter((x) => str(x.browserPageId) !== '')
+            .map((x) => ({ browserPageId: str(x.browserPageId), url: bareUrl(x.url) })),
+    }));
+}
 export function repoList(runner = execOrca) {
     return readCmd(['repo', 'list'], {}, runner, (r) => ({
         repos: arr(r.repos).map((p) => {

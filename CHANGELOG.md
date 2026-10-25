@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0 - 2026-10-25
+
+One command opens the live dashboard in an Orca browser tab, and agents get a skill for filing bugs.
+
+- Command `MatrixKoder: Open Dashboard` (`Mod+Alt+D`, global). It starts the dashboard server if it is not running, opens `http://127.0.0.1:<port>/?t=<token>` in an Orca browser tab, and brings an already open dashboard tab to the front instead of opening a second one.
+- The sidebar panel is now a small launcher (`web/launcher.html`) that points to the command and shows no data. It no longer loads the dashboard as a plain file, which had no server port or token and could only show "Data may be stale".
+- Worker commands start the dashboard service on demand: if it failed to start at activation, the next command starts it (one start at a time) instead of failing with "not running".
+- Orca adapter: allowlisted action `tab switch` (page id, optional worktree, `--focus`) and a typed `tabList` read that returns page ids and bare addresses only (no token). The allowlist is now 10 actions.
+- Agent skill `skills/matrixkoder/SKILL.md`: when to run `mk bug add`, `mk bug fix` and `mk todo add`, and how to find the shipped `bin/mk.mjs` inside the installed plugin. Orca 1.4 has no manifest field for skills, so the file ships with the plugin and is copied into the agent's skills folder by hand (see README).
+- Docs: README (marketplace install and updates, Open Dashboard, `mk` CLI and skill), `.matrixkoder/README.md`, and a hand-run end-to-end checklist in `test/manual/e2e.md`.
+- Version 0.2.0 in `package.json`, `package-lock.json`, `orca-plugin.json` and `orca-marketplace.json` (`ref` `v0.2.0`).
+
 ## 0.1.2 - 2026-10-25
 
 The dashboard now runs on live data from Orca and the plugin's own database.
