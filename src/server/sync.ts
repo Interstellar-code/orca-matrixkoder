@@ -27,13 +27,16 @@ import type {
 } from '../orca/index.js';
 import { all, one, tx, type Db } from '../store/db.js';
 import { scanInbox } from '../store/import.js';
-import { cut, isoToMs, J, type CliProbe, type CliProber, type GitRunner, type ServerCtx } from './common.js';
+import { CANCELLED_RESULT, cut, isoToMs, J, type CliProbe, type CliProber, type GitRunner, type ServerCtx } from './common.js';
 import { deriveLaneState, recomputeBugs, recomputePlanTasks } from './status.js';
 
 export const GONE_AFTER_COMPLETE_PULLS = 2;
 export const AGENT_CLI_IDS = ['claude', 'codex', 'agy', 'opencode', 'omp', 'gemini'];
 const PANE_STATES = new Set(['working', 'blocked', 'waiting', 'done']);
 const DAY = 86_400_000;
+/** A base branch is used inside `${base}..HEAD`, so a name that starts with "-" (read by git as an option) or holds odd characters is not accepted. */
+const SAFE_REF = /^\w[\w./-]*$/;
+const safeRef = (v: unknown): string => (typeof v === 'string' && SAFE_REF.test(v) && !v.includes('..') ? v : 'main');
 const GIT_TARGETS_PER_TICK = 6;
 const WORKER_SHOWS_PER_RUN = 4;
 
@@ -406,12 +409,18 @@ export class Sync {
     return seen.size;
   }
 
+  /**
+   * Known limit (review 2, finding 8): Orca's task-list has no paging or completeness field (A7), so a partial list looks
+   * like a complete one and a task that fell off it is marked 'missing'. Only the cached state changes (status and data are
+   * kept), and the next full list puts it back, so nothing is lost. A count check would need Orca to report a total.
+   */
   private applyTasks(runId: string, tl: TaskListProjection, at: number): number {
     const { db } = this;
     const byId = new Map(tl.tasks.map((t) => [t.id, t]));
     const stateOf = (id: string): { state: string; cancelled: boolean } => {
       const t = byId.get(id);
-      return t ? { state: t.status, cancelled: t.status === 'failed' && /cancel/i.test(t.result ?? '') } : { state: 'missing', cancelled: false };
+      // the dashboard's own cancel (actions.ts taskCancel) sets result "cancelled"; free text that merely mentions it is not a cancel
+      return t ? { state: t.status, cancelled: t.status === 'failed' && (t.result ?? '').trim().toLowerCase() === CANCELLED_RESULT } : { state: 'missing', cancelled: false };
     };
     for (const row of all(db, 'SELECT id, orca_task_id, last_state, status FROM plan_task WHERE orca_run_id = ? AND orca_task_id IS NOT NULL AND dropped_at IS NULL', runId)) {
       const { state, cancelled } = stateOf(String(row.orca_task_id));
@@ -499,6 +508,10 @@ export class Sync {
     return { title: cut(lines[first].trim(), 160), body: cut(lines.slice(first + 1).join('\n').trim(), 1500) };
   }
 
+  /**
+   * Known limit (review 2, finding 8): gate-list has no paging or completeness field (A7) either. A gate absent from a
+   * partial list is marked gone only after two consecutive pulls (`missed`), and a later pull that sees it clears gone_at.
+   */
   private applyGates(runId: string, gl: GateListProjection, at: number): number {
     const { db } = this;
     const seen = new Set<string>();
@@ -555,7 +568,10 @@ export class Sync {
         const text = m.payload.question ?? m.subject;
         const { title, body } = this.splitQuestion(text);
         const dispatch = m.payload.dispatchId ?? (m.from.startsWith('dispatch:') ? m.from.slice(9) : null);
-        const reply = msgs.find((r) => r.sequence > m.sequence && r.to === m.from && r.type !== 'heartbeat' && r.type !== 'question');
+        // A reply is a later message in the same thread, addressed to the asker. Matching on the address alone would let an
+        // unrelated status or nudge to the same dispatch close a question that is still open.
+        const thread = m.threadId ?? m.id;
+        const reply = msgs.find((r) => r.sequence > m.sequence && r.threadId === thread && r.to === m.from && r.type !== 'heartbeat' && r.type !== 'question');
         const prev = one(db, 'SELECT orca_status FROM ask WHERE id = ?', m.id);
         const status = reply || prev?.orca_status === 'answered' ? 'answered' : 'pending';
         db.prepare(
@@ -659,7 +675,7 @@ export class Sync {
     let firstError: string | null = null;
     for (const w of targets) {
       const repo = one(this.db, 'SELECT base_ref FROM repo WHERE id = ?', String(w.repo_id));
-      const base = repo?.base_ref ? String(repo.base_ref) : 'main';
+      const base = safeRef(repo?.base_ref);
       const path = String(w.path);
       let ahead = await this.git(path, ['rev-list', '--count', `${base}..HEAD`]);
       if (ahead === null) ahead = await this.git(path, ['rev-list', '--count', `origin/${base}..HEAD`]);
@@ -757,7 +773,7 @@ export class Sync {
       if (r.base_ref_at !== null && at - Number(r.base_ref_at) < 600_000) continue;
       const out = await this.git(String(r.path), ['symbolic-ref', 'refs/remotes/origin/HEAD']);
       const ref = out ? out.replace(/^refs\/remotes\/origin\//, '') : 'main';
-      tx(this.db, () => this.db.prepare('UPDATE repo SET base_ref = ?, base_ref_at = ? WHERE id = ?').run(ref || 'main', at, String(r.id)));
+      tx(this.db, () => this.db.prepare('UPDATE repo SET base_ref = ?, base_ref_at = ? WHERE id = ?').run(safeRef(ref), at, String(r.id)));
     }
   }
 

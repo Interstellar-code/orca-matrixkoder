@@ -84,7 +84,8 @@ export async function startTestService(o = {}) {
     webDir: web,
     loops: false,
     runner: o.runner ?? stubRunner({}),
-    cliOrca: o.cliOrca ?? ((args) => { cliCalls.push(args); throw new Error('unexpected mk CLI orca call'); }),
+    // realCli: leave the default (the real `orca` through a child process), for tests that put a stub `orca` on PATH
+    cliOrca: o.realCli ? undefined : o.cliOrca ?? ((args) => { cliCalls.push(args); throw new Error('unexpected mk CLI orca call'); }),
     git: o.git ?? (async () => null),
     probeCli: o.probeCli ?? (async () => ({ found: false, error: 'stub' })),
     clock: o.clock,

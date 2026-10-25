@@ -107,7 +107,7 @@ const gate = (id, taskId, status, extra = {}) => ({
 });
 const msg = (o) => ({
   id: o.id ?? `msg_t${o.sequence}`, run_id: RUN, delivery_contract: 'current_delivery', from_handle: o.from, to_handle: o.to,
-  subject: o.subject ?? `subject ${o.sequence}`, body: o.body ?? '', type: o.type, priority: 'normal', thread_id: null,
+  subject: o.subject ?? `subject ${o.sequence}`, body: o.body ?? '', type: o.type, priority: 'normal', thread_id: o.thread ?? null,
   payload: o.payload === undefined ? null : JSON.stringify(o.payload), read: 0, sequence: o.sequence, created_at: o.at,
   delivered_at: null, sender_pane_key: null, pointer_enter_pending: 0, pointer_pty_id: null, pointer_process_incarnation: null,
 });
@@ -884,7 +884,13 @@ test('T11.6 inbox: cursor, no duplicates, heartbeats update the lane only, ask v
   const qe = events().find((e) => e.ref === 'msg:msg_q_new');
   assert.equal(qe.kind, 'ask');
   assert.match(qe.text, /Which way\?/);
-  raw.push(msg({ sequence: s + 3, type: 'status', from: `run:${RUN}`, to: 'dispatch:ctx_newq', at: '2026-10-25T05:01:00Z' }));
+  // a later status to the same dispatch that is not in the question's thread does not answer it (review 2, finding 5)
+  raw.push(msg({ sequence: s + 3, type: 'status', from: `run:${RUN}`, to: 'dispatch:ctx_newq', at: '2026-10-25T05:00:40Z' }));
+  raw.push(msg({ sequence: s + 4, type: 'status', from: `run:${RUN}`, to: 'dispatch:ctx_newq', at: '2026-10-25T05:00:50Z', thread: 'msg_some_other_thread' }));
+  await svc.sync.pullFast();
+  assert.equal(ask().orca_status, 'pending', 'a nudge to the same dispatch is not a reply');
+  assert.equal(ask().resolved_at, null);
+  raw.push(msg({ sequence: s + 5, type: 'status', from: `run:${RUN}`, to: 'dispatch:ctx_newq', at: '2026-10-25T05:01:00Z', thread: 'msg_q_new' }));
   await svc.sync.pullFast();
   assert.equal(ask().orca_status, 'answered');
   assert.equal(ask().resolved_at, ms('2026-10-25T05:01:00Z'));
@@ -1172,4 +1178,46 @@ test('T11.adapter: a list that omitted a host (hostScope.omittedHostIds) project
     raw.result.hostScope = { hostIds: ['local'], omittedHostIds: ['ssh-down'] };
     assert.equal((await fn(async () => ({ stdout: JSON.stringify(raw) }))).value.truncated, true, `${name}: a host was omitted`);
   }
+});
+
+// ---------------------------------------------------------------- review round 2
+
+test('R2.9 a failed task is cancelled only when its result is exactly "cancelled"', async (t) => {
+  const { svc, db, w } = await boot(t, { track: false });
+  const repoPath = tmpDir('cancel-repo');
+  mkdirSync(join(repoPath, '.matrixkoder', 'inbox'), { recursive: true });
+  copyFileSync(REAL_PLAN, join(repoPath, '.matrixkoder', 'inbox', PLAN_NAME));
+  db.prepare('INSERT INTO repo(id,path,display_name,kind,first_seen_at,last_seen_at) VALUES(?,?,?,?,?,?)').run(REPO, repoPath, 'plan-repo', 'git', 1, 1);
+  importFile(db, { repoId: REPO, repoPath }, PLAN_NAME);
+  db.prepare("UPDATE plan SET status = 'running', orca_run_id = ?").run(RUN);
+  addTask(w, 'task_c1', 'failed', 'could not cancel subscription');
+  addTask(w, 'task_c2', 'failed', 'Cancelled');
+  addTask(w, 'task_c3', 'failed', 'user cancelled the run');
+  for (const [code, task] of [['STORE.2', 'task_c1'], ['STORE.3', 'task_c2'], ['STORE.4', 'task_c3']]) {
+    db.prepare('UPDATE plan_task SET orca_run_id = ?, orca_task_id = ? WHERE code = ?').run(RUN, task, code);
+  }
+  await svc.sync.pullFast();
+  const status = (code) => val(db, 'SELECT status FROM plan_task WHERE code = ?', code);
+  assert.equal(status('STORE.2'), 'failed', 'free text that mentions cancel is a plain failure');
+  assert.equal(status('STORE.3'), 'cancelled', 'the dashboard\'s own result, however it is cased');
+  assert.equal(status('STORE.4'), 'failed');
+});
+
+test('R2.11 a base branch that git would read as an option is never passed to git', async (t) => {
+  const seen = [];
+  const git = async (cwd, args) => {
+    seen.push(args);
+    return okGit(cwd, args);
+  };
+  const { svc, db } = await boot(t, { git });
+  await svc.sync.pullAll();
+  const live = val(db, 'SELECT count(*) FROM worktree w JOIN lane l ON l.worktree_id = w.id WHERE l.ended_at IS NULL AND w.gone_at IS NULL');
+  assert.ok(live > 0, 'the fixtures have a live lane to compare');
+  db.prepare("UPDATE repo SET base_ref = '--output=/tmp/mk-pwned', base_ref_at = ?").run(Date.now() + 86_400_000);
+  seen.length = 0;
+  await svc.sync.pullGit();
+  const revs = seen.filter((a) => a[0] === 'rev-list' || (a[0] === 'diff' && a[1] === '--shortstat'));
+  assert.ok(revs.length > 0);
+  for (const a of seen) assert.ok(!a.some((x) => x.startsWith('--output') || x.startsWith('-') && x !== '--count' && x !== '--shortstat' && x !== '--porcelain'), `unsafe argv ${a.join(' ')}`);
+  assert.ok(revs.some((a) => a.includes('main..HEAD') || a.includes('main...HEAD')), 'falls back to main');
 });

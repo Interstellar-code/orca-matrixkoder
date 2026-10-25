@@ -48,16 +48,6 @@ export async function startService(opts = {}) {
     const decisions = new Decisions(ctx);
     const actions = new Actions(ctx, sync, decisions);
     const version = pluginVersion();
-    // On start: finish or expire Undo windows a restart cut short, then the daily backup and prune.
-    const replayed = await decisions.replay();
-    if (replayed.ran || replayed.expired || replayed.scheduled)
-        log(`[decisions] replay: ${replayed.ran} sent, ${replayed.expired} expired, ${replayed.scheduled} waiting`);
-    try {
-        runMaintenance(db, dir, ctx.clock.now());
-    }
-    catch (e) {
-        log(`[maintenance] ${e.message}`);
-    }
     const state = (q = {}) => buildState(ctx, q, { version });
     const events = (q = {}) => eventsPage(ctx, q);
     const event = (id) => eventDetail(ctx, id);
@@ -78,6 +68,17 @@ export async function startService(opts = {}) {
             }, opts.keepAliveMs ?? 60_000);
             keep.unref?.();
         }
+    }
+    // On start: finish or expire Undo windows a restart cut short, then the daily backup and prune. This comes after the
+    // bind and the keep-alive, because replay makes Orca calls (up to 10 s each) and must not hold either back.
+    const replayed = await decisions.replay();
+    if (replayed.ran || replayed.expired || replayed.scheduled)
+        log(`[decisions] replay: ${replayed.ran} sent, ${replayed.expired} expired, ${replayed.scheduled} waiting`);
+    try {
+        runMaintenance(db, dir, ctx.clock.now());
+    }
+    catch (e) {
+        log(`[maintenance] ${e.message}`);
     }
     return {
         url: http.url, port: http.port, token: http.token, ctx, sync, actions,

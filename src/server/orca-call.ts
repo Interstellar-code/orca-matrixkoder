@@ -2,6 +2,8 @@
  * Runs an allowlisted Orca action for the server. Adds the A6 fallback: if Orca says the call needs a bound
  * terminal (the worker has none), the same command is typed into the run's coordinator terminal with the
  * allowlisted `terminal send` action instead. Everything still goes through the adapter's allowlist.
+ * The fallback is for the two decision commands only (gate-resolve, reply), and only when no value holds a control
+ * character: the text is typed into a live prompt, where Ctrl-C or a paste-end byte would end the quote.
  */
 import { ACTIONS, buildActionArgv, runAction } from '../orca/index.js';
 import type { ActionArgs, ActionResult, OrcaError } from '../orca/index.js';
@@ -18,6 +20,17 @@ export function needsTerminal(e: OrcaError): boolean {
   return /bound terminal|no terminal|terminal handle|not (running )?in an? (orca )?terminal/i.test(e.message);
 }
 
+/** Only decisions may take the fallback: their reply carries no id the server needs, and a retry-request makes a repeat safe (review 2, findings 1 and 4). */
+const FALLBACK_ACTIONS = new Set(['gate-resolve', 'reply']);
+const FALLBACK_MAX_CHARS = 2000;
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
+
+/** True when every argv token is plain enough to type into a terminal: no control byte (Ctrl-C, ESC, newline, CR, NUL...) and not huge. */
+export function safeToType(argv: readonly string[]): boolean {
+  return argv.every((t) => t.length <= FALLBACK_MAX_CHARS && !CONTROL_CHARS.test(t));
+}
+
 const shellQuote = (s: string): string => (/^[\w@%+=:,./-]+$/.test(s) ? s : `'${s.replace(/'/g, `'\\''`)}'`);
 
 export function coordinatorHandle(c: ServerCtx, runId: string | undefined): string | null {
@@ -28,10 +41,14 @@ export function coordinatorHandle(c: ServerCtx, runId: string | undefined): stri
 
 export async function callOrca(c: ServerCtx, name: string, args: ActionArgs, runId?: string): Promise<ActionResult> {
   const first = await runAction(name, args, c.runner);
-  if (first.ok || !needsTerminal(first.error)) return first;
+  if (first.ok || !needsTerminal(first.error) || !FALLBACK_ACTIONS.has(name)) return first;
   const handle = coordinatorHandle(c, runId ?? (typeof args.run === 'string' ? args.run : undefined));
   const built = buildActionArgv(name, args);
   if (!handle || !built.ok) return first;
+  if (!safeToType(built.argv)) {
+    c.log(`[orca] ${name} needs a bound terminal, but its text has control characters or is too long to type safely; not sending it`);
+    return first;
+  }
   const text = `orca ${built.argv.map(shellQuote).join(' ')}`;
   c.log(`[orca] ${name} needs a bound terminal; sending it through coordinator ${handle}`);
   const sent = await runAction('terminal send', { terminal: handle, text, enter: true }, c.runner);

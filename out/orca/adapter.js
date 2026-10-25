@@ -280,6 +280,7 @@ export function inbox(runner = execOrca, opts = {}) {
                 sequence: num(x.sequence),
                 read: num(x.read) === 1 || x.read === true,
                 createdAt: str(x.created_at),
+                threadId: strOrNull(x.thread_id),
                 payload: {
                     ...(typeof p.taskId === 'string' ? { taskId: p.taskId } : {}),
                     ...(typeof p.dispatchId === 'string' ? { dispatchId: p.dispatchId } : {}),

@@ -5,10 +5,11 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { appendFileSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { appendFileSync, chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ACTION_NAMES } from '../../out/server/index.js';
+import { safeToType } from '../../out/server/orca-call.js';
 import { fakeClock, get, post, startTestService, stubRunner, tmpDir } from './helpers.mjs';
 
 const REAL_PLAN = new URL('../../.matrixkoder/inbox/orca-dashboard-wiring.md', import.meta.url).pathname;
@@ -60,7 +61,7 @@ async function world(t, o = {}) {
     if (args[1] === 'task-create') return JSON.stringify({ ok: true, result: { task: { id: `task_y${++cliTask}` } } });
     throw new Error(`unexpected mk CLI orca call ${args.join(' ')}`);
   };
-  const svc = await startTestService({ dir: o.dir, runner, cliOrca, clock, undoMs: UNDO_MS });
+  const svc = await startTestService({ dir: o.dir, runner, cliOrca, clock, undoMs: UNDO_MS, realCli: o.realCli });
   let closed = false;
   const close = async () => { if (!closed) { closed = true; await svc.close(); } };
   t.after(close);
@@ -1074,4 +1075,147 @@ test('every name in ACTION_NAMES was exercised in this file', () => {
   ]);
   const untested = ACTION_NAMES.filter((n) => !used.has(n));
   assert.deepEqual(untested, [], `actions never exercised: ${untested.join(', ')}`);
+});
+
+// ------------------------------------------------------------------------------------------------ review round 2
+
+test('R2.1 A6 never types control characters into the coordinator terminal; the decision fails with no `terminal send`', async (t) => {
+  const w = await world(t);
+  w.run('run_a', 'term_coord');
+  w.ask('msg_1', 'question');
+  w.override['orchestration reply'] = NEEDS_TERMINAL;
+  await w.act('answer', { askId: 'msg_1', answer: 'ok\u0003\u001b[201~; echo PWNED #\nnext' });
+  w.clock.advance(UNDO_MS);
+  await settle();
+  assert.equal(callsOf(w, 'terminal', 'send').length, 0, 'nothing was typed');
+  assert.equal(callsOf(w, 'orchestration', 'reply').length, 1);
+  const row = q1(w.svc, 'SELECT * FROM decision_log');
+  assert.equal(row.status, 'failed');
+  assert.match(row.error, /bound terminal/);
+
+  // rework text takes the same road for a gate; \r, \n and DEL are refused too, a plain sentence still goes
+  w.run('run_b', 'term_coord');
+  w.ask('gate_c', 'gate', 'run_b');
+  w.override['orchestration gate-resolve'] = NEEDS_TERMINAL;
+  for (const bad of ['a\rb', 'a\nb', 'a\u007fb', 'a\u0000b']) {
+    assert.equal(safeToType(['orca', `--body=${bad}`]), false, JSON.stringify(bad));
+  }
+  assert.equal(safeToType(['x'.repeat(2001)]), false, 'over 2000 characters');
+  assert.equal(safeToType(['orca', '--body=it\'s fine; go', '--json']), true);
+  await w.act('rework', { askId: 'gate_c', text: 'please\u001bredo' });
+  w.clock.advance(UNDO_MS);
+  await settle();
+  assert.equal(callsOf(w, 'terminal', 'send').length, 0);
+  assert.equal(q1(w.svc, "SELECT status FROM decision_log WHERE ask_id = 'gate_c'").status, 'failed');
+  noCheck(w);
+});
+
+test('R2.2 commit() claims a decision once, and replay resends a claimed-but-unfinished row once with the same request id', async (t) => {
+  const w = await world(t);
+  w.run();
+  w.ask('gate_1');
+  const r = await w.act('approve', { askId: 'gate_1' });
+  const d = w.svc.actions.decisions;
+  await Promise.all([d.commit(r.decisionId), d.commit(r.decisionId), d.commit(r.decisionId)]);
+  assert.equal(callsOf(w, 'orchestration', 'gate-resolve').length, 1, 'three concurrent commits made one Orca call');
+  assert.equal(q1(w.svc, 'SELECT status FROM decision_log').status, 'sent');
+  await d.commit(r.decisionId);
+  assert.equal(callsOf(w, 'orchestration', 'gate-resolve').length, 1, 'a later commit finds it done');
+
+  // a crash between the claim and the result: status pending, sent_at set
+  const clock = fakeClock();
+  const dir = tmpDir('replay-claimed');
+  const w1 = await world(t, { clock, dir });
+  w1.run();
+  w1.ask('gate_2');
+  await w1.act('approve', { askId: 'gate_2' });
+  const row = q1(w1.svc, "SELECT * FROM decision_log WHERE ask_id = 'gate_2'");
+  w1.svc.ctx.db.prepare('UPDATE decision_log SET sent_at = ? WHERE id = ?').run(clock.now() + UNDO_MS, row.id);
+  await w1.close();
+  clock.advance(UNDO_MS + 60_000);
+  const w2 = await world(t, { clock, dir, plan: false, noRepo: true });
+  const sent = callsOf(w2, 'orchestration', 'gate-resolve');
+  assert.equal(sent.length, 1, 'resent exactly once');
+  assert.ok(sent[0].includes(`--retry-request=${row.request_id}`), 'with the same request id');
+  assert.equal(q1(w2.svc, "SELECT status FROM decision_log WHERE ask_id = 'gate_2'").status, 'sent');
+});
+
+test('R2.4 run-create and task-create never use the A6 fallback: terminal_required is an orca_failed error and nothing is typed', async (t) => {
+  const w = await world(t);
+  const plan = await w.importPlan();
+  w.override['orchestration run-create'] = NEEDS_TERMINAL;
+  const noRun = await w.act('plan.start', { planId: plan.id });
+  assert.equal(noRun.ok, false);
+  assert.equal(noRun.error.kind, 'orca_failed');
+  assert.match(noRun.error.message, /bound terminal/);
+  assert.equal(q1(w.svc, 'SELECT status FROM plan WHERE id = ?', plan.id).status, 'imported');
+  w.override['orchestration run-create'] = undefined;
+
+  await w.act('plan.start', { planId: plan.id });
+  const runId = q1(w.svc, 'SELECT orca_run_id AS r FROM plan WHERE id = ?', plan.id).r;
+  w.run(runId, 'term_coord'); // a coordinator terminal exists, and still is not used
+  const task = q1(w.svc, "SELECT * FROM plan_task WHERE plan_id = ? AND status = 'ready' ORDER BY id", plan.id);
+  w.override['orchestration task-create'] = NEEDS_TERMINAL;
+  const before = q1(w.svc, 'SELECT * FROM plan_task WHERE id = ?', task.id);
+  const r = await w.act('task.start', { taskId: task.id, agent: 'claude' });
+  assert.equal(r.ok, false);
+  assert.equal(r.error.kind, 'orca_failed');
+  assert.match(r.error.message, /Orca could not create the task/);
+  assert.deepEqual(q1(w.svc, 'SELECT * FROM plan_task WHERE id = ?', task.id), before, 'row unchanged');
+  assert.equal(callsOf(w, 'terminal', 'send').length, 0, 'nothing was typed');
+  noCheck(w);
+});
+
+test('R2.10 bug actions need an id like B-12: "--help" and friends are bad_args and run no command', async (t) => {
+  const w = await world(t);
+  for (const name of ['bug.fix', 'bug.close', 'bug.reopen']) {
+    for (const bugId of ['--help', '-1', 'b-1', 'B-', 'B-1x', '../B-1', 'B-1 B-2']) {
+      const r = await w.act(name, { bugId });
+      assert.equal(r.ok, false, `${name} ${bugId}`);
+      assert.equal(r.error.kind, 'bad_args', `${name} ${bugId}`);
+    }
+  }
+  assert.equal(w.cli.length, 0);
+});
+
+test('R2.6 bug.fix runs the mk CLI in a child process: a slow orca call does not stop /api/ping', async (t) => {
+  const bin = mkdtempSync(join(tmpdir(), 'mk-slowbin-'));
+  const orca = join(bin, 'orca');
+  // answers run-create and task-create after 1.2 s; the wait is synchronous, as the real CLI's spawnSync is
+  writeFileSync(orca, `#!${process.execPath}
+const a = process.argv.slice(2);
+Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1200);
+if (a[1] === 'run-create') console.log(JSON.stringify({ ok: true, result: { run: { id: 'run_slow' } } }));
+else if (a[1] === 'task-create') console.log(JSON.stringify({ ok: true, result: { task: { id: 'task_slow' } } }));
+else { console.error('unexpected ' + a.join(' ')); process.exit(1); }
+`);
+  chmodSync(orca, 0o755);
+  const oldPath = process.env.PATH;
+  process.env.PATH = `${bin}:${oldPath}`;
+  t.after(() => { process.env.PATH = oldPath; });
+
+  const w = await world(t, { realCli: true });
+  const add = await w.act('bug.add', { repoId: 'repo-1', title: 'slow one' });
+  assert.equal(add.ok, true, JSON.stringify(add));
+  let done = false;
+  const fix = w.act('bug.fix', { bugId: add.bug.id }).finally(() => { done = true; });
+  const pings = [];
+  const t0 = Date.now();
+  while (!done && Date.now() - t0 < 10_000) {
+    const s = Date.now();
+    const res = await get(w.svc, '/api/ping');
+    assert.equal(res.status, 200);
+    pings.push(Date.now() - s);
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  const r = await fix;
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.equal(r.bug.status, 'fixing');
+  assert.equal(r.bug.orca_task_id, 'task_slow');
+  assert.ok(pings.length >= 5, `ping answered ${pings.length} times while Orca was slow`);
+  assert.ok(Math.max(...pings) < 600, `slowest ping ${Math.max(...pings)} ms`);
+  assert.equal(q1(w.svc, "SELECT orca_task_id AS t FROM bug WHERE id = ?", add.bug.id).t, 'task_slow');
+  // a failing command through the child keeps its typed error
+  const missing = await w.act('bug.fix', { bugId: 'B-99' });
+  assert.equal(missing.error.kind, 'not_found');
 });

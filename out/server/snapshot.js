@@ -7,7 +7,7 @@
  * and the snapshot rebuilt, down to one row per list.
  */
 import { all, one } from '../store/db.js';
-import { loadSettings } from '../store/settings.js';
+import { defaultSettings, loadSettings } from '../store/settings.js';
 import { cut, homeAbbrev, maybeNum, num, parseJson } from './common.js';
 export const SCREENS = ['projects', 'overview', 'lanes', 'plan', 'waiting', 'events', 'inbox', 'bugs', 'todo', 'settings'];
 export const SNAPSHOT_LIMIT = 64 * 1024;
@@ -23,6 +23,31 @@ export function buildState(c, q = {}, info = { version: null }) {
         if (Buffer.byteLength(JSON.stringify(out)) <= TARGET)
             return out;
         caps = scale(caps, 0.5);
+    }
+    // Last guard: the page is never sent over the limit. The settings values are the one block the caps cannot shrink.
+    if (Buffer.byteLength(JSON.stringify(out)) > SNAPSHOT_LIMIT && out.settings && typeof out.settings === 'object') {
+        out = { ...out, settings: { ...out.settings, values: {} } };
+    }
+    return out;
+}
+/** Keep only the keys the settings schema knows (agent ids are free, their fields are not), so a stray key in the file cannot grow the snapshot. */
+function knownSettings(actual, known, isAgents = false) {
+    if (known === null || typeof known !== 'object' || Array.isArray(known))
+        return actual;
+    if (actual === null || typeof actual !== 'object' || Array.isArray(actual))
+        return known;
+    const a = actual;
+    const k = known;
+    const out = {};
+    if (isAgents) {
+        const shape = k.claude;
+        for (const id of Object.keys(a).slice(0, 20))
+            out[id] = knownSettings(a[id], shape);
+        return out;
+    }
+    for (const key of Object.keys(k)) {
+        if (key in a)
+            out[key] = knownSettings(a[key], k[key], key === 'agents');
     }
     return out;
 }
@@ -465,7 +490,7 @@ class Builder {
         const quota = all(this.db, 'SELECT * FROM quota');
         const clis = all(this.db, 'SELECT * FROM agent_cli ORDER BY agent_id');
         return {
-            values: this.settings,
+            values: knownSettings(this.settings, defaultSettings()),
             agents: clis.map((a) => ({
                 id: String(a.agent_id), found: num(a.found) === 1, cli: a.cli_path ?? null, version: a.version ?? null,
                 quota: quota.filter((q) => q.provider === providerOf[String(a.agent_id)]).map((q) => ({

@@ -78,10 +78,10 @@ export class Decisions {
         this.cancelTimer(id);
         return { ok: true, decisionId: id, status: 'undone' };
     }
-    /** Send the decision's Orca command now. Safe to call twice: the second call finds it already claimed. */
+    /** Send the decision's Orca command now. Safe to call twice: the claim needs sent_at to be empty, so only one caller gets it. */
     async commit(id) {
         const { db, clock } = this.c;
-        const claimed = tx(db, () => Number(db.prepare("UPDATE decision_log SET sent_at = ? WHERE id = ? AND status = 'pending'").run(clock.now(), id).changes));
+        const claimed = tx(db, () => Number(db.prepare("UPDATE decision_log SET sent_at = ? WHERE id = ? AND status = 'pending' AND sent_at IS NULL").run(clock.now(), id).changes));
         if (claimed === 0)
             return;
         const row = one(db, 'SELECT * FROM decision_log WHERE id = ?', id);
@@ -102,9 +102,15 @@ export class Decisions {
         const { db, clock } = this.c;
         const at = clock.now();
         const out = { ran: 0, expired: 0, scheduled: 0 };
-        for (const r of all(db, "SELECT id, commit_at FROM decision_log WHERE status = 'pending' ORDER BY id")) {
+        for (const r of all(db, "SELECT id, commit_at, sent_at FROM decision_log WHERE status = 'pending' ORDER BY id")) {
             const commitAt = Number(r.commit_at ?? 0);
             const id = r.id;
+            if (r.sent_at !== null && at - commitAt <= REPLAY_WINDOW_MS) {
+                // The worker stopped after claiming this row and before recording the result. Sending again is deliberate:
+                // the command keeps its --retry-request, so Orca returns the first receipt instead of resolving twice.
+                this.c.log(`[decision ${id}] was claimed but never finished; sending it again with the same retry-request`);
+                tx(db, () => db.prepare("UPDATE decision_log SET sent_at = NULL WHERE id = ? AND status = 'pending'").run(id));
+            }
             if (commitAt > at) {
                 this.schedule(id, commitAt - at);
                 out.scheduled++;

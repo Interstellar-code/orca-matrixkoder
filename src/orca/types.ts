@@ -226,6 +226,8 @@ export interface InboxMessage {
   sequence: number;
   read: boolean;
   createdAt: string;
+  /** The conversation this message belongs to (a question's own id; a reply carries the question's id). Null when Orca sent none. */
+  threadId: string | null;
   payload: {
     taskId?: string;
     dispatchId?: string;

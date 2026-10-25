@@ -9,13 +9,15 @@
  *   2. Approve, rework and answer wait in decision_log for the Undo window; `undo` cancels one.
  *   3. Every call returns {ok:true,...} or {ok:false,error:{kind,message,...}}. An unknown name is refused.
  */
+import { spawn } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync } from 'node:fs';
-import { join } from 'node:path';
-import { main as cliMain } from '../store/cli.js';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { main as cliMain, realOrca } from '../store/cli.js';
 import { one, tx } from '../store/db.js';
 import { ImportError, importFile, scanInbox } from '../store/import.js';
 import { loadSettings, saveSettings, SettingsError } from '../store/settings.js';
-import { cut, fail, J, parseJson } from './common.js';
+import { CANCELLED_RESULT, cut, fail, J, parseJson } from './common.js';
 import { callOrca, orcaFailure, receiptId } from './orca-call.js';
 export const ACTION_NAMES = [
     'approve', 'rework', 'answer', 'undo', 'ask.snooze',
@@ -51,6 +53,13 @@ const reqInt = (a, k) => {
     if (typeof v !== 'number' || !Number.isInteger(v))
         return refuse('bad_args', `"${k}" is required (a whole number)`);
     return v;
+};
+const CLI_CHILD = join(dirname(fileURLToPath(import.meta.url)), 'cli-child.js');
+const CLI_CHILD_TIMEOUT_MS = 180_000;
+const SETTINGS_PATCH_MAX = 16_000;
+const bugId = (a) => {
+    const id = reqStr(a, 'bugId', 20);
+    return /^B-\d+$/.test(id) ? id : refuse('bad_args', '"bugId" must look like B-12');
 };
 const planFile = (name) => {
     if (!/^[^/\\\0]+\.md$/.test(name) || name.startsWith('.'))
@@ -103,9 +112,9 @@ export class Actions {
             case 'inbox.restore': return this.inboxRestore(a);
             case 'inbox.delete': return this.inboxDelete(a);
             case 'bug.add': return this.bugAdd(a);
-            case 'bug.fix': return this.cli(['bug', 'fix', reqStr(a, 'bugId', 20)], 'bug');
-            case 'bug.close': return this.cli(['bug', 'close', reqStr(a, 'bugId', 20)], 'bug');
-            case 'bug.reopen': return this.cli(['bug', 'reopen', reqStr(a, 'bugId', 20)], 'bug');
+            case 'bug.fix': return this.cli(['bug', 'fix', bugId(a)], 'bug', true);
+            case 'bug.close': return this.cli(['bug', 'close', bugId(a)], 'bug');
+            case 'bug.reopen': return this.cli(['bug', 'reopen', bugId(a)], 'bug');
             case 'todo.add': return this.todoAdd(a);
             case 'todo.done': return this.todoDone(a);
             case 'todo.makeTask': return this.todoMakeTask(a);
@@ -267,7 +276,7 @@ export class Actions {
             refuse('conflict', `task ${task.code} is already ${task.status}`);
         // Orca has no cancel; the recipe is a task-update to failed with result "cancelled" (the worker, if any, is stopped by its lane).
         const r = await callOrca(this.c, 'task-update', {
-            id: String(task.orca_task_id), status: 'failed', result: 'cancelled', run: String(plan.orca_run_id), 'retry-request': `mk-cancel-${task.id}-${task.attempts}`,
+            id: String(task.orca_task_id), status: 'failed', result: CANCELLED_RESULT, run: String(plan.orca_run_id), 'retry-request': `mk-cancel-${task.id}-${task.attempts}`,
         });
         if (!r.ok)
             return orcaFailure('Orca could not cancel the task', r);
@@ -373,7 +382,24 @@ export class Actions {
         return { ok: true, deletedTo: folder };
     }
     // ---------------------------------------------------------------- bugs and todos (the mk CLI's own code)
-    cli(argv, key) {
+    /** Run `mk <argv>` and return its JSON as {ok:true,[key]}. `slow` commands (the ones that call Orca) run in a child process. */
+    async cli(argv, key, slow = false) {
+        // An injected runner (tests) stays in this process; the real one is synchronous, so it goes to a child.
+        const { code, out, err } = slow && this.c.cliOrca === realOrca ? await this.cliChild(argv) : this.cliInline(argv);
+        if (code === 0)
+            return { ok: true, [key]: parseJson(out, null) };
+        const message = (err.split('\n').find((l) => l.startsWith('mk:')) ?? err).replace(/^mk:\s*/, '').trim() || 'the command failed';
+        if (code === 2)
+            return fail('bad_args', message);
+        if (/^no (bug|todo) /.test(message))
+            return fail('not_found', message);
+        if (/^orca /.test(message))
+            return fail('orca_failed', message);
+        if (/already|reopen/.test(message))
+            return fail('conflict', message);
+        return fail('store_failed', message);
+    }
+    cliInline(argv) {
         let out = '';
         let err = '';
         const code = cliMain(argv, {
@@ -384,18 +410,24 @@ export class Actions {
             orca: this.c.cliOrca,
             dir: this.c.dir,
         });
-        if (code === 0)
-            return { ok: true, [key]: parseJson(out, null) };
-        const message = err.replace(/^mk:\s*/, '').trim() || 'the command failed';
-        if (code === 2)
-            return fail('bad_args', message);
-        if (/^no (bug|todo) /.test(message))
-            return fail('not_found', message);
-        if (/^orca /.test(message))
-            return fail('orca_failed', message);
-        if (/already|reopen/.test(message))
-            return fail('conflict', message);
-        return fail('store_failed', message);
+        return { code, out, err };
+    }
+    /** The same CLI in its own process, so a slow `orca` call never stops this one. */
+    cliChild(argv) {
+        return new Promise((resolve) => {
+            let out = '';
+            let err = '';
+            const child = spawn(process.execPath, [CLI_CHILD, ...argv], {
+                cwd: this.c.dir,
+                env: { ...process.env, MK_REPORTED_BY: 'user', MK_DATA_DIR: this.c.dir },
+                stdio: ['ignore', 'pipe', 'pipe'],
+                timeout: CLI_CHILD_TIMEOUT_MS,
+            });
+            child.stdout.on('data', (d) => (out += d.toString('utf8')));
+            child.stderr.on('data', (d) => (err += d.toString('utf8')));
+            child.on('error', (e) => resolve({ code: 1, out, err: `mk: could not run the mk command: ${e.message}` }));
+            child.on('close', (code) => resolve({ code: code ?? 1, out, err: code === null ? 'mk: the mk command timed out' : err }));
+        });
     }
     bugAdd(a) {
         const argv = ['bug', 'add', `--repo=${reqStr(a, 'repoId')}`, `--title=${reqStr(a, 'title', 300)}`, '--reported-by=user'];
@@ -418,7 +450,7 @@ export class Actions {
             argv.push(`--group=${group}`);
         return this.cli(argv, 'todo');
     }
-    todoDone(a) {
+    async todoDone(a) {
         const id = reqInt(a, 'todoId');
         if (a.done === false) {
             if (!one(this.c.db, 'SELECT 1 AS x FROM todo WHERE id = ?', id))
@@ -454,6 +486,8 @@ export class Actions {
         const patch = a.patch;
         if (patch === null || typeof patch !== 'object' || Array.isArray(patch))
             refuse('bad_args', '"patch" must be an object of settings to change');
+        if (J(patch).length > SETTINGS_PATCH_MAX)
+            refuse('too_large', `"patch" is too large (limit ${SETTINGS_PATCH_MAX} characters)`);
         try {
             return { ok: true, settings: saveSettings(patch, this.c.dir) };
         }

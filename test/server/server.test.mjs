@@ -7,6 +7,7 @@ import { networkInterfaces } from 'node:os';
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { importFile } from '../../out/store/import.js';
+import { startService } from '../../out/server/index.js';
 import { fx, fixtureRoutes, get, post, startTestService, stubRunner, tmpDir } from './helpers.mjs';
 
 const SCREENS = ['projects', 'overview', 'lanes', 'plan', 'waiting', 'events', 'inbox', 'bugs', 'todo', 'settings'];
@@ -604,4 +605,72 @@ test('no prompt text, assistant message, tool input or preview from the recorded
       for (const key of FORBIDDEN) assert.ok(!String(row.payload ?? '').includes(`"${key}"`), 'payload stored with a prompt-like key');
     }
   });
+});
+
+// ------------------------------------------------------------------------------------------------ review round 2
+
+test('R2.3 /api/state stays under 64 KB when the settings file holds a huge unknown key, and settings.save refuses a huge patch', async () => {
+  const dir = tmpDir('big-settings');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'mk-settings.json'), JSON.stringify({ schema: 1, junk: 'j'.repeat(200 * 1024), agents: { claude: { routable: true, stray: 'z'.repeat(100_000) } } }));
+  await withService({ dir }, async (svc) => {
+    for (const screen of SCREENS) {
+      const { json, bytes } = await state(svc, `?screen=${screen}`);
+      assert.ok(bytes < LIMIT, `${screen}: ${bytes}`);
+      assert.equal(json.settings.values.junk, undefined, 'unknown keys are not sent');
+      assert.equal(json.settings.values.agents.claude.stray, undefined);
+      assert.equal(json.settings.values.agents.claude.routable, true, 'known keys still are');
+    }
+    const refused = await (await post(svc, 'settings.save', { patch: { junk: 'x'.repeat(200 * 1024) } })).json();
+    assert.equal(refused.ok, false);
+    assert.equal(refused.error.kind, 'too_large');
+  });
+
+  // known keys that are themselves huge (a hand-edited list): the last guard drops the values, never sends over 64 KB
+  const dir2 = tmpDir('big-known');
+  mkdirSync(dir2, { recursive: true });
+  writeFileSync(join(dir2, 'mk-settings.json'), JSON.stringify({ schema: 1, safety: { neverRun: Array.from({ length: 100 }, (_, i) => `${i} ${'n'.repeat(3000)}`) } }));
+  await withService({ dir: dir2 }, async (svc) => {
+    const { json, bytes } = await state(svc, '?screen=settings');
+    assert.ok(bytes < LIMIT, `${bytes}`);
+    assert.deepEqual(json.settings.values, {});
+    assert.ok(json.settings.agents && json.settings.dataDir !== undefined, 'the rest of the settings block is intact');
+  });
+});
+
+test('R2.7 keep-alive: the host call repeats, a failing call is logged and does not stop it, close() stops it', async () => {
+  const dir = tmpDir('keepalive');
+  const web = join(dir, 'web');
+  mkdirSync(web, { recursive: true });
+  writeFileSync(join(web, 'index.html'), '<!doctype html><title>t</title>');
+  const logs = [];
+  let calls = 0;
+  const svc = await startService({
+    dir, webDir: web, loops: true, fastMs: 3_600_000, slowMs: 3_600_000,
+    runner: stubRunner(fixtureRoutes()), cliOrca: () => { throw new Error('unused'); },
+    git: async () => null, probeCli: async () => ({ found: false, error: 'stub' }),
+    keepAlive: () => {
+      calls++;
+      if (calls === 2) return Promise.reject(new Error('host is gone'));
+      if (calls === 3) throw new Error('threw at once');
+      return 'ok';
+    },
+    keepAliveMs: 20,
+    log: (m) => logs.push(m),
+  });
+  const waitFor = async (fn, ms = 3000) => {
+    const t0 = Date.now();
+    while (!fn() && Date.now() - t0 < ms) await new Promise((r) => setTimeout(r, 10));
+    return fn();
+  };
+  try {
+    assert.ok(await waitFor(() => calls >= 5), `ping was called ${calls} times`);
+    assert.ok(logs.some((m) => /\[keepalive\] host is gone/.test(m)), 'a rejecting ping is logged');
+    assert.ok(logs.some((m) => /\[keepalive\] threw at once/.test(m)), 'a throwing ping is logged');
+  } finally {
+    await svc.close();
+  }
+  const after = calls;
+  await new Promise((r) => setTimeout(r, 120));
+  assert.equal(calls, after, 'no ping after close()');
 });

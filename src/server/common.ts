@@ -75,6 +75,9 @@ export const fail = (kind: ErrorKind, message: string, extra: Partial<ActionErro
   error: { kind, message, ...extra },
 });
 
+/** The task result the dashboard writes when it cancels a task (Orca has no cancel); sync reads exactly this back. */
+export const CANCELLED_RESULT = 'cancelled';
+
 export const J = (v: unknown): string => JSON.stringify(v);
 
 export function parseJson<T>(s: unknown, fallback: T): T {
