@@ -12,6 +12,16 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const FIXTURE_PATH = join(root, 'test', 'fixtures', 'snapshot.json');
 
+const ACTION_NAMES = [
+  'approve', 'rework', 'answer', 'undo', 'ask.snooze',
+  'plan.start', 'plan.park', 'plan.resume', 'plan.markMerged',
+  'task.start', 'task.retry', 'task.cancel',
+  'inbox.import', 'inbox.reimport', 'inbox.archive', 'inbox.restore', 'inbox.delete',
+  'bug.add', 'bug.fix', 'bug.close', 'bug.reopen',
+  'todo.add', 'todo.done', 'todo.makeTask',
+  'settings.save',
+];
+
 export function emptySnapshot() {
   return {
     meta: {
@@ -221,6 +231,11 @@ export function createDevServer(options = {}) {
       req.on('end', () => {
         try {
           const parsed = JSON.parse(body || '{}');
+          if (!parsed.name || !ACTION_NAMES.includes(parsed.name)) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: false, error: { kind: 'unknown_action', message: `unknown action "${String(parsed.name || '').slice(0, 60)}"` } }));
+            return;
+          }
           const entry = {
             name: parsed.name,
             args: parsed.args || {},

@@ -305,22 +305,18 @@ describe('Chrome headless integration tests (T7)', () => {
     await new Promise((r) => setTimeout(r, 400));
 
     const screenActionChecks = [
-      ['Projects', 'button[aria-label="Sweep lanes now"]', 'sweep-lanes'],
-      ['Main', 'button[aria-label="Sweep lanes now"]', 'sweep-lanes'],
-      ['Lanes', 'button[aria-label="Sweep lanes now"]', 'sweep-lanes'],
-      ['Plan', 'button[aria-label="Sweep lanes now"]', 'sweep-lanes'],
-      ['Waiting', 'button[aria-label="Sweep lanes now"]', 'sweep-lanes'],
-      ['Events', 'button.btn.sm', 'pause'],
-      ['Inbox', 'button[aria-label="Sweep lanes now"]', 'sweep-lanes'],
-      ['Bugs', 'button[aria-label="Sweep lanes now"]', 'sweep-lanes'],
-      ['Todo', 'button[aria-label="Sweep lanes now"]', 'sweep-lanes'],
-      ['Settings', 'button.btn', 'repo set-base-ref'],
-      ['SettingsAgents', 'button.btn', 'settings save'],
-      ['SettingsRouting', 'button[aria-label="Fewer lanes"]', 'settings save'],
-      ['SettingsSafety', 'button.sw', 'settings save'],
-      ['SettingsAlerts', 'button.btn', 'settings testNotification'],
-      ['SettingsLook', 'button.sw', 'settings save'],
-      ['SettingsShortcuts', 'button.btn', 'settings save'],
+      ['Main', 'button.btn.amb', 'approve'],
+      ['Waiting', 'button.btn.sm', 'answer'],
+      ['Inbox', 'article button.btn.sm:not([disabled])', 'inbox.archive'],
+      ['Bugs', 'section button.btn.sm', 'bug.fix'],
+      ['Todo', 'input[type="checkbox"]', 'todo.done'],
+      ['Settings', '.segc button', 'settings.save'],
+      ['SettingsAgents', 'button.sw', 'settings.save'],
+      ['SettingsRouting', 'button[aria-label="Fewer lanes"]', 'settings.save'],
+      ['SettingsSafety', 'button.sw', 'settings.save'],
+      ['SettingsAlerts', 'button.sw', 'settings.save'],
+      ['SettingsLook', 'button.sw', 'settings.save'],
+      ['SettingsShortcuts', 'button.btn', 'settings.save'],
     ];
 
     for (const [screen, selector, expectedAction] of screenActionChecks) {

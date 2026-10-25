@@ -98,7 +98,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
     </section>
 
     <div style="display: flex; gap: 8px; align-items: center; padding: 0 2px">
-      <button class="btn" onClick="{{testNotification}}">Send a test notification</button>
+      <button class="btn" disabled title="Not supported in web dashboard">Send a test notification</button>
       <span style="font-size: 11.5px; color: #7fae8c">Uses Orca desktop notifications</span>
     </div>
 
@@ -149,7 +149,11 @@ class Component extends DCLogic {
         const next = !s.on[k];
         const nextOn = Object.assign({}, s.on, { [k]: next });
         this.setState({ on: nextOn });
-        this.action('settings save', { alerts: nextOn });
+        if (k === 'desktop') {
+          this.action('settings.save', { patch: { alerts: { desktop: next } } });
+        } else if (k !== 'sound') {
+          this.action('settings.save', { patch: { alerts: { events: { [k]: next } } } });
+        }
       },
     }));
 
@@ -165,17 +169,14 @@ class Component extends DCLogic {
       flipQuiet: () => {
         const next = !s.quiet;
         this.setState({ quiet: next });
-        this.action('settings save', { quietHours: next });
+        this.action('settings.save', { patch: { alerts: { quietHours: { enabled: next } } } });
       },
       wakeCls: 'sw' + (s.wake ? ' on' : ''),
       wakeP: String(s.wake),
       flipWake: () => {
         const next = !s.wake;
         this.setState({ wake: next });
-        this.action('settings save', { wakeOrchestrator: next });
-      },
-      testNotification: () => {
-        this.action('settings testNotification');
+        this.action('settings.save', { patch: { alerts: { wakeOrchestrator: next } } });
       },
     };
   }

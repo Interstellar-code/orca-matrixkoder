@@ -69,7 +69,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 
     <div style="display: flex; align-items: center; gap: 8px">
       <span style="font-size: 12.5px; color: #8bbf9a; flex: 1">Coding agents MK can hand lanes to. Off means MK never routes to it.</span>
-      <button class="btn" onClick="{{detectAgain}}">Detect again</button>
+      <button class="btn" disabled title="Not supported in web dashboard">Detect again</button>
     </div>
 
     <sc-for list="{{agents}}" as="a" hint-placeholder-count="4">
@@ -85,7 +85,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
         </div>
         <sc-if value="{{a.ready}}" hint-placeholder-val="{{true}}">
         <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #0d2414">
-          <div class="kv"><span>Default model</span><span class="mono" style="color: #e6fff0; flex: 1">{{a.model}}</span><button class="btn" style="height: 26px; font-size: 11.5px" onClick="{{a.changeModel}}">Change</button></div>
+          <div class="kv"><span>Default model</span><span class="mono" style="color: #e6fff0; flex: 1">{{a.model}}</span><button class="btn" style="height: 26px; font-size: 11.5px" disabled title="Not supported in web dashboard">Change</button></div>
           <sc-for list="{{a.quota}}" as="q" hint-placeholder-count="2">
             <div class="kv"><span>{{q.label}}</span><div class="meter"><div style="{{q.style}}"></div></div><span class="mono" style="width: 64px; text-align: right; color: #b9e8c4">{{q.text}}</span></div>
           </sc-for>
@@ -138,9 +138,6 @@ class Component extends DCLogic {
       rain: window.MK_RAIN ? window.MK_RAIN(73) : [],
       stabs: window.MK_STABS ? window.MK_STABS('agents') : [],
       repoName,
-      detectAgain: () => {
-        this.action('settings save', { detectAgents: true });
-      },
       agents: agentList.map((a) => {
         const id = a.id || '';
         const name = agentNames[id] || (id.charAt(0).toUpperCase() + id.slice(1));
@@ -173,10 +170,7 @@ class Component extends DCLogic {
           flip: () => {
             const next = !isRoutable;
             this.setState({ on: Object.assign({}, on, { [id]: next }) });
-            this.action('settings save', { agents: { [id]: { routable: next } } });
-          },
-          changeModel: () => {
-            this.action('settings save', { agents: { [id]: { modelChange: true } } });
+            this.action('settings.save', { patch: { agents: { [id]: { routable: next } } } });
           },
         };
       }),

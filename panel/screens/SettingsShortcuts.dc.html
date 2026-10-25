@@ -92,7 +92,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
           <button class="btn" disabled="{{l.full}}" onClick="{{l.add}}">Add</button>
         </div>
       </sc-for>
-      <div class="row" style="padding-bottom: 12px"><button class="btn" style="border-style: dashed; color: #8bbf9a" onClick="{{addCustom}}">+ Custom: MK command or Orca automation</button></div>
+      <div class="row" style="padding-bottom: 12px"><button class="btn" style="border-style: dashed; color: #8bbf9a" disabled title="Not supported in web dashboard">+ Custom: MK command or Orca automation</button></div>
     </section>
 
     <section aria-label="Footer preview" style="display: flex; flex-direction: column; gap: 6px">
@@ -133,7 +133,7 @@ class Component extends DCLogic {
 
     const setSlots = (next) => {
       this.setState({ slots: next });
-      this.action('settings save', { shortcuts: next });
+      this.action('settings.save', { patch: { shortcuts: { footer: next } } });
     };
 
     const move = (i, d) => {
@@ -169,9 +169,6 @@ class Component extends DCLogic {
         full,
         add: () => setSlots([...slots, id]),
       })),
-      addCustom: () => {
-        this.action('settings save', { addShortcut: true });
-      },
       preview: slots.map((id, i) => ({
         label: libDefs[id] ? libDefs[id][0] : id,
         key: libDefs[id] ? libDefs[id][2] : '',

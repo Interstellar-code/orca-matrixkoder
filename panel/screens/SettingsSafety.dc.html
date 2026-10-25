@@ -104,7 +104,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
       <sc-for list="{{cmds}}" as="c" hint-placeholder-count="4">
         <div class="cmd"><span class="mono" style="font-size: 12px; color: #ffc4b8; flex: 1">{{c}}</span></div>
       </sc-for>
-      <div class="cmd"><button class="btn" style="border-style: dashed; color: #8bbf9a" onClick="{{addCmd}}">+ Add a command</button></div>
+      <div class="cmd"><button class="btn" style="border-style: dashed; color: #8bbf9a" disabled title="Not supported in web dashboard">+ Add a command</button></div>
     </section>
 
   </main>
@@ -148,7 +148,14 @@ class Component extends DCLogic {
           const next = !s.on[k];
           const nextOn = Object.assign({}, s.on, { [k]: next });
           this.setState({ on: nextOn });
-          this.action('settings save', { safety: nextOn });
+          const keyMap = {
+            gitHard: 'blockDestructiveGit',
+            rmrf: 'blockDeleteOutsideWorktree',
+            push: 'askBeforePush',
+            secrets: 'scanDiffsForSecrets',
+          };
+          const prop = keyMap[k] || k;
+          this.action('settings.save', { patch: { safety: { [prop]: next } } });
         },
       })),
       branches: s.branches.map((name) => ({
@@ -156,7 +163,7 @@ class Component extends DCLogic {
         remove: () => {
           const next = s.branches.filter((b) => b !== name);
           this.setState({ branches: next });
-          this.action('settings save', { protectedBranches: next });
+          this.action('settings.save', { patch: { safety: { protectedBranches: next } } });
         },
       })),
       draft: s.draft,
@@ -165,12 +172,9 @@ class Component extends DCLogic {
         if (!s.draft.trim()) return;
         const next = [...s.branches, s.draft.trim()];
         this.setState({ branches: next, draft: '' });
-        this.action('settings save', { protectedBranches: next });
+        this.action('settings.save', { patch: { safety: { protectedBranches: next } } });
       },
       cmds: s.cmds,
-      addCmd: () => {
-        this.action('settings save', { addCommand: true });
-      },
     };
   }
 }

@@ -153,7 +153,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 class Component extends DCLogic {
   constructor(p) {
     super(p);
-    this.state = { answers: {} };
+    this.state = { answers: {}, decisions: {} };
   }
 
   renderVals() {
@@ -176,13 +176,19 @@ class Component extends DCLogic {
       title: a.title,
       outcome: s.answers[a.id],
       src: `${a.lane || 'P'} · ${a.agent || 'agent'} · just now`,
-      canUndo: true,
-      undo: () => {
-        this.action('undo', { askId: a.id });
-        const n = { ...s.answers };
-        delete n[a.id];
-        this.setState({ answers: n });
-      },
+      canUndo: !!s.decisions[a.id],
+      undo: s.decisions[a.id] ? () => {
+        const decId = s.decisions[a.id];
+        this.action('undo', { decisionId: decId }).then((res) => {
+          if (res && res.ok) {
+            const nAns = { ...this.state.answers };
+            delete nAns[a.id];
+            const nDec = { ...this.state.decisions };
+            delete nDec[a.id];
+            this.setState({ answers: nAns, decisions: nDec });
+          }
+        });
+      } : null,
     }));
 
     const rawDone = (w.resolved || []).map((r) => ({
@@ -190,8 +196,10 @@ class Component extends DCLogic {
       title: r.title || 'Resolved task',
       outcome: r.outcome || 'Approved',
       src: r.src || 'orchestrator',
-      canUndo: !!r.canUndo,
-      undo: r.canUndo ? () => this.action('undo', { askId: r.id || r.askId }) : null,
+      canUndo: !!r.canUndo && typeof r.decisionId === 'number',
+      undo: r.canUndo && typeof r.decisionId === 'number' ? () => {
+        this.action('undo', { decisionId: r.decisionId });
+      } : null,
     }));
 
     const done = mine.concat(rawDone);
@@ -209,8 +217,16 @@ class Component extends DCLogic {
         label,
         pick: () => {
           const act = label === 'Ask me later' ? 'ask.snooze' : 'answer';
-          this.action(act, { askId: a.id, option: label });
-          this.setState({ answers: { ...s.answers, [a.id]: `Answered: ${label}` } });
+          const args = label === 'Ask me later' ? { askId: a.id, minutes: 60 } : { askId: a.id, answer: label };
+          const prev = s.answers;
+          this.setState({ answers: { ...prev, [a.id]: `Answered: ${label}` } });
+          this.action(act, args).then((res) => {
+            if (!res || !res.ok) {
+              this.setState({ answers: prev });
+            } else if (res.decisionId) {
+              this.setState({ decisions: { ...this.state.decisions, [a.id]: res.decisionId } });
+            }
+          });
         },
       }));
 
@@ -229,12 +245,26 @@ class Component extends DCLogic {
         isGate,
         isQuestion,
         approve: () => {
-          this.action('approve', { askId: a.id });
-          this.setState({ answers: { ...s.answers, [a.id]: 'Approved' } });
+          const prev = s.answers;
+          this.setState({ answers: { ...prev, [a.id]: 'Approved' } });
+          this.action('approve', { askId: a.id }).then((res) => {
+            if (!res || !res.ok) {
+              this.setState({ answers: prev });
+            } else if (res.decisionId) {
+              this.setState({ decisions: { ...this.state.decisions, [a.id]: res.decisionId } });
+            }
+          });
         },
         rework: () => {
-          this.action('rework', { askId: a.id, note: 'Rework requested' });
-          this.setState({ answers: { ...s.answers, [a.id]: 'Sent back for rework' } });
+          const prev = s.answers;
+          this.setState({ answers: { ...prev, [a.id]: 'Sent back for rework' } });
+          this.action('rework', { askId: a.id, text: 'Rework requested' }).then((res) => {
+            if (!res || !res.ok) {
+              this.setState({ answers: prev });
+            } else if (res.decisionId) {
+              this.setState({ decisions: { ...this.state.decisions, [a.id]: res.decisionId } });
+            }
+          });
         },
         options,
       };
@@ -249,7 +279,7 @@ class Component extends DCLogic {
       asks: askList,
       hasDone: done.length > 0,
       done,
-      sweepLanes: () => this.action('sweep-lanes', {}),
+      sweepLanes: () => { if (window.MK && window.MK.refresh) window.MK.refresh(); },
     };
   }
 }

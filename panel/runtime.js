@@ -307,6 +307,27 @@
     }
   }
 
+  let toastEl = null;
+  let toastTimer = null;
+
+  function showToast(message, isError = true) {
+    if (!toastEl) {
+      toastEl = document.createElement('div');
+      toastEl.id = 'mk-toast';
+      toastEl.className = 'mk-toast';
+      toastEl.setAttribute('role', 'alert');
+      document.body.appendChild(toastEl);
+    }
+    const text = typeof message === 'object' && message ? (message.message || JSON.stringify(message)) : String(message);
+    toastEl.textContent = text;
+    toastEl.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:99999;background:${isError ? '#3a1512' : '#08190d'};color:${isError ? '#ff9b8a' : '#19e35a'};border:1px solid ${isError ? '#7a2520' : '#145a2a'};border-radius:8px;padding:8px 16px;font-family:'Geist',system-ui,sans-serif;font-size:12.5px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,0.6);transition:opacity 0.2s;display:block;opacity:1;pointer-events:none`;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      if (toastEl) toastEl.style.opacity = '0';
+      setTimeout(() => { if (toastEl) toastEl.style.display = 'none'; }, 200);
+    }, 4000);
+  }
+
   async function action(name, args = {}) {
     const url = `${apiBase}/api/action`;
     try {
@@ -319,12 +340,21 @@
         body: JSON.stringify({ name, args }),
       });
       const json = await res.json();
-      // After action, refresh state immediately
-      fetchState(current);
+      if (!json.ok) {
+        const errMsg = (json.error && json.error.message) || (typeof json.error === 'string' ? json.error : 'Action refused');
+        showToast(errMsg, true);
+        await fetchState(current);
+        return json;
+      }
+      // After successful action, refresh state immediately
+      await fetchState(current);
       return json;
     } catch (err) {
       console.error('Action failed:', name, err);
-      return { ok: false, error: err.message };
+      const errMsg = err.message || 'Connection error';
+      showToast(errMsg, true);
+      await fetchState(current);
+      return { ok: false, error: { message: errMsg } };
     }
   }
 

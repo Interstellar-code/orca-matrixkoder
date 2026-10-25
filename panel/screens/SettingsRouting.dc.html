@@ -85,7 +85,7 @@ input[type=range]{accent-color:#19e35a;width:110px}
     <section class="card" aria-labelledby="r-fall">
       <h2 id="r-fall" class="sec">{{fallTitle}}</h2>
       <sc-for list="{{tiers}}" as="t" hint-placeholder-count="4">
-        <div class="tier"><span style="color: #8bbf9a">{{t.size}}</span><span class="mono" style="font-size: 12px; color: #e6fff0">{{t.route}}</span><button class="btn" style="height: 26px; font-size: 11.5px" onClick="{{t.edit}}">Edit</button></div>
+        <div class="tier"><span style="color: #8bbf9a">{{t.size}}</span><span class="mono" style="font-size: 12px; color: #e6fff0">{{t.route}}</span><button class="btn" style="height: 26px; font-size: 11.5px" disabled title="Not supported in web dashboard">Edit</button></div>
       </sc-for>
       <div style="height: 6px"></div>
     </section>
@@ -133,39 +133,36 @@ class Component extends DCLogic {
       flipJev: () => {
         const next = !s.jev;
         this.setState({ jev: next });
-        this.action('settings save', { useJev: next });
+        this.action('settings.save', { patch: { routing: { useJev: next } } });
       },
       askCls: 'sw' + (s.ask ? ' on' : ''),
       askP: String(s.ask),
       flipAsk: () => {
         const next = !s.ask;
         this.setState({ ask: next });
-        this.action('settings save', { askBeforeDestructive: next });
+        this.action('settings.save', { patch: { routing: { askBeforeDestructive: next } } });
       },
       fallTitle: s.jev ? 'Fallback when Jev is down' : 'Routes by task size',
       tiers: defaultTiers.map(([size, route]) => ({
         size,
         route,
-        edit: () => {
-          this.action('settings save', { tier: size });
-        },
       })),
       lanes: s.lanes,
       less: () => {
         const next = Math.max(1, s.lanes - 1);
         this.setState({ lanes: next });
-        this.action('settings save', { maxLanes: next });
+        this.action('settings.save', { patch: { routing: { maxLanes: next } } });
       },
       more: () => {
         const next = Math.min(8, s.lanes + 1);
         this.setState({ lanes: next });
-        this.action('settings save', { maxLanes: next });
+        this.action('settings.save', { patch: { routing: { maxLanes: next } } });
       },
       spare: s.spare,
       setSpare: (e) => {
         const next = Number(e.target.value);
         this.setState({ spare: next });
-        this.action('settings save', { spareClaudeBelowPct: next });
+        this.action('settings.save', { patch: { routing: { spareClaudeBelowPct: next } } });
       },
     };
   }

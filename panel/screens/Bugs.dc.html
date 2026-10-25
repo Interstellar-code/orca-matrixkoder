@@ -207,8 +207,13 @@ class Component extends DCLogic {
         statusStyle: st[1],
         canFix: b.status === 'open',
         fix: () => {
-          this.action('bug fix', { bugId: b.id });
-          this.setState({ sent: { ...s.sent, [b.id]: true } });
+          const prev = this.state.sent;
+          this.setState({ sent: { ...prev, [b.id]: true } });
+          this.action('bug.fix', { bugId: b.id }).then((res) => {
+            if (!res || !res.ok) {
+              this.setState({ sent: prev });
+            }
+          });
         },
       };
     });
@@ -225,8 +230,13 @@ class Component extends DCLogic {
       addBug: () => {
         const text = (s.draft || '').trim();
         if (!text) return;
-        this.action('bug add', { title: text, file: '', line: 0, risk: 3 });
+        const repoId = meta.repoId || (window.MK_DATA && window.MK_DATA.meta && window.MK_DATA.meta.repoId);
         this.setState({ draft: '' });
+        this.action('bug.add', { repoId, title: text, risk: 3 }).then((res) => {
+          if (!res || !res.ok) {
+            this.setState({ draft: text });
+          }
+        });
       },
       filters: filterDefs.map(([id, label]) => ({
         label: `${label} ${counts[id] || 0}`,
@@ -236,7 +246,7 @@ class Component extends DCLogic {
       })),
       bugs: bugList,
       noBugs: bugList.length === 0,
-      sweepLanes: () => this.action('sweep-lanes', {}),
+      sweepLanes: () => { if (window.MK && window.MK.refresh) window.MK.refresh(); },
     };
   }
 }

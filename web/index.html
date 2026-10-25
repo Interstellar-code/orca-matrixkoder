@@ -304,7 +304,7 @@ html,body{margin:0;height:100%;background:#020604;overflow:hidden}
     <sc-if value="{{hasArchived}}">
       <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #8bbf9a; padding: 0 2px">
         <span style="flex: 1">{{archivedLabel}} in <span class="mono" style="font-size: 11.5px">inbox/archive</span></span>
-        <button onClick="{{restore}}" style="font-family: 'Geist', system-ui, sans-serif; border: 0; background: transparent; color: #4fd1c5; font-size: 12px; cursor: pointer; padding: 0">Restore</button>
+        <button disabled title="Restore not supported" style="font-family: 'Geist', system-ui, sans-serif; border: 0; background: transparent; color: #7fae8c; font-size: 12px; cursor: default; padding: 0; opacity: 0.6">Restore</button>
       </div>
     </sc-if>
 
@@ -370,7 +370,7 @@ html,body{margin:0;height:100%;background:#020604;overflow:hidden}
       <h1 style="margin: 0; font-size: 15px; font-weight: 600; color: #e6fff0">Lanes</h1>
       <span style="font-size: 12px; color: #7fae8c">{{summaryText}}</span>
       <span style="flex: 1"></span>
-      <button class="btn sm" onClick="{{addLane}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add lane</button>
+      <button class="btn sm" disabled title="Not supported in web dashboard"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add lane</button>
     </div>
 
     <div role="group" aria-label="Filter lanes" style="display: flex; gap: 6px; flex-wrap: wrap">
@@ -417,10 +417,10 @@ html,body{margin:0;height:100%;background:#020604;overflow:hidden}
           </div>
           </sc-if>
           <div style="display: flex; gap: 6px; flex-wrap: wrap">
-            <button class="btn sm" onClick="{{l.openTerm}}">Terminal</button>
-            <button class="btn sm" onClick="{{l.openDiff}}">Diff</button>
-            <button class="btn sm" onClick="{{l.pause}}">Pause</button>
-            <button class="btn sm" onClick="{{l.handoff}}">Hand off</button>
+            <button class="btn sm" disabled title="Not supported in web dashboard">Terminal</button>
+            <button class="btn sm" disabled title="Not supported in web dashboard">Diff</button>
+            <button class="btn sm" disabled title="Not supported in web dashboard">Pause</button>
+            <button class="btn sm" disabled title="Not supported in web dashboard">Hand off</button>
           </div>
         </div>
         </sc-if>
@@ -554,8 +554,8 @@ html,body{margin:0;height:100%;background:#020604;overflow:hidden}
               <span style="display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 6px; {{c.style}}; font-size: 11px; font-weight: 500">{{c.label}}</span>
             </sc-for>
             <span style="flex: 1"></span>
-            <button class="ib" style="width: 28px; height: 28px" aria-label="Open terminal" onClick="{{l.openTerm}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 17 6-6-6-6"></path><path d="M12 19h8"></path></svg></button>
-            <button class="ib" style="width: 28px; height: 28px" aria-label="Open diff" onClick="{{l.openDiff}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v14"></path><path d="M5 10h14"></path><path d="M5 21h14"></path></svg></button>
+            <button class="ib" style="width: 28px; height: 28px" aria-label="Open terminal" disabled=""><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 17 6-6-6-6"></path><path d="M12 19h8"></path></svg></button>
+            <button class="ib" style="width: 28px; height: 28px" aria-label="Open diff" disabled=""><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v14"></path><path d="M5 10h14"></path><path d="M5 21h14"></path></svg></button>
           </div>
         </article>
       </sc-for>
@@ -891,7 +891,7 @@ html,body{margin:0;height:100%;background:#020604;overflow:hidden}
     <section class="card" aria-labelledby="g-proj">
       <h2 id="g-proj" class="sec">Project</h2>
       <div class="row"><div class="lbl"><span>Repo</span><span>The Orca project this panel follows</span></div><span class="val">{{repoName}}</span></div>
-      <div class="row"><div class="lbl"><span>Default base branch</span><span>New lane worktrees branch from here</span></div><span class="val">{{baseBranch}}</span><button class="btn" onClick="{{changeBaseRef}}">Change</button></div>
+      <div class="row"><div class="lbl"><span>Default base branch</span><span>New lane worktrees branch from here</span></div><span class="val">{{baseBranch}}</span><button class="btn" disabled title="Not supported in web dashboard">Change</button></div>
       <div class="row"><div class="lbl"><span>Open on start</span><span>The tab the panel opens on</span></div><span class="val">{{openOnStart}}</span><button class="btn" onClick="{{changeOpenOnStart}}">Change</button></div>
     </section>
 
@@ -899,13 +899,13 @@ html,body{margin:0;height:100%;background:#020604;overflow:hidden}
       <h2 id="g-data" class="sec">Data</h2>
       <div class="row"><div class="lbl"><span>MK data folder</span><span>Plans, runs and briefs</span></div><span class="val">{{dataFolder}}</span></div>
       <div class="row"><div class="lbl"><span>Plan inbox</span><span>Where the Inbox tab looks</span></div><span class="val">{{inboxFolder}}</span></div>
-      <div class="row"><div class="lbl"><span>Settings file</span><span>Back up or move to another machine</span></div><button class="btn" onClick="{{exportSettings}}">Export</button><button class="btn" onClick="{{importSettings}}">Import</button></div>
+      <div class="row"><div class="lbl"><span>Settings file</span><span>Back up or move to another machine</span></div><button class="btn" disabled title="Not supported in web dashboard">Export</button><button class="btn" disabled title="Not supported in web dashboard">Import</button></div>
     </section>
 
     <section class="card" aria-labelledby="g-about">
       <h2 id="g-about" class="sec">About</h2>
-      <div class="row"><div class="lbl"><span>MatrixKoder for Orca {{version}}</span><span>Plugin version</span></div><button class="btn" onClick="{{checkUpdates}}">Check for updates</button></div>
-      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Reset all settings</span><span>Back to defaults; plans and runs are kept</span></div><button class="btn" style="color: #ff9b8a" onClick="{{resetSettings}}">Reset</button></div>
+      <div class="row"><div class="lbl"><span>MatrixKoder for Orca {{version}}</span><span>Plugin version</span></div><button class="btn" disabled title="Not supported in web dashboard">Check for updates</button></div>
+      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Reset all settings</span><span>Back to defaults; plans and runs are kept</span></div><button class="btn" style="color: #ff9b8a; opacity: 0.6" disabled title="Not supported in web dashboard">Reset</button></div>
     </section>
 
   </main>
@@ -943,7 +943,7 @@ html,body{margin:0;height:100%;background:#020604;overflow:hidden}
 
     <div style="display: flex; align-items: center; gap: 8px">
       <span style="font-size: 12.5px; color: #8bbf9a; flex: 1">Coding agents MK can hand lanes to. Off means MK never routes to it.</span>
-      <button class="btn" onClick="{{detectAgain}}">Detect again</button>
+      <button class="btn" disabled title="Not supported in web dashboard">Detect again</button>
     </div>
 
     <sc-for list="{{agents}}" as="a" hint-placeholder-count="4">
@@ -959,7 +959,7 @@ html,body{margin:0;height:100%;background:#020604;overflow:hidden}
         </div>
         <sc-if value="{{a.ready}}" hint-placeholder-val="{{true}}">
         <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #0d2414">
-          <div class="kv"><span>Default model</span><span class="mono" style="color: #e6fff0; flex: 1">{{a.model}}</span><button class="btn" style="height: 26px; font-size: 11.5px" onClick="{{a.changeModel}}">Change</button></div>
+          <div class="kv"><span>Default model</span><span class="mono" style="color: #e6fff0; flex: 1">{{a.model}}</span><button class="btn" style="height: 26px; font-size: 11.5px" disabled title="Not supported in web dashboard">Change</button></div>
           <sc-for list="{{a.quota}}" as="q" hint-placeholder-count="2">
             <div class="kv"><span>{{q.label}}</span><div class="meter"><div style="{{q.style}}"></div></div><span class="mono" style="width: 64px; text-align: right; color: #b9e8c4">{{q.text}}</span></div>
           </sc-for>
@@ -1034,7 +1034,7 @@ html,body{margin:0;height:100%;background:#020604;overflow:hidden}
     </section>
 
     <div style="display: flex; gap: 8px; align-items: center; padding: 0 2px">
-      <button class="btn" onClick="{{testNotification}}">Send a test notification</button>
+      <button class="btn" disabled title="Not supported in web dashboard">Send a test notification</button>
       <span style="font-size: 11.5px; color: #7fae8c">Uses Orca desktop notifications</span>
     </div>
 
@@ -1149,7 +1149,7 @@ html,body{margin:0;height:100%;background:#020604;overflow:hidden}
     <section class="card" aria-labelledby="r-fall">
       <h2 id="r-fall" class="sec">{{fallTitle}}</h2>
       <sc-for list="{{tiers}}" as="t" hint-placeholder-count="4">
-        <div class="tier"><span style="color: #8bbf9a">{{t.size}}</span><span class="mono" style="font-size: 12px; color: #e6fff0">{{t.route}}</span><button class="btn" style="height: 26px; font-size: 11.5px" onClick="{{t.edit}}">Edit</button></div>
+        <div class="tier"><span style="color: #8bbf9a">{{t.size}}</span><span class="mono" style="font-size: 12px; color: #e6fff0">{{t.route}}</span><button class="btn" style="height: 26px; font-size: 11.5px" disabled title="Not supported in web dashboard">Edit</button></div>
       </sc-for>
       <div style="height: 6px"></div>
     </section>
@@ -1227,7 +1227,7 @@ html,body{margin:0;height:100%;background:#020604;overflow:hidden}
       <sc-for list="{{cmds}}" as="c" hint-placeholder-count="4">
         <div class="cmd"><span class="mono" style="font-size: 12px; color: #ffc4b8; flex: 1">{{c}}</span></div>
       </sc-for>
-      <div class="cmd"><button class="btn" style="border-style: dashed; color: #8bbf9a" onClick="{{addCmd}}">+ Add a command</button></div>
+      <div class="cmd"><button class="btn" style="border-style: dashed; color: #8bbf9a" disabled title="Not supported in web dashboard">+ Add a command</button></div>
     </section>
 
   </main>
@@ -1285,7 +1285,7 @@ html,body{margin:0;height:100%;background:#020604;overflow:hidden}
           <button class="btn" disabled="{{l.full}}" onClick="{{l.add}}">Add</button>
         </div>
       </sc-for>
-      <div class="row" style="padding-bottom: 12px"><button class="btn" style="border-style: dashed; color: #8bbf9a" onClick="{{addCustom}}">+ Custom: MK command or Orca automation</button></div>
+      <div class="row" style="padding-bottom: 12px"><button class="btn" style="border-style: dashed; color: #8bbf9a" disabled title="Not supported in web dashboard">+ Custom: MK command or Orca automation</button></div>
     </section>
 
     <section aria-label="Footer preview" style="display: flex; flex-direction: column; gap: 6px">
@@ -1371,7 +1371,7 @@ html,body{margin:0;height:100%;background:#020604;overflow:hidden}
                 <sc-if value="{{t.hasLink}}"><a class="link" href="{{t.href}}" style="align-self: flex-start">{{t.link}}</a></sc-if>
               </span>
               <sc-if value="{{t.open}}"><button class="mini" onClick="{{t.makeTask}}">Make task</button></sc-if>
-              <button class="mini" aria-label="Delete: {{t.text}}" onClick="{{t.remove}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+              <button class="mini" disabled title="Delete not supported; mark done instead" aria-label="Delete: {{t.text}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
             </div>
           </sc-for>
         </div>
@@ -1825,6 +1825,27 @@ html,body{margin:0;height:100%;background:#020604;overflow:hidden}
     }
   }
 
+  let toastEl = null;
+  let toastTimer = null;
+
+  function showToast(message, isError = true) {
+    if (!toastEl) {
+      toastEl = document.createElement('div');
+      toastEl.id = 'mk-toast';
+      toastEl.className = 'mk-toast';
+      toastEl.setAttribute('role', 'alert');
+      document.body.appendChild(toastEl);
+    }
+    const text = typeof message === 'object' && message ? (message.message || JSON.stringify(message)) : String(message);
+    toastEl.textContent = text;
+    toastEl.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:99999;background:${isError ? '#3a1512' : '#08190d'};color:${isError ? '#ff9b8a' : '#19e35a'};border:1px solid ${isError ? '#7a2520' : '#145a2a'};border-radius:8px;padding:8px 16px;font-family:'Geist',system-ui,sans-serif;font-size:12.5px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,0.6);transition:opacity 0.2s;display:block;opacity:1;pointer-events:none`;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      if (toastEl) toastEl.style.opacity = '0';
+      setTimeout(() => { if (toastEl) toastEl.style.display = 'none'; }, 200);
+    }, 4000);
+  }
+
   async function action(name, args = {}) {
     const url = `${apiBase}/api/action`;
     try {
@@ -1837,12 +1858,21 @@ html,body{margin:0;height:100%;background:#020604;overflow:hidden}
         body: JSON.stringify({ name, args }),
       });
       const json = await res.json();
-      // After action, refresh state immediately
-      fetchState(current);
+      if (!json.ok) {
+        const errMsg = (json.error && json.error.message) || (typeof json.error === 'string' ? json.error : 'Action refused');
+        showToast(errMsg, true);
+        await fetchState(current);
+        return json;
+      }
+      // After successful action, refresh state immediately
+      await fetchState(current);
       return json;
     } catch (err) {
       console.error('Action failed:', name, err);
-      return { ok: false, error: err.message };
+      const errMsg = err.message || 'Connection error';
+      showToast(errMsg, true);
+      await fetchState(current);
+      return { ok: false, error: { message: errMsg } };
     }
   }
 
@@ -2014,8 +2044,13 @@ class Component extends DCLogic {
         statusStyle: st[1],
         canFix: b.status === 'open',
         fix: () => {
-          this.action('bug fix', { bugId: b.id });
-          this.setState({ sent: { ...s.sent, [b.id]: true } });
+          const prev = this.state.sent;
+          this.setState({ sent: { ...prev, [b.id]: true } });
+          this.action('bug.fix', { bugId: b.id }).then((res) => {
+            if (!res || !res.ok) {
+              this.setState({ sent: prev });
+            }
+          });
         },
       };
     });
@@ -2032,8 +2067,13 @@ class Component extends DCLogic {
       addBug: () => {
         const text = (s.draft || '').trim();
         if (!text) return;
-        this.action('bug add', { title: text, file: '', line: 0, risk: 3 });
+        const repoId = meta.repoId || (window.MK_DATA && window.MK_DATA.meta && window.MK_DATA.meta.repoId);
         this.setState({ draft: '' });
+        this.action('bug.add', { repoId, title: text, risk: 3 }).then((res) => {
+          if (!res || !res.ok) {
+            this.setState({ draft: text });
+          }
+        });
       },
       filters: filterDefs.map(([id, label]) => ({
         label: `${label} ${counts[id] || 0}`,
@@ -2043,7 +2083,7 @@ class Component extends DCLogic {
       })),
       bugs: bugList,
       noBugs: bugList.length === 0,
-      sweepLanes: () => this.action('sweep-lanes', {}),
+      sweepLanes: () => { if (window.MK && window.MK.refresh) window.MK.refresh(); },
     };
   }
 }
@@ -2136,10 +2176,9 @@ class Component extends DCLogic {
       pausedP: String(s.paused),
       pauseLabel: s.paused ? 'Resume' : 'Pause',
       togglePause: () => {
-        this.action('pause', { paused: !s.paused });
         this.setState({ paused: !s.paused });
       },
-      sweepLanes: () => this.action('sweep-lanes', {}),
+      sweepLanes: () => { if (window.MK && window.MK.refresh) window.MK.refresh(); },
     };
   }
 }
@@ -2166,7 +2205,7 @@ class Component extends DCLogic {
 
     const filesList = shown.map((f) => {
       const fId = f.id || f.name || 'f';
-      const isPass = f.fit === 'pass' || f.pass === true;
+      const isPass = f.fit === 'pass' || f.check === 'pass' || (typeof f.check === 'string' && f.check.startsWith('pass')) || f.pass === true;
       const isImp = !!s.imported[fId] || f.state === 'imported' || !!f.planId;
       const miss = Array.isArray(f.missing) ? f.missing.join(', ') : String(f.missing || '');
 
@@ -2183,18 +2222,38 @@ class Component extends DCLogic {
         hasMissing: !isPass && !isImp && !!miss,
         missing: miss,
         imported: isImp,
+        slug: f.planSlug || f.name.replace(/\.md$/, ''),
         notImported: !isImp,
         doImport: () => {
-          this.action('inbox import', { file: f.name });
-          this.setState({ imported: { ...s.imported, [fId]: true } });
+          const prev = this.state.imported;
+          this.setState({ imported: { ...prev, [fId]: true } });
+          const repoId = meta.repoId || (window.MK_DATA && window.MK_DATA.meta && window.MK_DATA.meta.repoId);
+          const act = f.imported || f.state === 'imported' ? 'inbox.reimport' : 'inbox.import';
+          this.action(act, { repoId, name: f.name }).then((res) => {
+            if (!res || !res.ok) {
+              this.setState({ imported: prev });
+            }
+          });
         },
         doArchive: () => {
-          this.action('inbox archive', { file: f.name });
-          this.setState({ archived: { ...s.archived, [fId]: true } });
+          const prev = this.state.archived;
+          this.setState({ archived: { ...prev, [fId]: true } });
+          const repoId = meta.repoId || (window.MK_DATA && window.MK_DATA.meta && window.MK_DATA.meta.repoId);
+          this.action('inbox.archive', { repoId, name: f.name }).then((res) => {
+            if (!res || !res.ok) {
+              this.setState({ archived: prev });
+            }
+          });
         },
         doDelete: () => {
-          this.action('inbox delete', { file: f.name });
-          this.setState({ archived: { ...s.archived, [fId]: true } });
+          const prev = this.state.archived;
+          this.setState({ archived: { ...prev, [fId]: true } });
+          const repoId = meta.repoId || (window.MK_DATA && window.MK_DATA.meta && window.MK_DATA.meta.repoId);
+          this.action('inbox.delete', { repoId, name: f.name }).then((res) => {
+            if (!res || !res.ok) {
+              this.setState({ archived: prev });
+            }
+          });
         },
       };
     });
@@ -2209,12 +2268,7 @@ class Component extends DCLogic {
       hasNoFiles: filesList.length === 0,
       hasArchived: nArch > 0,
       archivedLabel: `${nArch} ${nArch === 1 ? 'file archived' : 'files archived'}`,
-      restore: () => {
-        this.action('inbox restore', { file: 'all' });
-        this.setState({ archived: {} });
-      },
-      newPlan: () => this.action('inbox import', { file: 'new-plan.md' }),
-      sweepLanes: () => this.action('sweep-lanes', {}),
+      sweepLanes: () => { if (window.MK && window.MK.refresh) window.MK.refresh(); },
     };
   }
 }
@@ -2314,10 +2368,6 @@ class Component extends DCLogic {
         toggle: () => {
           this.setState({ open: { ...s.open, [l.label]: !isOpen } });
         },
-        openTerm: () => this.action('terminal send', { terminal: l.terminalHandle || 'term_1', text: '' }),
-        openDiff: () => this.action('tab create', { url: `diff:${l.path || ''}` }),
-        pause: () => this.action('terminal send', { terminal: l.terminalHandle || 'term_1', text: '\x1b' }),
-        handoff: () => this.action('worker-start', { spec: `Hand off ${l.label}`, agent: 'claude' }),
       };
     });
 
@@ -2336,8 +2386,7 @@ class Component extends DCLogic {
       filters: filterObjs,
       laneList,
       hasNoLanes: laneList.length === 0,
-      addLane: () => this.action('worker-start', { spec: 'New lane', agent: 'claude' }),
-      sweepLanes: () => this.action('sweep-lanes', {}),
+      sweepLanes: () => { if (window.MK && window.MK.refresh) window.MK.refresh(); },
     };
   }
 }
@@ -2349,7 +2398,7 @@ MK_SCREENS["Main"] = { css: "\nbody{margin:0;background:#000}\na{color:#4fd1c5}a
 class Component extends DCLogic {
   constructor(p) {
     super(p);
-    this.state = { approved: false };
+    this.state = { approved: false, decisionId: null };
   }
 
   renderVals() {
@@ -2409,8 +2458,6 @@ class Component extends DCLogic {
         pillStyle,
         taskTitle: (l.task && l.task.title) || 'Active dispatch',
         checks: chkList,
-        openTerm: () => this.action('terminal send', { terminal: l.terminalHandle || 'term_1', text: '' }),
-        openDiff: () => this.action('tab create', { url: `diff:${l.path || ''}` }),
       };
     });
 
@@ -2453,22 +2500,40 @@ class Component extends DCLogic {
       decisionBody: dec ? dec.body : '',
       decisionMeta: dec ? `${dec.lane || 'P'} · ${dec.agent || 'agent'} · live` : '',
       approve: () => {
-        this.action('approve', { askId: dec ? dec.askId : 'g_1' });
+        if (!dec || !dec.askId) return;
         this.setState({ approved: true });
+        this.action('approve', { askId: dec.askId }).then((res) => {
+          if (!res || !res.ok) {
+            this.setState({ approved: false });
+          } else if (res.decisionId) {
+            this.setState({ decisionId: res.decisionId });
+          }
+        });
       },
       rework: () => {
-        this.action('rework', { askId: dec ? dec.askId : 'g_1', note: 'Rework requested' });
+        if (!dec || !dec.askId) return;
+        this.action('rework', { askId: dec.askId, text: 'Rework requested' }).then((res) => {
+          if (res && res.ok && res.decisionId) {
+            this.setState({ decisionId: res.decisionId });
+          }
+        });
       },
       undo: () => {
-        this.action('undo', { askId: dec ? dec.askId : 'g_1' });
-        this.setState({ approved: false });
+        const id = this.state.decisionId;
+        if (id) {
+          this.action('undo', { decisionId: id }).then((res) => {
+            if (res && res.ok) {
+              this.setState({ approved: false, decisionId: null });
+            }
+          });
+        }
       },
       lanesCountText: `${lanes.length} ${lanes.length === 1 ? 'worktree' : 'worktrees'}`,
       laneList,
       hasNoLanes: laneList.length === 0,
       wavesSummary: `${waveRows.length} waves · ${tasks[1] || 0} tasks`,
       waveRows,
-      sweepLanes: () => this.action('sweep-lanes', {}),
+      sweepLanes: () => { if (window.MK && window.MK.refresh) window.MK.refresh(); },
     };
   }
 }
@@ -2564,7 +2629,7 @@ class Component extends DCLogic {
           toggle: flip(tId),
           subs,
           canRetry,
-          retry: () => this.action('task.retry', { taskId: t.orcaTaskId || t.id }),
+          retry: () => this.action('task.retry', { taskId: Number(t.id) }),
         };
       });
 
@@ -2623,7 +2688,7 @@ class Component extends DCLogic {
       hasNoPhases: phases.length === 0,
       expandAll,
       collapseAll,
-      sweepLanes: () => this.action('sweep-lanes', {}),
+      sweepLanes: () => { if (window.MK && window.MK.refresh) window.MK.refresh(); },
     };
   }
 }
@@ -2711,7 +2776,7 @@ class Component extends DCLogic {
       toggleSort: () => this.setState({ byActivity: !s.byActivity }),
       reposList,
       hasNoRepos: reposList.length === 0,
-      sweepLanes: () => this.action('sweep-lanes', {}),
+      sweepLanes: () => { if (window.MK && window.MK.refresh) window.MK.refresh(); },
     };
   }
 }
@@ -2751,30 +2816,15 @@ class Component extends DCLogic {
       soloP: String(!orch),
       toOrch: () => {
         this.setState({ mode: 'orch' });
-        this.action('settings save', { mode: 'orch' });
+        this.action('settings.save', { patch: { general: { mode: 'orchestrator' } } });
       },
       toSolo: () => {
         this.setState({ mode: 'solo' });
-        this.action('settings save', { mode: 'solo' });
+        this.action('settings.save', { patch: { general: { mode: 'solo' } } });
       },
       modeHint: orch ? 'MK plans the work and hands tasks to lanes in their own worktrees. You approve at the gates.' : 'Everything runs in this session, one task at a time. No lanes or worktrees.',
-      changeBaseRef: () => {
-        this.action('repo set-base-ref', { ref: baseBranch === 'main' ? 'master' : 'main' });
-      },
       changeOpenOnStart: () => {
-        this.action('settings save', { openOnStart: 'Main' });
-      },
-      exportSettings: () => {
-        this.action('settings save', { export: true });
-      },
-      importSettings: () => {
-        this.action('settings save', { import: true });
-      },
-      checkUpdates: () => {
-        this.action('settings save', { checkUpdates: true });
-      },
-      resetSettings: () => {
-        this.action('settings save', { reset: true });
+        this.action('settings.save', { patch: { general: { openOnStart: 'projects' } } });
       },
     };
   }
@@ -2819,9 +2869,6 @@ class Component extends DCLogic {
       rain: window.MK_RAIN ? window.MK_RAIN(73) : [],
       stabs: window.MK_STABS ? window.MK_STABS('agents') : [],
       repoName,
-      detectAgain: () => {
-        this.action('settings save', { detectAgents: true });
-      },
       agents: agentList.map((a) => {
         const id = a.id || '';
         const name = agentNames[id] || (id.charAt(0).toUpperCase() + id.slice(1));
@@ -2854,10 +2901,7 @@ class Component extends DCLogic {
           flip: () => {
             const next = !isRoutable;
             this.setState({ on: Object.assign({}, on, { [id]: next }) });
-            this.action('settings save', { agents: { [id]: { routable: next } } });
-          },
-          changeModel: () => {
-            this.action('settings save', { agents: { [id]: { modelChange: true } } });
+            this.action('settings.save', { patch: { agents: { [id]: { routable: next } } } });
           },
         };
       }),
@@ -2911,7 +2955,11 @@ class Component extends DCLogic {
         const next = !s.on[k];
         const nextOn = Object.assign({}, s.on, { [k]: next });
         this.setState({ on: nextOn });
-        this.action('settings save', { alerts: nextOn });
+        if (k === 'desktop') {
+          this.action('settings.save', { patch: { alerts: { desktop: next } } });
+        } else if (k !== 'sound') {
+          this.action('settings.save', { patch: { alerts: { events: { [k]: next } } } });
+        }
       },
     }));
 
@@ -2927,17 +2975,14 @@ class Component extends DCLogic {
       flipQuiet: () => {
         const next = !s.quiet;
         this.setState({ quiet: next });
-        this.action('settings save', { quietHours: next });
+        this.action('settings.save', { patch: { alerts: { quietHours: { enabled: next } } } });
       },
       wakeCls: 'sw' + (s.wake ? ' on' : ''),
       wakeP: String(s.wake),
       flipWake: () => {
         const next = !s.wake;
         this.setState({ wake: next });
-        this.action('settings save', { wakeOrchestrator: next });
-      },
-      testNotification: () => {
-        this.action('settings testNotification');
+        this.action('settings.save', { patch: { alerts: { wakeOrchestrator: next } } });
       },
     };
   }
@@ -2968,7 +3013,12 @@ class Component extends DCLogic {
       p: String(s[key] === id),
       pick: () => {
         this.setState({ [key]: id });
-        this.action('settings save', { theme: { [key]: id } });
+        const patch = key === 'speed'
+          ? { theme: { rain: { speed: id } } }
+          : key === 'size'
+          ? { theme: { textSize: id } }
+          : { theme: { density: id } };
+        this.action('settings.save', { patch });
       },
     }));
   }
@@ -2980,7 +3030,11 @@ class Component extends DCLogic {
       flip: () => {
         const next = !v;
         this.setState({ [key]: next });
-        this.action('settings save', { theme: { [key]: next } });
+        if (key === 'rain') {
+          this.action('settings.save', { patch: { theme: { rain: { enabled: next } } } });
+        } else if (key === 'calm') {
+          this.action('settings.save', { patch: { theme: { reduceMotion: next } } });
+        }
       },
     };
   }
@@ -3013,7 +3067,7 @@ class Component extends DCLogic {
       setBright: (e) => {
         const next = Number(e.target.value);
         this.setState({ bright: next });
-        this.action('settings save', { theme: { bright: next } });
+        this.action('settings.save', { patch: { theme: { rain: { brightness: next } } } });
       },
       speeds: this.seg('speed', [['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast']]),
       sizes: this.seg('size', [['S', 'S'], ['M', 'M'], ['L', 'L']]),
@@ -3053,39 +3107,36 @@ class Component extends DCLogic {
       flipJev: () => {
         const next = !s.jev;
         this.setState({ jev: next });
-        this.action('settings save', { useJev: next });
+        this.action('settings.save', { patch: { routing: { useJev: next } } });
       },
       askCls: 'sw' + (s.ask ? ' on' : ''),
       askP: String(s.ask),
       flipAsk: () => {
         const next = !s.ask;
         this.setState({ ask: next });
-        this.action('settings save', { askBeforeDestructive: next });
+        this.action('settings.save', { patch: { routing: { askBeforeDestructive: next } } });
       },
       fallTitle: s.jev ? 'Fallback when Jev is down' : 'Routes by task size',
       tiers: defaultTiers.map(([size, route]) => ({
         size,
         route,
-        edit: () => {
-          this.action('settings save', { tier: size });
-        },
       })),
       lanes: s.lanes,
       less: () => {
         const next = Math.max(1, s.lanes - 1);
         this.setState({ lanes: next });
-        this.action('settings save', { maxLanes: next });
+        this.action('settings.save', { patch: { routing: { maxLanes: next } } });
       },
       more: () => {
         const next = Math.min(8, s.lanes + 1);
         this.setState({ lanes: next });
-        this.action('settings save', { maxLanes: next });
+        this.action('settings.save', { patch: { routing: { maxLanes: next } } });
       },
       spare: s.spare,
       setSpare: (e) => {
         const next = Number(e.target.value);
         this.setState({ spare: next });
-        this.action('settings save', { spareClaudeBelowPct: next });
+        this.action('settings.save', { patch: { routing: { spareClaudeBelowPct: next } } });
       },
     };
   }
@@ -3131,7 +3182,14 @@ class Component extends DCLogic {
           const next = !s.on[k];
           const nextOn = Object.assign({}, s.on, { [k]: next });
           this.setState({ on: nextOn });
-          this.action('settings save', { safety: nextOn });
+          const keyMap = {
+            gitHard: 'blockDestructiveGit',
+            rmrf: 'blockDeleteOutsideWorktree',
+            push: 'askBeforePush',
+            secrets: 'scanDiffsForSecrets',
+          };
+          const prop = keyMap[k] || k;
+          this.action('settings.save', { patch: { safety: { [prop]: next } } });
         },
       })),
       branches: s.branches.map((name) => ({
@@ -3139,7 +3197,7 @@ class Component extends DCLogic {
         remove: () => {
           const next = s.branches.filter((b) => b !== name);
           this.setState({ branches: next });
-          this.action('settings save', { protectedBranches: next });
+          this.action('settings.save', { patch: { safety: { protectedBranches: next } } });
         },
       })),
       draft: s.draft,
@@ -3148,12 +3206,9 @@ class Component extends DCLogic {
         if (!s.draft.trim()) return;
         const next = [...s.branches, s.draft.trim()];
         this.setState({ branches: next, draft: '' });
-        this.action('settings save', { protectedBranches: next });
+        this.action('settings.save', { patch: { safety: { protectedBranches: next } } });
       },
       cmds: s.cmds,
-      addCmd: () => {
-        this.action('settings save', { addCommand: true });
-      },
     };
   }
 }
@@ -3187,7 +3242,7 @@ class Component extends DCLogic {
 
     const setSlots = (next) => {
       this.setState({ slots: next });
-      this.action('settings save', { shortcuts: next });
+      this.action('settings.save', { patch: { shortcuts: { footer: next } } });
     };
 
     const move = (i, d) => {
@@ -3223,9 +3278,6 @@ class Component extends DCLogic {
         full,
         add: () => setSlots([...slots, id]),
       })),
-      addCustom: () => {
-        this.action('settings save', { addShortcut: true });
-      },
       preview: slots.map((id, i) => ({
         label: libDefs[id] ? libDefs[id][0] : id,
         key: libDefs[id] ? libDefs[id][2] : '',
@@ -3256,29 +3308,63 @@ class Component extends DCLogic {
     const groupNames = ['Today', 'Soon', 'Later'];
 
     const setDone = (id, done) => {
-      this.action('todo done', { id, done });
+      const prev = rawRows;
       const next = rawRows.map((x) => (x.id === id ? { ...x, done } : x));
       this.setState({ localItems: next });
+      this.action('todo.done', { todoId: Number(id), done: !!done }).then((res) => {
+        if (!res || !res.ok) {
+          this.setState({ localItems: prev });
+        } else {
+          this.setState({ localItems: null });
+        }
+      });
     };
 
     const add = () => {
       const text = (s.draft || '').trim();
       if (!text) return;
-      this.action('todo add', { text, group: 'Today' });
-      const next = [{ id: 't_' + Date.now(), text, group: 'Today', done: false }, ...rawRows];
+      const next = [{ id: 't_' + Date.now(), text, group: 'today', done: false }, ...rawRows];
       this.setState({ localItems: next, draft: '', f: s.f === 'done' ? 'open' : s.f });
+      const repoId = meta.repoId || (window.MK_DATA && window.MK_DATA.meta && window.MK_DATA.meta.repoId);
+      this.action('todo.add', { repoId, text, group: 'today' }).then((res) => {
+        if (!res || !res.ok) {
+          this.setState({ localItems: null });
+        } else {
+          this.setState({ localItems: null });
+        }
+      });
     };
 
-    const remove = (id) => {
-      this.action('todo delete', { id });
-      const next = rawRows.filter((x) => x.id !== id);
-      this.setState({ localItems: next });
-    };
-
-    const makeTask = (x) => {
-      this.action('todo makeTask', { id: x.id });
+    const makeTask = async (x) => {
+      let phaseId = x.phaseId || (x.link && x.link.kind === 'phase' ? Number(x.link.ref) : undefined);
+      if (phaseId === undefined) {
+        const planPhases = (this.getData('plan') || {}).phases || (window.MK_DATA.plan || {}).phases || [];
+        if (planPhases.length > 0) {
+          phaseId = Number(planPhases[0].id);
+        } else {
+          try {
+            const apiBase = window.MK.getApiBase();
+            const res = await fetch(`${apiBase}/api/state?screen=plan`, {
+              headers: { 'x-mk-token': window.MK.getToken(), 'Accept': 'application/json' },
+            });
+            if (res.ok) {
+              const d = await res.json();
+              if (d && d.plan && d.plan.phases && d.plan.phases.length > 0) {
+                phaseId = Number(d.plan.phases[0].id);
+              }
+            }
+          } catch (_) {}
+        }
+      }
       const next = rawRows.filter((y) => y.id !== x.id);
       this.setState({ localItems: next, toast: `Added “${x.text}” as a task` });
+      this.action('todo.makeTask', { todoId: Number(x.id), ...(phaseId !== undefined ? { phaseId } : {}) }).then((res) => {
+        if (!res || !res.ok) {
+          this.setState({ localItems: null, toast: '' });
+        } else {
+          this.setState({ localItems: null });
+        }
+      });
     };
 
     const visible = rawRows.filter((x) => s.f === 'all' || (s.f === 'open' ? !x.done : x.done));
@@ -3286,7 +3372,7 @@ class Component extends DCLogic {
     const nDone = rawRows.length - nOpen;
 
     const groups = groupNames.map((name) => {
-      const items = visible.filter((x) => (x.group || 'Today') === name);
+      const items = visible.filter((x) => (x.grp || x.group || 'today').toLowerCase() === name.toLowerCase());
       return {
         name,
         count: String(items.length),
@@ -3300,7 +3386,6 @@ class Component extends DCLogic {
           href: x.href || 'Plan.dc.html',
           textStyle: x.done ? 'font-size:13px;color:#7fae8c;text-decoration:line-through' : 'font-size:13px;color:#e6fff0',
           toggle: () => setDone(x.id, !x.done),
-          remove: () => remove(x.id),
           makeTask: () => makeTask(x),
         })),
       };
@@ -3331,7 +3416,7 @@ class Component extends DCLogic {
       empty: groups.length === 0,
       hasToast: !!s.toast,
       toast: s.toast,
-      sweepLanes: () => this.action('sweep-lanes', {}),
+      sweepLanes: () => { if (window.MK && window.MK.refresh) window.MK.refresh(); },
     };
   }
 }
@@ -3343,7 +3428,7 @@ MK_SCREENS["Waiting"] = { css: "\nbody{margin:0;background:#000}\na{color:#4fd1c
 class Component extends DCLogic {
   constructor(p) {
     super(p);
-    this.state = { answers: {} };
+    this.state = { answers: {}, decisions: {} };
   }
 
   renderVals() {
@@ -3366,13 +3451,19 @@ class Component extends DCLogic {
       title: a.title,
       outcome: s.answers[a.id],
       src: `${a.lane || 'P'} · ${a.agent || 'agent'} · just now`,
-      canUndo: true,
-      undo: () => {
-        this.action('undo', { askId: a.id });
-        const n = { ...s.answers };
-        delete n[a.id];
-        this.setState({ answers: n });
-      },
+      canUndo: !!s.decisions[a.id],
+      undo: s.decisions[a.id] ? () => {
+        const decId = s.decisions[a.id];
+        this.action('undo', { decisionId: decId }).then((res) => {
+          if (res && res.ok) {
+            const nAns = { ...this.state.answers };
+            delete nAns[a.id];
+            const nDec = { ...this.state.decisions };
+            delete nDec[a.id];
+            this.setState({ answers: nAns, decisions: nDec });
+          }
+        });
+      } : null,
     }));
 
     const rawDone = (w.resolved || []).map((r) => ({
@@ -3380,8 +3471,10 @@ class Component extends DCLogic {
       title: r.title || 'Resolved task',
       outcome: r.outcome || 'Approved',
       src: r.src || 'orchestrator',
-      canUndo: !!r.canUndo,
-      undo: r.canUndo ? () => this.action('undo', { askId: r.id || r.askId }) : null,
+      canUndo: !!r.canUndo && typeof r.decisionId === 'number',
+      undo: r.canUndo && typeof r.decisionId === 'number' ? () => {
+        this.action('undo', { decisionId: r.decisionId });
+      } : null,
     }));
 
     const done = mine.concat(rawDone);
@@ -3399,8 +3492,16 @@ class Component extends DCLogic {
         label,
         pick: () => {
           const act = label === 'Ask me later' ? 'ask.snooze' : 'answer';
-          this.action(act, { askId: a.id, option: label });
-          this.setState({ answers: { ...s.answers, [a.id]: `Answered: ${label}` } });
+          const args = label === 'Ask me later' ? { askId: a.id, minutes: 60 } : { askId: a.id, answer: label };
+          const prev = s.answers;
+          this.setState({ answers: { ...prev, [a.id]: `Answered: ${label}` } });
+          this.action(act, args).then((res) => {
+            if (!res || !res.ok) {
+              this.setState({ answers: prev });
+            } else if (res.decisionId) {
+              this.setState({ decisions: { ...this.state.decisions, [a.id]: res.decisionId } });
+            }
+          });
         },
       }));
 
@@ -3419,12 +3520,26 @@ class Component extends DCLogic {
         isGate,
         isQuestion,
         approve: () => {
-          this.action('approve', { askId: a.id });
-          this.setState({ answers: { ...s.answers, [a.id]: 'Approved' } });
+          const prev = s.answers;
+          this.setState({ answers: { ...prev, [a.id]: 'Approved' } });
+          this.action('approve', { askId: a.id }).then((res) => {
+            if (!res || !res.ok) {
+              this.setState({ answers: prev });
+            } else if (res.decisionId) {
+              this.setState({ decisions: { ...this.state.decisions, [a.id]: res.decisionId } });
+            }
+          });
         },
         rework: () => {
-          this.action('rework', { askId: a.id, note: 'Rework requested' });
-          this.setState({ answers: { ...s.answers, [a.id]: 'Sent back for rework' } });
+          const prev = s.answers;
+          this.setState({ answers: { ...prev, [a.id]: 'Sent back for rework' } });
+          this.action('rework', { askId: a.id, text: 'Rework requested' }).then((res) => {
+            if (!res || !res.ok) {
+              this.setState({ answers: prev });
+            } else if (res.decisionId) {
+              this.setState({ decisions: { ...this.state.decisions, [a.id]: res.decisionId } });
+            }
+          });
         },
         options,
       };
@@ -3439,7 +3554,7 @@ class Component extends DCLogic {
       asks: askList,
       hasDone: done.length > 0,
       done,
-      sweepLanes: () => this.action('sweep-lanes', {}),
+      sweepLanes: () => { if (window.MK && window.MK.refresh) window.MK.refresh(); },
     };
   }
 }

@@ -226,10 +226,9 @@ class Component extends DCLogic {
       pausedP: String(s.paused),
       pauseLabel: s.paused ? 'Resume' : 'Pause',
       togglePause: () => {
-        this.action('pause', { paused: !s.paused });
         this.setState({ paused: !s.paused });
       },
-      sweepLanes: () => this.action('sweep-lanes', {}),
+      sweepLanes: () => { if (window.MK && window.MK.refresh) window.MK.refresh(); },
     };
   }
 }

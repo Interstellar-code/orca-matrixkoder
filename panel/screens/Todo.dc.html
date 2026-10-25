@@ -115,7 +115,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
                 <sc-if value="{{t.hasLink}}"><a class="link" href="{{t.href}}" style="align-self: flex-start">{{t.link}}</a></sc-if>
               </span>
               <sc-if value="{{t.open}}"><button class="mini" onClick="{{t.makeTask}}">Make task</button></sc-if>
-              <button class="mini" aria-label="Delete: {{t.text}}" onClick="{{t.remove}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+              <button class="mini" disabled title="Delete not supported; mark done instead" aria-label="Delete: {{t.text}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
             </div>
           </sc-for>
         </div>
@@ -160,29 +160,63 @@ class Component extends DCLogic {
     const groupNames = ['Today', 'Soon', 'Later'];
 
     const setDone = (id, done) => {
-      this.action('todo done', { id, done });
+      const prev = rawRows;
       const next = rawRows.map((x) => (x.id === id ? { ...x, done } : x));
       this.setState({ localItems: next });
+      this.action('todo.done', { todoId: Number(id), done: !!done }).then((res) => {
+        if (!res || !res.ok) {
+          this.setState({ localItems: prev });
+        } else {
+          this.setState({ localItems: null });
+        }
+      });
     };
 
     const add = () => {
       const text = (s.draft || '').trim();
       if (!text) return;
-      this.action('todo add', { text, group: 'Today' });
-      const next = [{ id: 't_' + Date.now(), text, group: 'Today', done: false }, ...rawRows];
+      const next = [{ id: 't_' + Date.now(), text, group: 'today', done: false }, ...rawRows];
       this.setState({ localItems: next, draft: '', f: s.f === 'done' ? 'open' : s.f });
+      const repoId = meta.repoId || (window.MK_DATA && window.MK_DATA.meta && window.MK_DATA.meta.repoId);
+      this.action('todo.add', { repoId, text, group: 'today' }).then((res) => {
+        if (!res || !res.ok) {
+          this.setState({ localItems: null });
+        } else {
+          this.setState({ localItems: null });
+        }
+      });
     };
 
-    const remove = (id) => {
-      this.action('todo delete', { id });
-      const next = rawRows.filter((x) => x.id !== id);
-      this.setState({ localItems: next });
-    };
-
-    const makeTask = (x) => {
-      this.action('todo makeTask', { id: x.id });
+    const makeTask = async (x) => {
+      let phaseId = x.phaseId || (x.link && x.link.kind === 'phase' ? Number(x.link.ref) : undefined);
+      if (phaseId === undefined) {
+        const planPhases = (this.getData('plan') || {}).phases || (window.MK_DATA.plan || {}).phases || [];
+        if (planPhases.length > 0) {
+          phaseId = Number(planPhases[0].id);
+        } else {
+          try {
+            const apiBase = window.MK.getApiBase();
+            const res = await fetch(`${apiBase}/api/state?screen=plan`, {
+              headers: { 'x-mk-token': window.MK.getToken(), 'Accept': 'application/json' },
+            });
+            if (res.ok) {
+              const d = await res.json();
+              if (d && d.plan && d.plan.phases && d.plan.phases.length > 0) {
+                phaseId = Number(d.plan.phases[0].id);
+              }
+            }
+          } catch (_) {}
+        }
+      }
       const next = rawRows.filter((y) => y.id !== x.id);
       this.setState({ localItems: next, toast: `Added “${x.text}” as a task` });
+      this.action('todo.makeTask', { todoId: Number(x.id), ...(phaseId !== undefined ? { phaseId } : {}) }).then((res) => {
+        if (!res || !res.ok) {
+          this.setState({ localItems: null, toast: '' });
+        } else {
+          this.setState({ localItems: null });
+        }
+      });
     };
 
     const visible = rawRows.filter((x) => s.f === 'all' || (s.f === 'open' ? !x.done : x.done));
@@ -190,7 +224,7 @@ class Component extends DCLogic {
     const nDone = rawRows.length - nOpen;
 
     const groups = groupNames.map((name) => {
-      const items = visible.filter((x) => (x.group || 'Today') === name);
+      const items = visible.filter((x) => (x.grp || x.group || 'today').toLowerCase() === name.toLowerCase());
       return {
         name,
         count: String(items.length),
@@ -204,7 +238,6 @@ class Component extends DCLogic {
           href: x.href || 'Plan.dc.html',
           textStyle: x.done ? 'font-size:13px;color:#7fae8c;text-decoration:line-through' : 'font-size:13px;color:#e6fff0',
           toggle: () => setDone(x.id, !x.done),
-          remove: () => remove(x.id),
           makeTask: () => makeTask(x),
         })),
       };
@@ -235,7 +268,7 @@ class Component extends DCLogic {
       empty: groups.length === 0,
       hasToast: !!s.toast,
       toast: s.toast,
-      sweepLanes: () => this.action('sweep-lanes', {}),
+      sweepLanes: () => { if (window.MK && window.MK.refresh) window.MK.refresh(); },
     };
   }
 }

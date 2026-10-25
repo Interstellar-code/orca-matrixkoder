@@ -145,8 +145,8 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
               <span style="display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 6px; {{c.style}}; font-size: 11px; font-weight: 500">{{c.label}}</span>
             </sc-for>
             <span style="flex: 1"></span>
-            <button class="ib" style="width: 28px; height: 28px" aria-label="Open terminal" onClick="{{l.openTerm}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 17 6-6-6-6"></path><path d="M12 19h8"></path></svg></button>
-            <button class="ib" style="width: 28px; height: 28px" aria-label="Open diff" onClick="{{l.openDiff}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v14"></path><path d="M5 10h14"></path><path d="M5 21h14"></path></svg></button>
+            <button class="ib" style="width: 28px; height: 28px" aria-label="Open terminal" disabled=""><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 17 6-6-6-6"></path><path d="M12 19h8"></path></svg></button>
+            <button class="ib" style="width: 28px; height: 28px" aria-label="Open diff" disabled=""><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v14"></path><path d="M5 10h14"></path><path d="M5 21h14"></path></svg></button>
           </div>
         </article>
       </sc-for>
@@ -190,7 +190,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 class Component extends DCLogic {
   constructor(p) {
     super(p);
-    this.state = { approved: false };
+    this.state = { approved: false, decisionId: null };
   }
 
   renderVals() {
@@ -250,8 +250,6 @@ class Component extends DCLogic {
         pillStyle,
         taskTitle: (l.task && l.task.title) || 'Active dispatch',
         checks: chkList,
-        openTerm: () => this.action('terminal send', { terminal: l.terminalHandle || 'term_1', text: '' }),
-        openDiff: () => this.action('tab create', { url: `diff:${l.path || ''}` }),
       };
     });
 
@@ -294,22 +292,40 @@ class Component extends DCLogic {
       decisionBody: dec ? dec.body : '',
       decisionMeta: dec ? `${dec.lane || 'P'} · ${dec.agent || 'agent'} · live` : '',
       approve: () => {
-        this.action('approve', { askId: dec ? dec.askId : 'g_1' });
+        if (!dec || !dec.askId) return;
         this.setState({ approved: true });
+        this.action('approve', { askId: dec.askId }).then((res) => {
+          if (!res || !res.ok) {
+            this.setState({ approved: false });
+          } else if (res.decisionId) {
+            this.setState({ decisionId: res.decisionId });
+          }
+        });
       },
       rework: () => {
-        this.action('rework', { askId: dec ? dec.askId : 'g_1', note: 'Rework requested' });
+        if (!dec || !dec.askId) return;
+        this.action('rework', { askId: dec.askId, text: 'Rework requested' }).then((res) => {
+          if (res && res.ok && res.decisionId) {
+            this.setState({ decisionId: res.decisionId });
+          }
+        });
       },
       undo: () => {
-        this.action('undo', { askId: dec ? dec.askId : 'g_1' });
-        this.setState({ approved: false });
+        const id = this.state.decisionId;
+        if (id) {
+          this.action('undo', { decisionId: id }).then((res) => {
+            if (res && res.ok) {
+              this.setState({ approved: false, decisionId: null });
+            }
+          });
+        }
       },
       lanesCountText: `${lanes.length} ${lanes.length === 1 ? 'worktree' : 'worktrees'}`,
       laneList,
       hasNoLanes: laneList.length === 0,
       wavesSummary: `${waveRows.length} waves · ${tasks[1] || 0} tasks`,
       waveRows,
-      sweepLanes: () => this.action('sweep-lanes', {}),
+      sweepLanes: () => { if (window.MK && window.MK.refresh) window.MK.refresh(); },
     };
   }
 }

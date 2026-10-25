@@ -260,7 +260,7 @@ class Component extends DCLogic {
           toggle: flip(tId),
           subs,
           canRetry,
-          retry: () => this.action('task.retry', { taskId: t.orcaTaskId || t.id }),
+          retry: () => this.action('task.retry', { taskId: Number(t.id) }),
         };
       });
 
@@ -319,7 +319,7 @@ class Component extends DCLogic {
       hasNoPhases: phases.length === 0,
       expandAll,
       collapseAll,
-      sweepLanes: () => this.action('sweep-lanes', {}),
+      sweepLanes: () => { if (window.MK && window.MK.refresh) window.MK.refresh(); },
     };
   }
 }

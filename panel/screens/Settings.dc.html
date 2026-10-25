@@ -81,7 +81,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
     <section class="card" aria-labelledby="g-proj">
       <h2 id="g-proj" class="sec">Project</h2>
       <div class="row"><div class="lbl"><span>Repo</span><span>The Orca project this panel follows</span></div><span class="val">{{repoName}}</span></div>
-      <div class="row"><div class="lbl"><span>Default base branch</span><span>New lane worktrees branch from here</span></div><span class="val">{{baseBranch}}</span><button class="btn" onClick="{{changeBaseRef}}">Change</button></div>
+      <div class="row"><div class="lbl"><span>Default base branch</span><span>New lane worktrees branch from here</span></div><span class="val">{{baseBranch}}</span><button class="btn" disabled title="Not supported in web dashboard">Change</button></div>
       <div class="row"><div class="lbl"><span>Open on start</span><span>The tab the panel opens on</span></div><span class="val">{{openOnStart}}</span><button class="btn" onClick="{{changeOpenOnStart}}">Change</button></div>
     </section>
 
@@ -89,13 +89,13 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
       <h2 id="g-data" class="sec">Data</h2>
       <div class="row"><div class="lbl"><span>MK data folder</span><span>Plans, runs and briefs</span></div><span class="val">{{dataFolder}}</span></div>
       <div class="row"><div class="lbl"><span>Plan inbox</span><span>Where the Inbox tab looks</span></div><span class="val">{{inboxFolder}}</span></div>
-      <div class="row"><div class="lbl"><span>Settings file</span><span>Back up or move to another machine</span></div><button class="btn" onClick="{{exportSettings}}">Export</button><button class="btn" onClick="{{importSettings}}">Import</button></div>
+      <div class="row"><div class="lbl"><span>Settings file</span><span>Back up or move to another machine</span></div><button class="btn" disabled title="Not supported in web dashboard">Export</button><button class="btn" disabled title="Not supported in web dashboard">Import</button></div>
     </section>
 
     <section class="card" aria-labelledby="g-about">
       <h2 id="g-about" class="sec">About</h2>
-      <div class="row"><div class="lbl"><span>MatrixKoder for Orca {{version}}</span><span>Plugin version</span></div><button class="btn" onClick="{{checkUpdates}}">Check for updates</button></div>
-      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Reset all settings</span><span>Back to defaults; plans and runs are kept</span></div><button class="btn" style="color: #ff9b8a" onClick="{{resetSettings}}">Reset</button></div>
+      <div class="row"><div class="lbl"><span>MatrixKoder for Orca {{version}}</span><span>Plugin version</span></div><button class="btn" disabled title="Not supported in web dashboard">Check for updates</button></div>
+      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Reset all settings</span><span>Back to defaults; plans and runs are kept</span></div><button class="btn" style="color: #ff9b8a; opacity: 0.6" disabled title="Not supported in web dashboard">Reset</button></div>
     </section>
 
   </main>
@@ -134,30 +134,15 @@ class Component extends DCLogic {
       soloP: String(!orch),
       toOrch: () => {
         this.setState({ mode: 'orch' });
-        this.action('settings save', { mode: 'orch' });
+        this.action('settings.save', { patch: { general: { mode: 'orchestrator' } } });
       },
       toSolo: () => {
         this.setState({ mode: 'solo' });
-        this.action('settings save', { mode: 'solo' });
+        this.action('settings.save', { patch: { general: { mode: 'solo' } } });
       },
       modeHint: orch ? 'MK plans the work and hands tasks to lanes in their own worktrees. You approve at the gates.' : 'Everything runs in this session, one task at a time. No lanes or worktrees.',
-      changeBaseRef: () => {
-        this.action('repo set-base-ref', { ref: baseBranch === 'main' ? 'master' : 'main' });
-      },
       changeOpenOnStart: () => {
-        this.action('settings save', { openOnStart: 'Main' });
-      },
-      exportSettings: () => {
-        this.action('settings save', { export: true });
-      },
-      importSettings: () => {
-        this.action('settings save', { import: true });
-      },
-      checkUpdates: () => {
-        this.action('settings save', { checkUpdates: true });
-      },
-      resetSettings: () => {
-        this.action('settings save', { reset: true });
+        this.action('settings.save', { patch: { general: { openOnStart: 'projects' } } });
       },
     };
   }

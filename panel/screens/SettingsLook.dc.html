@@ -133,7 +133,12 @@ class Component extends DCLogic {
       p: String(s[key] === id),
       pick: () => {
         this.setState({ [key]: id });
-        this.action('settings save', { theme: { [key]: id } });
+        const patch = key === 'speed'
+          ? { theme: { rain: { speed: id } } }
+          : key === 'size'
+          ? { theme: { textSize: id } }
+          : { theme: { density: id } };
+        this.action('settings.save', { patch });
       },
     }));
   }
@@ -145,7 +150,11 @@ class Component extends DCLogic {
       flip: () => {
         const next = !v;
         this.setState({ [key]: next });
-        this.action('settings save', { theme: { [key]: next } });
+        if (key === 'rain') {
+          this.action('settings.save', { patch: { theme: { rain: { enabled: next } } } });
+        } else if (key === 'calm') {
+          this.action('settings.save', { patch: { theme: { reduceMotion: next } } });
+        }
       },
     };
   }
@@ -178,7 +187,7 @@ class Component extends DCLogic {
       setBright: (e) => {
         const next = Number(e.target.value);
         this.setState({ bright: next });
-        this.action('settings save', { theme: { bright: next } });
+        this.action('settings.save', { patch: { theme: { rain: { brightness: next } } } });
       },
       speeds: this.seg('speed', [['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast']]),
       sizes: this.seg('size', [['S', 'S'], ['M', 'M'], ['L', 'L']]),
