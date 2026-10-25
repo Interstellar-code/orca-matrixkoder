@@ -61,3 +61,25 @@ test('the bug skill ships next to the manifest and names the shipped CLI', () =>
   for (const needle of ['mk bug add', 'mk bug fix', 'mk todo add', 'bin/mk.mjs', 'interstellar.matrixkoder']) assert.ok(skill.includes(needle), needle);
   assert.ok(existsSync(new URL('bin/mk.mjs', root)));
 });
+
+// Orca stops the whole plugin when the worker registers a command the manifest does not declare
+// ("registered undeclared command mk.action", v0.2.0).
+test('every command the worker registers is declared in orca-plugin.json', async () => {
+  const declared = new Set(manifest.contributes.commands.filter((c) => c.action === undefined).map((c) => c.id));
+  const { readdirSync } = await import('node:fs');
+  const ids = ['sweep-lanes'];
+  for (const f of readdirSync(new URL('out/commands/', root)).filter((x) => x.endsWith('.js'))) {
+    ids.push((await import(new URL(`out/commands/${f}`, root).href)).commandId);
+  }
+  for (const id of ids) assert.ok(declared.has(id), `worker command "${id}" is not declared in orca-plugin.json`);
+});
+
+test('the worker skips a command module the manifest does not declare', async () => {
+  const { registerCommandModules, createServiceKeeper } = await import(new URL('out/worker.js', root).href);
+  const registered = [];
+  const logs = [];
+  const ctx = { commands: { register: (id) => registered.push(id) }, events: { on() {} }, host: { call: async () => null }, grantedCapabilities: [], log: (m) => logs.push(m) };
+  await registerCommandModules(ctx, createServiceKeeper(async () => { throw new Error('not used'); }), new Set(['open-dashboard']));
+  assert.deepEqual(registered, ['open-dashboard']);
+  assert.ok(logs.some((m) => /mk\.action" is not declared/.test(m)));
+});

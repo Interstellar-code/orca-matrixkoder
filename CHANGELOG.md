@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 - 2026-10-25
+
+Fix: the plugin no longer stops right after it starts.
+
+- `mk.state` and `mk.action` are now declared in `orca-plugin.json`. Orca stops a plugin whose worker registers a command the manifest does not declare (`registered undeclared command mk.action`), so 0.2.0 was restarted and stopped in a loop.
+- The worker now skips, and logs, any command module the manifest does not declare, so a missing declaration can no longer take the plugin down. A test checks every worker command against the manifest.
+
 ## 0.2.0 - 2026-10-25
 
 One command opens the live dashboard in an Orca browser tab, and agents get a skill for filing bugs.

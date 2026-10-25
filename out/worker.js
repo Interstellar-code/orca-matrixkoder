@@ -2,7 +2,7 @@
  * MatrixKoder Plugin Worker for Orca IDE
  * Runs out-of-process in Node.js, coordinating Orca worktrees, events, and terminals.
  */
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { startService } from './server/index.js';
@@ -32,8 +32,21 @@ export function createServiceKeeper(start) {
         },
     };
 }
+/**
+ * Worker command ids declared in the plugin's orca-plugin.json (commands without a built-in `action`).
+ * Orca stops the whole plugin when the worker registers a command the manifest does not declare. Null if unreadable.
+ */
+export function declaredWorkerCommands(manifestPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'orca-plugin.json')) {
+    try {
+        const m = JSON.parse(readFileSync(manifestPath, 'utf8'));
+        return new Set((m.contributes?.commands ?? []).filter((c) => c.action === undefined && typeof c.id === 'string').map((c) => c.id));
+    }
+    catch {
+        return null;
+    }
+}
 /** Every .js module in out/commands/ (next to this file, so it works from Orca's plugin copy), so LAUNCH adds commands without editing this file. */
-export async function registerCommandModules(context, keeper) {
+export async function registerCommandModules(context, keeper, declared = declaredWorkerCommands()) {
     const dir = join(dirname(fileURLToPath(import.meta.url)), 'commands');
     let files = [];
     try {
@@ -48,6 +61,10 @@ export async function registerCommandModules(context, keeper) {
             const mod = (await import(pathToFileURL(join(dir, f)).href));
             if (typeof mod.commandId !== 'string' || typeof mod.default !== 'function') {
                 context.log(`[MatrixKoder] skipped commands/${f}: it needs a commandId and a default function`);
+                continue;
+            }
+            if (declared && !declared.has(mod.commandId)) {
+                context.log(`[MatrixKoder] skipped commands/${f}: "${mod.commandId}" is not declared in orca-plugin.json`);
                 continue;
             }
             const handler = mod.default;
