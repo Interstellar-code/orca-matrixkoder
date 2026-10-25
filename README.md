@@ -27,6 +27,18 @@ It connects your lead coordinator agent to parallel worker lanes across Git work
 
 ## Installation in Orca
 
+### From GitHub (gets updates)
+
+This repo is also an Orca plugin marketplace (`orca-marketplace.json`), so Orca can install the plugin and check it for updates.
+
+1. Open **Orca Settings** (`Cmd+,`) › **Plugins**, open the marketplace **Sources**, and add `https://github.com/Interstellar-code/orca-matrixkoder.git` with ref `main`.
+2. Install **MatrixKoder** from the list and accept its capabilities.
+3. After a new release, click **Check for update** on the MatrixKoder card.
+
+Each release moves the `ref` in `orca-marketplace.json` to the new tag.
+
+### From a local build (development)
+
 1. Open **Orca Settings** (`Cmd+,`).
 2. Navigate to the **Plugins (EXPERIMENTAL)** tab.
 3. Scroll to the **Development** section at the bottom.

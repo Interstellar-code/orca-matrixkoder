@@ -1,0 +1,15 @@
+{
+  "name": "MatrixKoder",
+  "owner": "Interstellar-code",
+  "plugins": [
+    {
+      "id": "interstellar.matrixkoder",
+      "source": {
+        "kind": "git",
+        "url": "https://github.com/Interstellar-code/orca-matrixkoder.git",
+        "ref": "v0.1.2"
+      },
+      "description": "Multi-agent orchestration dashboard and lane supervisor for Orca"
+    }
+  ]
+}
