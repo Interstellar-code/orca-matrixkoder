@@ -49,9 +49,9 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
     </div>
     <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
       <span style="font-size: 14px; font-weight: 700; letter-spacing: .02em; color: #e6fff0">MatrixKoder</span>
-      <button style="font-family: 'Geist', system-ui, sans-serif; align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; padding: 0; color: #8bbf9a; font-size: 12px; cursor: pointer">auth-v2-refactor <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+      <button style="font-family: 'Geist', system-ui, sans-serif; align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; padding: 0; color: #8bbf9a; font-size: 12px; cursor: pointer; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{planTitle}} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
     </div>
-    <button class="ib" aria-label="Sweep lanes now"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg></button>
+    <button class="ib" aria-label="Sweep lanes now" onClick="{{sweepLanes}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg></button>
     <a class="ib" href="Settings.dc.html" aria-label="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></a>
   </header>
 
@@ -78,45 +78,45 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 
     <section aria-label="Run status" style="border-radius: 14px; background: rgba(4,17,10,.84); backdrop-filter: blur(3px); border: 1px solid #0f2a17; padding: 16px; display: flex; flex-direction: column; gap: 14px">
       <div style="display: flex; align-items: center; gap: 8px">
-        <span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 12px; background: #0a2f2c; color: #4fd1c5; font-size: 12px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #4fd1c5; box-shadow: 0 0 0 3px rgba(79,209,197,.2)"></span>Building</span>
-        <span style="font-size: 12px; color: #8bbf9a">Wave 2 of 3</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 12px; background: #0a2f2c; color: #4fd1c5; font-size: 12px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #4fd1c5; box-shadow: 0 0 0 3px rgba(79,209,197,.2)"></span>{{stageLabel}}</span>
+        <span style="font-size: 12px; color: #8bbf9a">{{waveLabel}}</span>
         <span style="flex: 1"></span>
-        <span class="mono" style="font-size: 11px; color: #7fae8c">bus m-42 · 4s ago</span>
+        <span class="mono" style="font-size: 11px; color: #7fae8c">{{busText}}</span>
       </div>
       <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
-        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 4px; border-radius: 2px; background: #19e35a"></div><span style="font-size: 11px; color: #8bbf9a">Plan</span></div>
-        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 4px; border-radius: 2px; background: linear-gradient(90deg, #4fd1c5 60%, #12301f 60%)"></div><span style="font-size: 11px; color: #e6fff0; font-weight: 600">Build</span></div>
-        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 4px; border-radius: 2px; background: #12301f"></div><span style="font-size: 11px; color: #7fae8c">Verify</span></div>
-        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 4px; border-radius: 2px; background: #12301f"></div><span style="font-size: 11px; color: #7fae8c">Merge</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 4px; border-radius: 2px; background: {{planBg}}"></div><span style="font-size: 11px; color: #8bbf9a">Plan</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 4px; border-radius: 2px; background: {{buildBg}}"></div><span style="font-size: 11px; color: #e6fff0; font-weight: 600">Build</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 4px; border-radius: 2px; background: {{verifyBg}}"></div><span style="font-size: 11px; color: #7fae8c">Verify</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 4px; border-radius: 2px; background: {{mergeBg}}"></div><span style="font-size: 11px; color: #7fae8c">Merge</span></div>
       </div>
       <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
-        <div style="border-radius: 10px; background: #020a05; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 20px; font-weight: 600; color: #e6fff0">3</span><span style="font-size: 11px; color: #8bbf9a">lanes live</span></div>
-        <div style="border-radius: 10px; background: #020a05; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 20px; font-weight: 600; color: #e6fff0">7<span style="font-size: 13px; color: #7fae8c; font-weight: 500">/12</span></span><span style="font-size: 11px; color: #8bbf9a">tasks done</span></div>
-        <div style="border-radius: 10px; background: #221b08; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 20px; font-weight: 600; color: #e8b04a">1</span><span style="font-size: 11px; color: #d9b36a">needs you</span></div>
+        <div style="border-radius: 10px; background: #020a05; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 20px; font-weight: 600; color: #e6fff0">{{lanesLive}}</span><span style="font-size: 11px; color: #8bbf9a">lanes live</span></div>
+        <div style="border-radius: 10px; background: #020a05; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 20px; font-weight: 600; color: #e6fff0">{{tasksDone}}<span style="font-size: 13px; color: #7fae8c; font-weight: 500">/{{tasksTotal}}</span></span><span style="font-size: 11px; color: #8bbf9a">tasks done</span></div>
+        <div style="border-radius: 10px; background: #221b08; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 20px; font-weight: 600; color: #e8b04a">{{needsYou}}</span><span style="font-size: 11px; color: #d9b36a">needs you</span></div>
       </div>
     </section>
 
-    <sc-if value="{{pending}}" hint-placeholder-val="{{true}}">
+    <sc-if value="{{hasDecision}}" hint-placeholder-val="{{true}}">
     <section aria-label="Needs your decision" style="border-radius: 14px; background: #120e04; border: 1px solid #5c4515; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
       <div style="display: flex; align-items: center; gap: 8px">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e8b04a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
         <span style="font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #e8b04a">Needs your decision</span>
         <span style="flex: 1"></span>
-        <span class="mono" style="font-size: 11px; color: #b8975a">P2 · codex · 2m</span>
+        <span class="mono" style="font-size: 11px; color: #b8975a">{{decisionMeta}}</span>
       </div>
-      <div style="font-size: 14px; font-weight: 600; color: #fff3da">Security review: 2 public routes exposed</div>
-      <div style="font-size: 13px; line-height: 19px; color: #d9c49a">The reviewer found <span class="mono" style="font-size: 12px; color: #fff3da">/admin/export</span> and <span class="mono" style="font-size: 12px; color: #fff3da">/debug/session</span> reachable without auth in <span class="mono" style="font-size: 12px; color: #fff3da">middleware.ts</span>. Approve the fix plan, or send it back.</div>
+      <div style="font-size: 14px; font-weight: 600; color: #fff3da">{{decisionTitle}}</div>
+      <div style="font-size: 13px; line-height: 19px; color: #d9c49a">{{decisionBody}}</div>
       <div style="display: flex; gap: 8px; flex-wrap: wrap">
         <button class="btn amb" onClick="{{approve}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>Approve</button>
-        <button class="btn" style="border-color: #5c4515; background: #1a1406; color: #f0d9a8">Request rework</button>
-        <button class="btn" style="border-color: transparent; background: transparent; color: #d9b36a; padding: 0 8px">Details</button>
+        <button class="btn" style="border-color: #5c4515; background: #1a1406; color: #f0d9a8" onClick="{{rework}}">Request rework</button>
+        <a class="btn" style="border-color: transparent; background: transparent; color: #d9b36a; padding: 0 8px; text-decoration: none" href="#waiting">Details</a>
       </div>
     </section>
     </sc-if>
     <sc-if value="{{approved}}" hint-placeholder-val="{{false}}">
     <section aria-label="Decision sent" style="border-radius: 14px; background: #08190d; border: 1px solid #145a2a; padding: 12px 16px; display: flex; align-items: center; gap: 10px">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#19e35a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
-      <span style="font-size: 13px; color: #b9e8c4; flex: 1">Approved. P2 resumed with the fix plan.</span>
+      <span style="font-size: 13px; color: #b9e8c4; flex: 1">Approved. Action sent to coordinator.</span>
       <button class="btn" style="height: 30px; padding: 0 10px; font-size: 12px" onClick="{{undo}}">Undo</button>
     </section>
     </sc-if>
@@ -124,108 +124,61 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
     <section aria-label="Lanes" style="display: flex; flex-direction: column; gap: 8px">
       <div style="display: flex; align-items: baseline; gap: 8px">
         <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #e6fff0">Lanes</h2>
-        <span style="font-size: 12px; color: #7fae8c">3 worktrees</span>
+        <span style="font-size: 12px; color: #7fae8c">{{lanesCountText}}</span>
         <span style="flex: 1"></span>
         <a href="#lanes" style="font-size: 12px; text-decoration: none">All lanes</a>
       </div>
 
-      <article style="border-radius: 12px; background: rgba(4,17,10,.84); backdrop-filter: blur(3px); border: 1px solid #0f2a17; padding: 12px; display: flex; flex-direction: column; gap: 10px">
-        <div style="display: flex; align-items: center; gap: 10px">
-          <div style="width: 32px; height: 32px; border-radius: 9px; background: #0a2f2c; color: #4fd1c5; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">P1</div>
-          <div style="display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 1px">
-            <span style="font-size: 13px; font-weight: 600; color: #e6fff0">Claude <span style="font-weight: 400; color: #8bbf9a">· opus high</span></span>
-            <span class="mono" style="font-size: 11px; color: #7fae8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">fix/jwt-rotation · c8f421a</span>
+      <sc-for list="{{laneList}}" as="l">
+        <article style="border-radius: 12px; background: rgba(4,17,10,.84); backdrop-filter: blur(3px); border: 1px solid #0f2a17; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <div style="width: 32px; height: 32px; border-radius: 9px; {{l.badgeStyle}}; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">{{l.label}}</div>
+            <div style="display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 1px">
+              <span style="font-size: 13px; font-weight: 600; color: #e6fff0">{{l.agent}} <span style="font-weight: 400; color: #8bbf9a">· {{l.modelEffort}}</span></span>
+              <span class="mono" style="font-size: 11px; color: #7fae8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{l.branchHead}}</span>
+            </div>
+            <span style="height: 22px; padding: 0 8px; border-radius: 11px; {{l.pillStyle}}; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center">{{l.status}}</span>
           </div>
-          <span style="height: 22px; padding: 0 8px; border-radius: 11px; background: #0a2f2c; color: #4fd1c5; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center">Working · turn 4</span>
-        </div>
-        <div style="font-size: 13px; line-height: 18px; color: #b9e8c4">Update token expiry logic and Redis TTL</div>
-        <div style="display: flex; align-items: center; gap: 6px">
-          <span style="display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 6px; background: #123a1e; color: #19e35a; font-size: 11px; font-weight: 500">Build ✓</span>
-          <span style="display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 6px; background: #0a2f2c; color: #4fd1c5; font-size: 11px; font-weight: 500">Test running</span>
-          <span style="display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 6px; background: #0b1c10; color: #7fae8c; font-size: 11px; font-weight: 500">Review</span>
-          <span style="flex: 1"></span>
-          <button class="ib" style="width: 28px; height: 28px" aria-label="Open P1 terminal"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 17 6-6-6-6"></path><path d="M12 19h8"></path></svg></button>
-          <button class="ib" style="width: 28px; height: 28px" aria-label="Open P1 diff"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v14"></path><path d="M5 10h14"></path><path d="M5 21h14"></path></svg></button>
-        </div>
-      </article>
-
-      <article style="border-radius: 12px; background: rgba(4,17,10,.84); backdrop-filter: blur(3px); border: 1px solid #3d2f10; padding: 12px; display: flex; flex-direction: column; gap: 10px">
-        <div style="display: flex; align-items: center; gap: 10px">
-          <div style="width: 32px; height: 32px; border-radius: 9px; background: #221b08; color: #e8b04a; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">P2</div>
-          <div style="display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 1px">
-            <span style="font-size: 13px; font-weight: 600; color: #e6fff0">Codex <span style="font-weight: 400; color: #8bbf9a">· gpt high</span></span>
-            <span class="mono" style="font-size: 11px; color: #7fae8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">refactor/auth-guard · 91be0d3</span>
+          <div style="font-size: 13px; line-height: 18px; color: #b9e8c4">{{l.taskTitle}}</div>
+          <div style="display: flex; align-items: center; gap: 6px">
+            <sc-for list="{{l.checks}}" as="c">
+              <span style="display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 6px; {{c.style}}; font-size: 11px; font-weight: 500">{{c.label}}</span>
+            </sc-for>
+            <span style="flex: 1"></span>
+            <button class="ib" style="width: 28px; height: 28px" aria-label="Open terminal" onClick="{{l.openTerm}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 17 6-6-6-6"></path><path d="M12 19h8"></path></svg></button>
+            <button class="ib" style="width: 28px; height: 28px" aria-label="Open diff" onClick="{{l.openDiff}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v14"></path><path d="M5 10h14"></path><path d="M5 21h14"></path></svg></button>
           </div>
-          <span style="height: 22px; padding: 0 8px; border-radius: 11px; background: #221b08; color: #e8b04a; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center">{{p2status}}</span>
-        </div>
-        <div style="font-size: 13px; line-height: 18px; color: #b9e8c4">Add unit tests for auth middleware</div>
-        <div style="display: flex; align-items: center; gap: 6px">
-          <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: #123a1e; color: #19e35a; font-size: 11px; font-weight: 500">Build ✓</span>
-          <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: #123a1e; color: #19e35a; font-size: 11px; font-weight: 500">Test ✓</span>
-          <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: #221b08; color: #e8b04a; font-size: 11px; font-weight: 500">Review asks</span>
-          <span style="flex: 1"></span>
-          <button class="ib" style="width: 28px; height: 28px" aria-label="Open P2 terminal"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 17 6-6-6-6"></path><path d="M12 19h8"></path></svg></button>
-          <button class="ib" style="width: 28px; height: 28px" aria-label="Open P2 diff"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v14"></path><path d="M5 10h14"></path><path d="M5 21h14"></path></svg></button>
-        </div>
-      </article>
-
-      <article style="border-radius: 12px; background: rgba(4,17,10,.84); backdrop-filter: blur(3px); border: 1px solid #0f2a17; padding: 12px; display: flex; flex-direction: column; gap: 10px">
-        <div style="display: flex; align-items: center; gap: 10px">
-          <div style="width: 32px; height: 32px; border-radius: 9px; background: #0b1c10; color: #8bbf9a; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">P3</div>
-          <div style="display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 1px">
-            <span style="font-size: 13px; font-weight: 600; color: #e6fff0">AGY <span style="font-weight: 400; color: #8bbf9a">· gemini flash</span></span>
-            <span class="mono" style="font-size: 11px; color: #7fae8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">docs/api-specs · waiting for wave 3</span>
-          </div>
-          <span style="height: 22px; padding: 0 8px; border-radius: 11px; background: #0b1c10; color: #8bbf9a; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center">Idle</span>
-        </div>
-        <div style="font-size: 13px; line-height: 18px; color: #8bbf9a">Generate OpenAPI docs from endpoints</div>
-      </article>
+        </article>
+      </sc-for>
+      <sc-if value="{{hasNoLanes}}">
+        <div style="border-radius: 12px; background: rgba(4,17,10,.84); border: 1px solid #0f2a17; padding: 20px; text-align: center; color: #7fae8c; font-size: 13px">No live lanes</div>
+      </sc-if>
     </section>
 
     <section aria-label="Plan waves" style="border-radius: 14px; background: rgba(4,17,10,.84); backdrop-filter: blur(3px); border: 1px solid #0f2a17; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px">
       <div style="display: flex; align-items: baseline; gap: 8px">
         <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #e6fff0">Plan</h2>
-        <span style="font-size: 12px; color: #7fae8c">3 waves · 12 tasks</span>
+        <span style="font-size: 12px; color: #7fae8c">{{wavesSummary}}</span>
         <span style="flex: 1"></span>
         <a href="#plan" style="font-size: 12px; text-decoration: none">Open plan</a>
       </div>
-      <div style="display: flex; flex-direction: column; gap: 6px">
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px"><span style="color: #b9e8c4; flex: 1">W1 · DB schema and migrations</span><span class="mono" style="color: #19e35a">4/4</span></div>
-        <div style="height: 6px; border-radius: 3px; background: #0b1c10; overflow: hidden"><div style="width: 100%; height: 100%; border-radius: 3px; background: #19e35a"></div></div>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 6px">
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px"><span style="color: #e6fff0; font-weight: 600; flex: 1">W2 · Middleware and token handling</span><span class="mono" style="color: #4fd1c5">3/5</span></div>
-        <div style="height: 6px; border-radius: 3px; background: #0b1c10; overflow: hidden; display: flex; gap: 2px"><div style="width: 40%; height: 100%; background: #19e35a"></div><div style="width: 20%; height: 100%; background: #4fd1c5"></div><div style="width: 20%; height: 100%; background: #e8b04a"></div></div>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 6px">
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px"><span style="color: #8bbf9a; flex: 1">W3 · Integration QA and PR prep</span><span class="mono" style="color: #7fae8c">0/3</span></div>
-        <div style="height: 6px; border-radius: 3px; background: #0b1c10"></div>
-      </div>
+      <sc-for list="{{waveRows}}" as="w">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px"><span style="color: #b9e8c4; flex: 1">{{w.title}}</span><span class="mono" style="{{w.countStyle}}">{{w.counts}}</span></div>
+          <div style="height: 6px; border-radius: 3px; background: #0b1c10; overflow: hidden; display: flex; gap: 2px">
+            <sc-for list="{{w.bars}}" as="b">
+              <div style="width: {{b.pct}}%; height: 100%; background: {{b.bg}}"></div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
     </section>
 
   </main>
 
   <footer style="position: relative; z-index: 1; border-top: 1px solid #0f2a17; background: rgba(3,10,6,.92); backdrop-filter: blur(4px)">
-    <sc-if value="{{jevOpen}}" hint-placeholder-val="{{false}}">
-    <div style="margin: 12px 16px 0; border-radius: 12px; background: #04110a; border: 1px solid #1f6b5f; padding: 12px; display: flex; flex-direction: column; gap: 10px">
-      <div style="display: flex; align-items: center; gap: 8px">
-        <span style="font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #4fd1c5">Ask Jev</span>
-        <span style="font-size: 12px; color: #7fae8c">a judgment on this run</span>
-        <span style="flex: 1"></span>
-        <button class="ib" style="width: 28px; height: 28px" aria-label="Close Ask Jev" onClick="{{toggleJev}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
-      </div>
-      <label for="jevq" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Question for Jev</label>
-      <input id="jevq" placeholder="Is P2's fix plan safe to approve?" style="font-family: 'Geist', system-ui, sans-serif; height: 38px; box-sizing: border-box; padding: 0 12px; border-radius: 9px; border: 1px solid #1c4a2b; background: #020a05; color: #e6fff0; font-size: 13px; outline: none">
-      <div style="display: flex; gap: 6px; flex-wrap: wrap">
-        <button class="chipq">Verify P1's claims</button>
-        <button class="chipq">Screen the review text</button>
-        <button class="chipq">Is wave 2 done?</button>
-      </div>
-    </div>
-    </sc-if>
     <div role="toolbar" aria-label="Shortcuts" style="display: flex; gap: 8px; padding: 12px 16px 16px; flex-wrap: wrap">
-      <button class="btn pri" aria-label="Improve prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path><path d="M19 17v4M17 19h4"></path></svg>Improve<span class="kbd">⌃I</span></button>
-      <button class="{{jevCls}}" onClick="{{toggleJev}}" aria-expanded="{{jevExpanded}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M7 21h10M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path><path d="m16 16 3-8 3 8c-.9.6-1.9 1-3 1s-2.1-.4-3-1z"></path><path d="m2 16 3-8 3 8c-.9.6-1.9 1-3 1s-2.1-.4-3-1z"></path></svg>Ask Jev<span class="kbd">⌃J</span></button>
+      <button class="btn pri" aria-label="Improve prompt" onClick="{{sweepLanes}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path><path d="M19 17v4M17 19h4"></path></svg>Sweep<span class="kbd">⌃I</span></button>
       <button class="slot" disabled="" aria-label="Empty shortcut slot">+ shortcut</button>
       <button class="slot" disabled="" aria-label="Empty shortcut slot">+</button>
     </div>
@@ -234,48 +187,129 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
-const TABS = [
-  ['projects', 'Projects', 'M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z', 'Projects.dc.html'],
-  ['overview', 'Overview','M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z', 'Main.dc.html'],
-  ['lanes', 'Lanes', 'M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9', 'Lanes.dc.html'],
-  ['plan', 'Plan', 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01', 'Plan.dc.html'],
-  ['waiting', 'Waiting','M12 8v4M12 16h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z', 'Waiting.dc.html'],
-  ['events', 'Events', 'M22 12h-4l-3 9L9 3l-3 9H2', 'Events.dc.html'],
-  ['inbox', 'Inbox', 'M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z', 'Inbox.dc.html'],
-  ['bugs', 'Bugs', 'M8 2l1.9 1.9M16 2l-1.9 1.9M9 7.1V6a3 3 0 0 1 6 0v1.1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6zM12 20v-9M6.5 13H3M21 13h-3.5M6 7.5 3.5 6M18 7.5 20.5 6', 'Bugs.dc.html'],
-  ['todo', 'Todo', 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11', 'Todo.dc.html'],
-];
-const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
-function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
-const R = rng(42);
-const RAIN = [];
-for (let i = 0; i < 30; i++) {
-  const n = 14 + Math.floor(R() * 26);
-  let g = [];
-  for (let k = 0; k < n; k++) g.push(GLYPHS[Math.floor(R() * GLYPHS.length)]);
-  const dur = 7 + R() * 9, delay = -R() * dur, op = 0.16 + R() * 0.22;
-  RAIN.push({ glyphs: g.join('\n'), style: 'left:' + (i * 14.6 + R() * 4).toFixed(1) + 'px;opacity:' + op.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's' });
-}
 class Component extends DCLogic {
-  constructor(p) { super(p); this.state = { tab: 'overview', approved: false, jev: false }; }
+  constructor(p) {
+    super(p);
+    this.state = { approved: false };
+  }
+
   renderVals() {
     const s = this.state;
-    const badges = { lanes: ['3', 'background:#0a2f2c;color:#4fd1c5'], waiting: s.approved ? null : ['1', 'background:#e8b04a;color:#1a1204'], inbox: ['2', 'background:#0f2a17;color:#b9e8c4'], bugs: ['4', 'background:#3a1512;color:#ff9b8a'] };
+    const ov = this.getData('overview') || {};
+    const meta = this.getMeta() || {};
+    const lanes = this.getData('lanes') || [];
+    const badges = this.getBadges() || {};
+
+    const planTitle = meta.planId || ov.planId || 'MatrixKoder Plan';
+    const stage = ov.stage || 'plan';
+    const stageLabel = stage.charAt(0).toUpperCase() + stage.slice(1);
+    const wave = ov.wave || [0, 0];
+    const waveLabel = `Wave ${wave[0] || 0} of ${wave[1] || 0}`;
+
+    const bus = ov.bus;
+    const busText = bus ? `bus ${String(bus.id || '').replace(/^msg_/, 'm-')} · live` : 'bus idle';
+
+    const prog = ov.stageProgress || {};
+    const pPct = Math.round((prog.plan || 0) * 100);
+    const bPct = Math.round((prog.build || 0) * 100);
+    const vPct = Math.round((prog.verify || 0) * 100);
+    const mPct = Math.round((prog.merge || 0) * 100);
+
+    const planBg = pPct > 0 ? (pPct >= 100 ? '#19e35a' : `linear-gradient(90deg, #19e35a ${pPct}%, #12301f ${pPct}%)`) : '#12301f';
+    const buildBg = bPct > 0 ? (bPct >= 100 ? '#4fd1c5' : `linear-gradient(90deg, #4fd1c5 ${bPct}%, #12301f ${bPct}%)`) : '#12301f';
+    const verifyBg = vPct > 0 ? (vPct >= 100 ? '#19e35a' : `linear-gradient(90deg, #19e35a ${vPct}%, #12301f ${vPct}%)`) : '#12301f';
+    const mergeBg = mPct > 0 ? (mPct >= 100 ? '#19e35a' : `linear-gradient(90deg, #19e35a ${mPct}%, #12301f ${mPct}%)`) : '#12301f';
+
+    const tasks = ov.tasks || [0, 0];
+    const dec = ov.decision;
+    const hasDecision = !!dec && !s.approved;
+
+    const laneList = lanes.map((l) => {
+      const isWorking = l.state === 'working';
+      const isWaiting = l.state === 'waiting';
+      const isFailed = l.state === 'failed';
+      const badgeStyle = isWaiting ? 'background:#221b08;color:#e8b04a' : (isWorking ? 'background:#0a2f2c;color:#4fd1c5' : 'background:#0b1c10;color:#8bbf9a');
+      const pillStyle = isWaiting ? 'background:#221b08;color:#e8b04a' : (isWorking ? 'background:#0a2f2c;color:#4fd1c5' : (isFailed ? 'background:#3a1512;color:#ff9b8a' : 'background:#0b1c10;color:#8bbf9a'));
+      const status = isWorking ? `Working · turn ${l.turns || 1}` : (isWaiting ? 'Waiting on you' : (isFailed ? 'Failed' : 'Idle'));
+
+      const chkList = (l.checks || []).map((c) => {
+        const passed = c.status === 'passed';
+        const running = c.status === 'running';
+        const bg = passed ? 'background:#123a1e;color:#19e35a' : (running ? 'background:#0a2f2c;color:#4fd1c5' : 'background:#0b1c10;color:#7fae8c');
+        const text = c.name + (passed ? ' ✓' : (running ? ' running' : ''));
+        return { label: text, style: bg };
+      });
+
+      return {
+        label: l.label || 'P',
+        agent: l.agent || 'Agent',
+        modelEffort: [l.model, l.effort].filter(Boolean).join(' · ') || 'auto',
+        branchHead: `${l.branch || 'main'} · ${(l.head || '').slice(0, 7)}`,
+        status,
+        badgeStyle,
+        pillStyle,
+        taskTitle: (l.task && l.task.title) || 'Active dispatch',
+        checks: chkList,
+        openTerm: () => this.action('terminal send', { terminal: l.terminalHandle || 'term_1', text: '' }),
+        openDiff: () => this.action('tab create', { url: `diff:${l.path || ''}` }),
+      };
+    });
+
+    const waveRows = (ov.waves || []).map((w, i) => {
+      const done = w.done || 0;
+      const total = w.total || 0;
+      const segs = w.segments || {};
+      const bars = [];
+      if (total > 0) {
+        if (segs.done) bars.push({ pct: Math.round((segs.done / total) * 100), bg: '#19e35a' });
+        if (segs.working) bars.push({ pct: Math.round((segs.working / total) * 100), bg: '#4fd1c5' });
+        if (segs.waiting) bars.push({ pct: Math.round((segs.waiting / total) * 100), bg: '#e8b04a' });
+      }
+      return {
+        title: `W${i + 1} · ${w.title || 'Wave'}`,
+        counts: `${done}/${total}`,
+        countStyle: done === total && total > 0 ? 'color:#19e35a' : 'color:#4fd1c5',
+        bars,
+      };
+    });
+
     return {
-      tabs: TABS.map(([id, label, icon, href]) => {
-        const b = badges[id];
-        return { label, icon, href: href || '', isLink: !!href, isBtn: !href, cls: 'tab' + (s.tab === id ? ' on' : ''), hasBadge: !!b, badge: b ? b[0] : '', badgeStyle: b ? b[1] : '', pick: () => this.setState({ tab: id }) };
-      }),
-      rain: RAIN,
-      jevOpen: s.jev,
-      jevExpanded: s.jev ? 'true' : 'false',
-      jevCls: s.jev ? 'btn' + ' on' : 'btn',
-      toggleJev: () => this.setState({ jev: !s.jev }),
-      pending: !s.approved,
+      rain: window.MK_RAIN(42),
+      tabs: window.MK_TABS('overview', badges, (t) => {}),
+      planTitle,
+      stageLabel,
+      waveLabel,
+      busText,
+      planBg,
+      buildBg,
+      verifyBg,
+      mergeBg,
+      lanesLive: ov.lanesLive != null ? ov.lanesLive : lanes.length,
+      tasksDone: tasks[0] || 0,
+      tasksTotal: tasks[1] || 0,
+      needsYou: ov.needsYou != null ? ov.needsYou : (badges.waiting || 0),
+      hasDecision,
       approved: s.approved,
-      p2status: s.approved ? 'Resumed' : 'Waiting on you',
-      approve: () => this.setState({ approved: true }),
-      undo: () => this.setState({ approved: false }),
+      decisionTitle: dec ? dec.title : '',
+      decisionBody: dec ? dec.body : '',
+      decisionMeta: dec ? `${dec.lane || 'P'} · ${dec.agent || 'agent'} · live` : '',
+      approve: () => {
+        this.action('approve', { askId: dec ? dec.askId : 'g_1' });
+        this.setState({ approved: true });
+      },
+      rework: () => {
+        this.action('rework', { askId: dec ? dec.askId : 'g_1', note: 'Rework requested' });
+      },
+      undo: () => {
+        this.action('undo', { askId: dec ? dec.askId : 'g_1' });
+        this.setState({ approved: false });
+      },
+      lanesCountText: `${lanes.length} ${lanes.length === 1 ? 'worktree' : 'worktrees'}`,
+      laneList,
+      hasNoLanes: laneList.length === 0,
+      wavesSummary: `${waveRows.length} waves · ${tasks[1] || 0} tasks`,
+      waveRows,
+      sweepLanes: () => this.action('sweep-lanes', {}),
     };
   }
 }

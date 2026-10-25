@@ -55,7 +55,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
       <a class="ib" href="Main.dc.html" aria-label="Back to Overview"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></a>
       <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
         <h1 style="margin: 0; font-size: 15px; font-weight: 600; color: #e6fff0">Settings</h1>
-        <span style="font-size: 12px; color: #8bbf9a">MatrixKoder · acme-api</span>
+        <span style="font-size: 12px; color: #8bbf9a">MatrixKoder · {{repoName}}</span>
       </div>
     </div>
     <div style="position: relative">
@@ -92,7 +92,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
           <button class="btn" disabled="{{l.full}}" onClick="{{l.add}}">Add</button>
         </div>
       </sc-for>
-      <div class="row" style="padding-bottom: 12px"><button class="btn" style="border-style: dashed; color: #8bbf9a">+ Custom: MK command or Orca automation</button></div>
+      <div class="row" style="padding-bottom: 12px"><button class="btn" style="border-style: dashed; color: #8bbf9a" onClick="{{addCustom}}">+ Custom: MK command or Orca automation</button></div>
     </section>
 
     <section aria-label="Footer preview" style="display: flex; flex-direction: column; gap: 6px">
@@ -108,61 +108,76 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
-const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
-function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
-function makeRain(seed) {
-  const R = rng(seed), out = [];
-  for (let i = 0; i < 30; i++) {
-    const n = 14 + Math.floor(R() * 26), g = [];
-    for (let k = 0; k < n; k++) g.push(GLYPHS[Math.floor(R() * GLYPHS.length)]);
-    const dur = 7 + R() * 9, delay = -R() * dur, op = 0.16 + R() * 0.22;
-    out.push({ glyphs: g.join('\n'), style: 'left:' + (i * 14.6 + R() * 4).toFixed(1) + 'px;opacity:' + op.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's' });
-  }
-  return out;
-}
-const RAIN = makeRain(107);
-const STABS = [
-  ['general', 'General', 'Settings.dc.html', 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'],
-  ['agents', 'Agents', 'SettingsAgents.dc.html', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8'],
-  ['routing', 'Routing', 'SettingsRouting.dc.html', 'M12 3v18M5 5h11l3 3-3 3H5zM19 13H8l-3 3 3 3h11'],
-  ['safety', 'Safety', 'SettingsSafety.dc.html', 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'],
-  ['alerts', 'Alerts', 'SettingsAlerts.dc.html', 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0'],
-  ['look', 'Theme', 'SettingsLook.dc.html', 'M12 3a9 9 0 1 0 9 9c0-1-1-1.5-2-1.5h-2a2 2 0 0 1-2-2V7c0-2-1.5-4-3-4zM7.5 10.5h.01M10.5 7h.01M15 8h.01'],
-  ['shortcuts', 'Shortcuts', 'SettingsShortcuts.dc.html', 'M13 2 3 14h9l-1 8 10-12h-9z'],
-];
-function stabs(active) { return STABS.map(([id, label, href, icon]) => ({ label, href, icon, cls: 'stab' + (id === active ? ' on' : ''), cur: id === active ? 'page' : 'false' })); }
-const ALL = {
-  improve: ['Improve', 'Rewrites the prompt before it is sent', '⌃I'],
-  jev: ['Ask Jev', 'A judgment on the current run', '⌃J'],
-  sweep: ['Sweep lanes', 'Check every lane for stalls now', '⌃S'],
-  next: ['Run next phase', 'Start the next phase when the current one merged', '⌃N'],
-  verify: ['Re-verify all', 'Rerun build and test gates on every lane', '⌃R'],
-  pr: ['Open PR', 'Open the plan PR in Orca', '⌃P'],
-  todo: ['New todo', 'Add to Todo without leaving the screen', '⌃T'],
-};
-const MAX = 4;
 class Component extends DCLogic {
-  constructor(p) { super(p); this.state = { slots: ['improve', 'jev'] }; }
+  constructor(p) {
+    super(p);
+    this.state = { slots: ['improve', 'jev'] };
+  }
   renderVals() {
-    const slots = this.state.slots, full = slots.length >= MAX;
-    const set = (next) => this.setState({ slots: next });
-    const move = (i, d) => { const n = slots.slice(); const t = n[i]; n[i] = n[i + d]; n[i + d] = t; set(n); };
+    const slots = this.state.slots;
+    const maxSlots = 4;
+    const full = slots.length >= maxSlots;
+    const proj = this.getData('projects') || {};
+    const repo = (proj.repos && proj.repos[0]) || {};
+    const repoName = repo.name || 'orca-matrixkoder';
+
+    const libDefs = {
+      improve: ['Improve', 'Rewrites the prompt before it is sent', '⌃I'],
+      jev: ['Ask Jev', 'A judgment on the current run', '⌃J'],
+      sweep: ['Sweep lanes', 'Check every lane for stalls now', '⌃S'],
+      next: ['Run next phase', 'Start the next phase when the current one merged', '⌃N'],
+      verify: ['Re-verify all', 'Rerun build and test gates on every lane', '⌃R'],
+      pr: ['Open PR', 'Open the plan PR in Orca', '⌃P'],
+      todo: ['New todo', 'Add to Todo without leaving the screen', '⌃T'],
+    };
+
+    const setSlots = (next) => {
+      this.setState({ slots: next });
+      this.action('settings save', { shortcuts: next });
+    };
+
+    const move = (i, d) => {
+      const n = slots.slice();
+      const t = n[i];
+      n[i] = n[i + d];
+      n[i + d] = t;
+      setSlots(n);
+    };
+
+    const emptyCount = Math.max(0, maxSlots - slots.length);
+    const empties = [];
+    for (let i = 0; i < emptyCount; i++) empties.push({ id: i });
+
     return {
-      rain: RAIN,
-      stabs: stabs('shortcuts'),
+      rain: window.MK_RAIN ? window.MK_RAIN(107) : [],
+      stabs: window.MK_STABS ? window.MK_STABS('shortcuts') : [],
+      repoName,
       used: slots.length,
       slots: slots.map((id, i) => ({
-        label: ALL[id][0], desc: ALL[id][1], key: ALL[id][2],
-        first: i === 0, last: i === slots.length - 1,
-        up: () => move(i, -1), down: () => move(i, 1),
-        remove: () => set(slots.filter((x) => x !== id)),
+        label: libDefs[id] ? libDefs[id][0] : id,
+        desc: libDefs[id] ? libDefs[id][1] : '',
+        key: libDefs[id] ? libDefs[id][2] : '',
+        first: i === 0,
+        last: i === slots.length - 1,
+        up: () => move(i, -1),
+        down: () => move(i, 1),
+        remove: () => setSlots(slots.filter((x) => x !== id)),
       })),
-      library: Object.keys(ALL).filter((id) => slots.indexOf(id) < 0).map((id) => ({
-        label: ALL[id][0], desc: ALL[id][1], full,
-        add: () => { if (!full) set([...slots, id]); },
+      library: Object.keys(libDefs).filter((id) => slots.indexOf(id) < 0).map((id) => ({
+        label: libDefs[id][0],
+        desc: libDefs[id][1],
+        full,
+        add: () => setSlots([...slots, id]),
       })),
-      preview: slots.map((id, i) => ({ label: ALL[id][0], key: ALL[id][2], cls: i === 0 ? 'fbtn pri' : 'fbtn' })),
-      empties: Array.from({ length: MAX - slots.length }, (_, i) => i),
+      addCustom: () => {
+        this.action('settings save', { addShortcut: true });
+      },
+      preview: slots.map((id, i) => ({
+        label: libDefs[id] ? libDefs[id][0] : id,
+        key: libDefs[id] ? libDefs[id][2] : '',
+        cls: 'fbtn' + (i === 0 ? ' pri' : ''),
+      })),
+      empties,
     };
   }
 }

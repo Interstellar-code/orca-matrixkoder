@@ -56,9 +56,9 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
     </div>
     <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
       <span style="font-size: 14px; font-weight: 700; letter-spacing: .02em; color: #e6fff0">MatrixKoder</span>
-      <button style="font-family: 'Geist', system-ui, sans-serif; align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; padding: 0; color: #8bbf9a; font-size: 12px; cursor: pointer">auth-v2-refactor <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+      <button style="font-family: 'Geist', system-ui, sans-serif; align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; padding: 0; color: #8bbf9a; font-size: 12px; cursor: pointer; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{planTitle}} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
     </div>
-    <button class="ib" aria-label="Sweep lanes now"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg></button>
+    <button class="ib" aria-label="Sweep lanes now" onClick="{{sweepLanes}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg></button>
     <a class="ib" href="Settings.dc.html" aria-label="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"></path></svg></a>
   </header>
 
@@ -85,131 +85,74 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 
     <div style="display: flex; align-items: center; gap: 8px">
       <h1 style="margin: 0; font-size: 15px; font-weight: 600; color: #e6fff0">Lanes</h1>
-      <span style="font-size: 12px; color: #7fae8c">3 worktrees · 1 waiting on you</span>
+      <span style="font-size: 12px; color: #7fae8c">{{summaryText}}</span>
       <span style="flex: 1"></span>
-      <button class="btn sm"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add lane</button>
+      <button class="btn sm" onClick="{{addLane}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add lane</button>
     </div>
 
     <div role="group" aria-label="Filter lanes" style="display: flex; gap: 6px; flex-wrap: wrap">
-      <sc-for list="{{filters}}" as="f" hint-placeholder-count="4">
+      <sc-for list="{{filters}}" as="f">
         <button class="{{f.cls}}" aria-pressed="{{f.p}}" onClick="{{f.pick}}">{{f.label}}</button>
       </sc-for>
     </div>
 
-    <sc-if value="{{show1}}" hint-placeholder-val="{{true}}">
-    <article class="card" style="padding: 12px; display: flex; flex-direction: column; gap: 12px">
-      <button class="exp" aria-expanded="{{o1x}}" onClick="{{t1}}">
-        <span style="width: 34px; height: 34px; border-radius: 9px; background: #0a2f2c; color: #4fd1c5; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0">P1</span>
-        <span style="display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 1px">
-          <span style="font-size: 13px; font-weight: 600; color: #e6fff0">Claude <span style="font-weight: 400; color: #8bbf9a">· opus 5.5 · high</span></span>
-          <span class="mono" style="font-size: 11px; color: #7fae8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">fix/jwt-rotation · c8f421a</span>
-        </span>
-        <span class="pill p-teal">Working · turn 4</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7fae8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="{{c1}}"><path d="m6 9 6 6 6-6"></path></svg>
-      </button>
-      <sc-if value="{{o1}}" hint-placeholder-val="{{true}}">
-      <div style="display: flex; flex-direction: column; gap: 12px">
-        <div style="display: flex; flex-direction: column; gap: 4px">
-          <span style="font-size: 11px; color: #7fae8c">Task T6 · wave 2</span>
-          <span style="font-size: 13px; line-height: 18px; color: #e6fff0">Update token expiry logic and Redis TTL</span>
+    <sc-for list="{{laneList}}" as="l">
+      <article class="card" style="padding: 12px; display: flex; flex-direction: column; gap: 12px; {{l.cardBorder}}">
+        <button class="exp" aria-expanded="{{l.exp}}" onClick="{{l.toggle}}">
+          <span style="width: 34px; height: 34px; border-radius: 9px; {{l.badgeStyle}}; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0">{{l.label}}</span>
+          <span style="display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 1px">
+            <span style="font-size: 13px; font-weight: 600; color: #e6fff0">{{l.agent}} <span style="font-weight: 400; color: #8bbf9a">· {{l.modelEffort}}</span></span>
+            <span class="mono" style="font-size: 11px; color: #7fae8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{l.branchHead}}</span>
+          </span>
+          <span class="pill {{l.pillCls}}">{{l.status}}</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7fae8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="{{l.chevStyle}}"><path d="m6 9 6 6 6-6"></path></svg>
+        </button>
+        <sc-if value="{{l.isOpen}}">
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-size: 11px; color: #7fae8c">{{l.taskMeta}}</span>
+            <span style="font-size: 13px; line-height: 18px; color: #e6fff0">{{l.taskTitle}}</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px">
+            <div class="kv"><span>Worktree</span><span>{{l.worktreePath}}</span></div>
+            <div class="kv"><span>Commits</span><span>{{l.commitsAhead}}</span></div>
+            <div class="kv"><span>Started</span><span>{{l.startedTime}}</span></div>
+            <div class="kv"><span>Changes</span><span>{{l.changesStat}}</span></div>
+          </div>
+          <sc-if value="{{l.hasGates}}">
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+            <sc-for list="{{l.gates}}" as="g">
+              <div class="gate" style="{{g.style}}"><span style="font-size: 11px; color: #8bbf9a">{{g.name}}</span><span style="font-size: 12px; font-weight: 600; {{g.valStyle}}">{{g.status}}</span><span class="mono" style="font-size: 10.5px; color: #7fae8c">{{g.sub}}</span></div>
+            </sc-for>
+          </div>
+          </sc-if>
+          <sc-if value="{{l.hasActivity}}">
+          <div class="mono" style="border-radius: 10px; background: #010402; border: 1px solid #0f2a17; padding: 10px 12px; font-size: 11.5px; line-height: 18px; color: #8bbf9a">
+            <sc-for list="{{l.activity}}" as="act">
+              <div><span style="color: #5f9a70">{{act.time}}</span> {{act.text}}</div>
+            </sc-for>
+          </div>
+          </sc-if>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap">
+            <button class="btn sm" onClick="{{l.openTerm}}">Terminal</button>
+            <button class="btn sm" onClick="{{l.openDiff}}">Diff</button>
+            <button class="btn sm" onClick="{{l.pause}}">Pause</button>
+            <button class="btn sm" onClick="{{l.handoff}}">Hand off</button>
+          </div>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px">
-          <div class="kv"><span>Worktree</span><span>~/code/acme-api-wt/p1</span></div>
-          <div class="kv"><span>Commits</span><span>3 ahead of main</span></div>
-          <div class="kv"><span>Started</span><span>14m ago</span></div>
-          <div class="kv"><span>Changes</span><span>6 files · +182 −40</span></div>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
-          <div class="gate"><span style="font-size: 11px; color: #8bbf9a">Build</span><span style="font-size: 12px; font-weight: 600; color: #19e35a">Passed</span><span class="mono" style="font-size: 10.5px; color: #7fae8c">2m ago</span></div>
-          <div class="gate" style="border-color: #1f6b5f"><span style="font-size: 11px; color: #8bbf9a">Test</span><span style="font-size: 12px; font-weight: 600; color: #4fd1c5">Running</span><span class="mono" style="font-size: 10.5px; color: #7fae8c">41 / 63</span></div>
-          <div class="gate"><span style="font-size: 11px; color: #8bbf9a">Review</span><span style="font-size: 12px; font-weight: 600; color: #8bbf9a">Not started</span><span class="mono" style="font-size: 10.5px; color: #7fae8c">after test</span></div>
-        </div>
-        <div class="mono" style="border-radius: 10px; background: #010402; border: 1px solid #0f2a17; padding: 10px 12px; font-size: 11.5px; line-height: 18px; color: #8bbf9a">
-          <div><span style="color: #5f9a70">12:41</span> edit src/auth/token.ts</div>
-          <div><span style="color: #5f9a70">12:42</span> run npm test -- auth</div>
-          <div><span style="color: #5f9a70">12:43</span> <span style="color: #4fd1c5">41/63 passing</span></div>
-        </div>
-        <div style="display: flex; gap: 6px; flex-wrap: wrap">
-          <button class="btn sm">Terminal</button>
-          <button class="btn sm">Diff</button>
-          <button class="btn sm">Pause</button>
-          <button class="btn sm">Hand off</button>
-        </div>
-      </div>
-      </sc-if>
-    </article>
-    </sc-if>
+        </sc-if>
+      </article>
+    </sc-for>
 
-    <sc-if value="{{show2}}" hint-placeholder-val="{{true}}">
-    <article class="card" style="padding: 12px; display: flex; flex-direction: column; gap: 12px; border-color: #3d2f10">
-      <button class="exp" aria-expanded="{{o2x}}" onClick="{{t2}}">
-        <span style="width: 34px; height: 34px; border-radius: 9px; background: #221b08; color: #e8b04a; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0">P2</span>
-        <span style="display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 1px">
-          <span style="font-size: 13px; font-weight: 600; color: #e6fff0">Codex <span style="font-weight: 400; color: #8bbf9a">· gpt high</span></span>
-          <span class="mono" style="font-size: 11px; color: #7fae8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">refactor/auth-guard · 91be0d3</span>
-        </span>
-        <span class="pill p-amb">Waiting on you</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7fae8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="{{c2}}"><path d="m6 9 6 6 6-6"></path></svg>
-      </button>
-      <sc-if value="{{o2}}" hint-placeholder-val="{{false}}">
-      <div style="display: flex; flex-direction: column; gap: 12px">
-        <div style="display: flex; flex-direction: column; gap: 4px">
-          <span style="font-size: 11px; color: #7fae8c">Task T7 · wave 2</span>
-          <span style="font-size: 13px; line-height: 18px; color: #e6fff0">Add unit tests for auth middleware</span>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
-          <div class="gate"><span style="font-size: 11px; color: #8bbf9a">Build</span><span style="font-size: 12px; font-weight: 600; color: #19e35a">Passed</span></div>
-          <div class="gate"><span style="font-size: 11px; color: #8bbf9a">Test</span><span style="font-size: 12px; font-weight: 600; color: #19e35a">63 / 63</span></div>
-          <div class="gate" style="border-color: #5c4515"><span style="font-size: 11px; color: #8bbf9a">Review</span><span style="font-size: 12px; font-weight: 600; color: #e8b04a">Asks you</span></div>
-        </div>
-        <div style="border-radius: 10px; background: #120e04; border: 1px solid #5c4515; padding: 10px 12px; display: flex; align-items: center; gap: 10px">
-          <span style="font-size: 12.5px; color: #f0d9a8; flex: 1">Security review: 2 public routes exposed</span>
-          <a href="Main.dc.html" style="font-size: 12px; font-weight: 600; color: #e8b04a; text-decoration: none">Decide</a>
-        </div>
-        <div style="display: flex; gap: 6px; flex-wrap: wrap">
-          <button class="btn sm">Terminal</button>
-          <button class="btn sm">Diff</button>
-          <button class="btn sm">Wake</button>
-        </div>
-      </div>
-      </sc-if>
-    </article>
-    </sc-if>
-
-    <sc-if value="{{show3}}" hint-placeholder-val="{{true}}">
-    <article class="card" style="padding: 12px; display: flex; flex-direction: column; gap: 12px">
-      <button class="exp" aria-expanded="{{o3x}}" onClick="{{t3}}">
-        <span style="width: 34px; height: 34px; border-radius: 9px; background: #0b1c10; color: #8bbf9a; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0">P3</span>
-        <span style="display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 1px">
-          <span style="font-size: 13px; font-weight: 600; color: #e6fff0">AGY <span style="font-weight: 400; color: #8bbf9a">· gemini flash</span></span>
-          <span class="mono" style="font-size: 11px; color: #7fae8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">docs/api-specs · no commits yet</span>
-        </span>
-        <span class="pill p-dim">Idle</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7fae8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="{{c3}}"><path d="m6 9 6 6 6-6"></path></svg>
-      </button>
-      <sc-if value="{{o3}}" hint-placeholder-val="{{false}}">
-      <div style="display: flex; flex-direction: column; gap: 12px">
-        <div style="display: flex; flex-direction: column; gap: 4px">
-          <span style="font-size: 11px; color: #7fae8c">Task T10 · wave 3</span>
-          <span style="font-size: 13px; line-height: 18px; color: #e6fff0">Generate OpenAPI docs from endpoints</span>
-          <span style="font-size: 12px; color: #8bbf9a">Starts when wave 2 merges.</span>
-        </div>
-        <div style="display: flex; gap: 6px; flex-wrap: wrap">
-          <button class="btn sm">Terminal</button>
-          <button class="btn sm">Start now</button>
-          <button class="btn sm" style="color: #ff9b8a">Remove lane</button>
-        </div>
-      </div>
-      </sc-if>
-    </article>
+    <sc-if value="{{hasNoLanes}}">
+      <div style="border-radius: 12px; background: rgba(4,17,10,.84); border: 1px solid #0f2a17; padding: 24px; text-align: center; color: #7fae8c; font-size: 13px">No lanes in this filter</div>
     </sc-if>
 
   </main>
 
   <footer style="position: relative; z-index: 1; border-top: 1px solid #0f2a17; background: rgba(3,10,6,.92); backdrop-filter: blur(4px)">
     <div role="toolbar" aria-label="Shortcuts" style="display: flex; gap: 8px; padding: 12px 16px 16px; flex-wrap: wrap">
-      <button class="btn pri" aria-label="Improve prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path><path d="M19 17v4M17 19h4"></path></svg>Improve<span class="kbd">⌃I</span></button>
-      <button class="btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M7 21h10M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path><path d="m16 16 3-8 3 8c-.9.6-1.9 1-3 1s-2.1-.4-3-1z"></path><path d="m2 16 3-8 3 8c-.9.6-1.9 1-3 1s-2.1-.4-3-1z"></path></svg>Ask Jev<span class="kbd">⌃J</span></button>
+      <button class="btn pri" aria-label="Improve prompt" onClick="{{sweepLanes}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path><path d="M19 17v4M17 19h4"></path></svg>Sweep<span class="kbd">⌃I</span></button>
       <button class="slot" disabled="" aria-label="Empty shortcut slot">+ shortcut</button>
       <button class="slot" disabled="" aria-label="Empty shortcut slot">+</button>
     </div>
@@ -218,56 +161,121 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
-const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
-function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
-function makeRain(seed) {
-  const R = rng(seed), out = [];
-  for (let i = 0; i < 30; i++) {
-    const n = 14 + Math.floor(R() * 26), g = [];
-    for (let k = 0; k < n; k++) g.push(GLYPHS[Math.floor(R() * GLYPHS.length)]);
-    const dur = 7 + R() * 9, delay = -R() * dur, op = 0.16 + R() * 0.22;
-    out.push({ glyphs: g.join('\n'), style: 'left:' + (i * 14.6 + R() * 4).toFixed(1) + 'px;opacity:' + op.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's' });
-  }
-  return out;
-}
-const RAIN = makeRain(11);
-const TABS = [
-  ['projects', 'Projects', 'M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z', 'Projects.dc.html'],
-  ['overview', 'Overview', 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z', 'Main.dc.html'],
-  ['lanes', 'Lanes', 'M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9', 'Lanes.dc.html'],
-  ['plan', 'Plan', 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01', 'Plan.dc.html'],
-  ['waiting', 'Waiting', 'M12 8v4M12 16h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z', 'Waiting.dc.html'],
-  ['events', 'Events', 'M22 12h-4l-3 9L9 3l-3 9H2', 'Events.dc.html'],
-  ['inbox', 'Inbox', 'M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z', 'Inbox.dc.html'],
-  ['bugs', 'Bugs', 'M8 2l1.9 1.9M16 2l-1.9 1.9M9 7.1V6a3 3 0 0 1 6 0v1.1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6zM12 20v-9M6.5 13H3M21 13h-3.5M6 7.5 3.5 6M18 7.5 20.5 6', 'Bugs.dc.html'],
-  ['todo', 'Todo', 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11', 'Todo.dc.html'],
-];
-const BADGES = { lanes: ['3', 'background:#0a2f2c;color:#4fd1c5'], waiting: ['1', 'background:#e8b04a;color:#1a1204'], inbox: ['2', 'background:#0f2a17;color:#b9e8c4'], bugs: ['4', 'background:#3a1512;color:#ff9b8a'] };
-function tabs(active) {
-  return TABS.map(([id, label, icon, href]) => {
-    const b = BADGES[id];
-    return { label, icon, href, isLink: !!href, isBtn: !href, cur: id === active ? 'page' : 'false', cls: 'tab' + (id === active ? ' on' : ''), hasBadge: !!b, badge: b ? b[0] : '', badgeStyle: b ? b[1] : '' };
-  });
-}
-const FILTERS = [['all', 'All 3'], ['working', 'Working 1'], ['waiting', 'Waiting 1'], ['idle', 'Idle 1']];
-const flip = 'transform:rotate(180deg)';
 class Component extends DCLogic {
-  constructor(p) { super(p); this.state = { f: 'all', o1: true, o2: false, o3: false }; }
+  constructor(p) {
+    super(p);
+    this.state = { f: 'all', open: { P1: true } };
+  }
+
   renderVals() {
     const s = this.state;
+    const lanes = this.getData('lanes') || [];
+    const badges = this.getBadges() || {};
+    const meta = this.getMeta() || {};
+
+    let nWorking = 0, nWaiting = 0, nIdle = 0, nFailed = 0;
+    for (const l of lanes) {
+      if (l.state === 'working') nWorking++;
+      else if (l.state === 'waiting') nWaiting++;
+      else if (l.state === 'failed') nFailed++;
+      else nIdle++;
+    }
+
+    const filters = [
+      { id: 'all', label: `All ${lanes.length}` },
+      { id: 'working', label: `Working ${nWorking}` },
+      { id: 'waiting', label: `Waiting ${nWaiting}` },
+      { id: 'idle', label: `Idle ${nIdle}` },
+    ];
+    if (nFailed > 0) {
+      filters.push({ id: 'failed', label: `Failed ${nFailed}` });
+    }
+
+    const filtered = lanes.filter((l) => {
+      if (s.f === 'all') return true;
+      if (s.f === 'idle') return l.state !== 'working' && l.state !== 'waiting' && l.state !== 'failed';
+      return l.state === s.f;
+    });
+
+    const laneList = filtered.map((l) => {
+      const isWorking = l.state === 'working';
+      const isWaiting = l.state === 'waiting';
+      const isFailed = l.state === 'failed';
+      const isOpen = !!s.open[l.label];
+
+      const badgeStyle = isWaiting ? 'background:#221b08;color:#e8b04a' : (isWorking ? 'background:#0a2f2c;color:#4fd1c5' : (isFailed ? 'background:#3a1512;color:#ff9b8a' : 'background:#0b1c10;color:#8bbf9a'));
+      const pillCls = isWaiting ? 'p-amb' : (isWorking ? 'p-teal' : (isFailed ? 'p-red' : 'p-dim'));
+      const cardBorder = isWaiting ? 'border-color:#3d2f10' : (isFailed ? 'border-color:#5c1512' : '');
+      const status = isWorking ? `Working · turn ${l.turns || 1}` : (isWaiting ? 'Waiting on you' : (isFailed ? 'Failed' : 'Idle'));
+
+      const chk = l.checks || [];
+      const gates = chk.map((c) => {
+        const passed = c.status === 'passed';
+        const running = c.status === 'running';
+        const valStyle = passed ? 'color:#19e35a' : (running ? 'color:#4fd1c5' : 'color:#8bbf9a');
+        const stText = passed ? 'Passed' : (running ? 'Running' : 'Not started');
+        const sub = c.passed && c.total ? `${c.passed} / ${c.total}` : (passed ? 'verified' : (running ? 'in progress' : ''));
+        return { name: c.name, status: stText, valStyle, sub, style: running ? 'border-color:#1f6b5f' : '' };
+      });
+
+      const actList = (l.activity || []).map((a) => {
+        const d = new Date(a.at || Date.now());
+        const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        return { time, text: a.text || a.kind || '' };
+      });
+
+      const git = l.git || {};
+      const changesStat = `${git.files || 0} files · +${git.added || 0} −${git.removed || 0}`;
+
+      return {
+        label: l.label || 'P',
+        agent: l.agent || 'Agent',
+        modelEffort: [l.model, l.effort].filter(Boolean).join(' · ') || 'auto',
+        branchHead: `${l.branch || 'main'} · ${(l.head || '').slice(0, 7)}`,
+        status,
+        badgeStyle,
+        pillCls,
+        cardBorder,
+        chevStyle: isOpen ? 'transform:rotate(180deg)' : '',
+        exp: isOpen ? 'true' : 'false',
+        isOpen,
+        taskMeta: `Task ${(l.task && l.task.id) || 'T'} · wave ${(l.task && l.task.wave) || 1}`,
+        taskTitle: (l.task && l.task.title) || 'Active dispatch',
+        worktreePath: l.path || '~',
+        commitsAhead: `${git.ahead || 0} ahead of main`,
+        startedTime: l.startedAt ? `${Math.max(1, Math.round((Date.now() - l.startedAt) / 60000))}m ago` : 'just now',
+        changesStat,
+        hasGates: gates.length > 0,
+        gates,
+        hasActivity: actList.length > 0,
+        activity: actList,
+        toggle: () => {
+          this.setState({ open: { ...s.open, [l.label]: !isOpen } });
+        },
+        openTerm: () => this.action('terminal send', { terminal: l.terminalHandle || 'term_1', text: '' }),
+        openDiff: () => this.action('tab create', { url: `diff:${l.path || ''}` }),
+        pause: () => this.action('terminal send', { terminal: l.terminalHandle || 'term_1', text: '\x1b' }),
+        handoff: () => this.action('worker-start', { spec: `Hand off ${l.label}`, agent: 'claude' }),
+      };
+    });
+
+    const filterObjs = filters.map((f) => ({
+      label: f.label,
+      p: s.f === f.id ? 'true' : 'false',
+      cls: 'fchip' + (s.f === f.id ? ' on' : ''),
+      pick: () => this.setState({ f: f.id }),
+    }));
+
     return {
-      rain: RAIN,
-      tabs: tabs('lanes'),
-      filters: FILTERS.map(([id, label]) => ({ label, cls: 'fchip' + (s.f === id ? ' on' : ''), p: s.f === id ? 'true' : 'false', pick: () => this.setState({ f: id }) })),
-      show1: s.f === 'all' || s.f === 'working',
-      show2: s.f === 'all' || s.f === 'waiting',
-      show3: s.f === 'all' || s.f === 'idle',
-      o1: s.o1, o2: s.o2, o3: s.o3,
-      o1x: String(s.o1), o2x: String(s.o2), o3x: String(s.o3),
-      c1: s.o1 ? flip : '', c2: s.o2 ? flip : '', c3: s.o3 ? flip : '',
-      t1: () => this.setState({ o1: !s.o1 }),
-      t2: () => this.setState({ o2: !s.o2 }),
-      t3: () => this.setState({ o3: !s.o3 }),
+      rain: window.MK_RAIN(11),
+      tabs: window.MK_TABS('lanes', badges, (t) => {}),
+      planTitle: meta.planId || 'MatrixKoder Plan',
+      summaryText: `${lanes.length} worktrees · ${badges.waiting || 0} waiting on you`,
+      filters: filterObjs,
+      laneList,
+      hasNoLanes: laneList.length === 0,
+      addLane: () => this.action('worker-start', { spec: 'New lane', agent: 'claude' }),
+      sweepLanes: () => this.action('sweep-lanes', {}),
     };
   }
 }

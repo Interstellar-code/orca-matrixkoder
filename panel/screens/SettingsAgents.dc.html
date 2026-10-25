@@ -52,7 +52,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
       <a class="ib" href="Main.dc.html" aria-label="Back to Overview"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></a>
       <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
         <h1 style="margin: 0; font-size: 15px; font-weight: 600; color: #e6fff0">Settings</h1>
-        <span style="font-size: 12px; color: #8bbf9a">MatrixKoder · acme-api</span>
+        <span style="font-size: 12px; color: #8bbf9a">MatrixKoder · {{repoName}}</span>
       </div>
     </div>
     <div style="position: relative">
@@ -69,7 +69,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 
     <div style="display: flex; align-items: center; gap: 8px">
       <span style="font-size: 12.5px; color: #8bbf9a; flex: 1">Coding agents MK can hand lanes to. Off means MK never routes to it.</span>
-      <button class="btn">Detect again</button>
+      <button class="btn" onClick="{{detectAgain}}">Detect again</button>
     </div>
 
     <sc-for list="{{agents}}" as="a" hint-placeholder-count="4">
@@ -85,7 +85,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
         </div>
         <sc-if value="{{a.ready}}" hint-placeholder-val="{{true}}">
         <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #0d2414">
-          <div class="kv"><span>Default model</span><span class="mono" style="color: #e6fff0; flex: 1">{{a.model}}</span><button class="btn" style="height: 26px; font-size: 11.5px">Change</button></div>
+          <div class="kv"><span>Default model</span><span class="mono" style="color: #e6fff0; flex: 1">{{a.model}}</span><button class="btn" style="height: 26px; font-size: 11.5px" onClick="{{a.changeModel}}">Change</button></div>
           <sc-for list="{{a.quota}}" as="q" hint-placeholder-count="2">
             <div class="kv"><span>{{q.label}}</span><div class="meter"><div style="{{q.style}}"></div></div><span class="mono" style="width: 64px; text-align: right; color: #b9e8c4">{{q.text}}</span></div>
           </sc-for>
@@ -103,55 +103,81 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
-const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
-function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
-function makeRain(seed) {
-  const R = rng(seed), out = [];
-  for (let i = 0; i < 30; i++) {
-    const n = 14 + Math.floor(R() * 26), g = [];
-    for (let k = 0; k < n; k++) g.push(GLYPHS[Math.floor(R() * GLYPHS.length)]);
-    const dur = 7 + R() * 9, delay = -R() * dur, op = 0.16 + R() * 0.22;
-    out.push({ glyphs: g.join('\n'), style: 'left:' + (i * 14.6 + R() * 4).toFixed(1) + 'px;opacity:' + op.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's' });
-  }
-  return out;
+function bar(left) {
+  const c = left < 25 ? '#ff7a66' : left < 50 ? '#e8b04a' : '#19e35a';
+  return 'height:100%;border-radius:3px;width:' + Math.min(100, Math.max(0, left)) + '%;background:' + c;
 }
-const RAIN = makeRain(73);
-const STABS = [
-  ['general', 'General', 'Settings.dc.html', 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'],
-  ['agents', 'Agents', 'SettingsAgents.dc.html', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8'],
-  ['routing', 'Routing', 'SettingsRouting.dc.html', 'M12 3v18M5 5h11l3 3-3 3H5zM19 13H8l-3 3 3 3h11'],
-  ['safety', 'Safety', 'SettingsSafety.dc.html', 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'],
-  ['alerts', 'Alerts', 'SettingsAlerts.dc.html', 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0'],
-  ['look', 'Theme', 'SettingsLook.dc.html', 'M12 3a9 9 0 1 0 9 9c0-1-1-1.5-2-1.5h-2a2 2 0 0 1-2-2V7c0-2-1.5-4-3-4zM7.5 10.5h.01M10.5 7h.01M15 8h.01'],
-  ['shortcuts', 'Shortcuts', 'SettingsShortcuts.dc.html', 'M13 2 3 14h9l-1 8 10-12h-9z'],
-];
-function stabs(active) { return STABS.map(([id, label, href, icon]) => ({ label, href, icon, cls: 'stab' + (id === active ? ' on' : ''), cur: id === active ? 'page' : 'false' })); }
-function bar(left) { const c = left < 25 ? '#ff7a66' : left < 50 ? '#e8b04a' : '#19e35a'; return 'height:100%;border-radius:3px;width:' + left + '%;background:' + c; }
-const AGENTS = [
-  { id: 'claude', name: 'Claude Code', cli: 'claude · v2 on PATH', initial: 'C', tint: ['#0d2a16', '#19e35a'], state: 'Ready', model: 'opus 5.5 · high', quota: [['5h window', 62], ['Weekly', 48]] },
-  { id: 'codex', name: 'Codex', cli: 'codex · on PATH', initial: 'X', tint: ['#0a2f2c', '#4fd1c5'], state: 'Ready', model: 'gpt high', quota: [['5h window', 81]] },
-  { id: 'agy', name: 'AGY', cli: 'agy · on PATH', initial: 'A', tint: ['#221b08', '#e8b04a'], state: 'Ready', model: 'gemini flash', quota: [] },
-  { id: 'opencode', name: 'OpenCode', cli: 'opencode · not found', initial: 'O', tint: ['#0b1c10', '#7fae8c'], state: 'Missing', model: '', quota: [] },
-];
+
 class Component extends DCLogic {
-  constructor(p) { super(p); this.state = { on: { claude: true, codex: true, agy: true, opencode: false } }; }
+  constructor(p) {
+    super(p);
+    this.state = { on: { claude: true, codex: true, agy: true, opencode: false } };
+  }
   renderVals() {
+    const agentNames = {
+      claude: 'Claude Code',
+      codex: 'Codex',
+      agy: 'AGY',
+      opencode: 'OpenCode',
+      omp: 'OMP',
+    };
+    const agentTints = {
+      claude: ['#0d2a16', '#19e35a'],
+      codex: ['#0a2f2c', '#4fd1c5'],
+      agy: ['#221b08', '#e8b04a'],
+      opencode: ['#0b1c10', '#7fae8c'],
+    };
+    const s = this.getData('settings') || {};
+    const proj = this.getData('projects') || {};
+    const repo = (proj.repos && proj.repos[0]) || {};
+    const repoName = repo.name || 'orca-matrixkoder';
+    const agentList = s.agents || [];
     const on = this.state.on;
+
     return {
-      rain: RAIN,
-      stabs: stabs('agents'),
-      agents: AGENTS.map((a) => {
-        const missing = a.state === 'Missing';
+      rain: window.MK_RAIN ? window.MK_RAIN(73) : [],
+      stabs: window.MK_STABS ? window.MK_STABS('agents') : [],
+      repoName,
+      detectAgain: () => {
+        this.action('settings save', { detectAgents: true });
+      },
+      agents: agentList.map((a) => {
+        const id = a.id || '';
+        const name = agentNames[id] || (id.charAt(0).toUpperCase() + id.slice(1));
+        const missing = !a.found;
+        const tint = agentTints[id] || ['#0b1c10', '#7fae8c'];
+        const isRoutable = on[id] !== undefined ? on[id] : a.found;
+        const quotaList = (a.quota || []).map((q) => ({
+          label: q.label || '',
+          text: (q.leftPct != null ? q.leftPct : 0) + '% left',
+          style: bar(q.leftPct != null ? q.leftPct : 0),
+        }));
+        const defaultModel = id === 'claude' ? 'opus 5.5 · high' : id === 'codex' ? 'gpt high' : id === 'agy' ? 'gemini flash' : '';
+
         return {
-          name: a.name, cli: a.cli, initial: a.initial, state: a.state, model: a.model,
-          avatarStyle: 'width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;background:' + a.tint[0] + ';color:' + a.tint[1],
+          id,
+          name,
+          cli: a.cli || (a.found ? id + ' · on PATH' : id + ' · not found'),
+          initial: (id.charAt(0) || 'A').toUpperCase(),
+          state: missing ? 'Missing' : 'Ready',
+          model: a.model || defaultModel,
+          avatarStyle: 'width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;background:' + tint[0] + ';color:' + tint[1],
           pillStyle: missing ? 'background:#3a1512;color:#ff9b8a' : 'background:#123a1e;color:#19e35a',
-          cardStyle: on[a.id] ? '' : 'opacity:.72',
-          ready: !missing, missing,
-          quota: a.quota.map(([label, left]) => ({ label, text: left + '% left', style: bar(left) })),
-          noQuota: !missing && a.quota.length === 0,
-          cls: 'sw' + (on[a.id] ? ' on' : ''), p: String(!!on[a.id]),
-          flip: () => this.setState({ on: { ...on, [a.id]: !on[a.id] } }),
+          cardStyle: isRoutable ? '' : 'opacity:.72',
+          ready: !missing,
+          missing,
+          quota: quotaList,
+          noQuota: !missing && quotaList.length === 0,
+          cls: 'sw' + (isRoutable ? ' on' : ''),
+          p: String(!!isRoutable),
+          flip: () => {
+            const next = !isRoutable;
+            this.setState({ on: Object.assign({}, on, { [id]: next }) });
+            this.action('settings save', { agents: { [id]: { routable: next } } });
+          },
+          changeModel: () => {
+            this.action('settings save', { agents: { [id]: { modelChange: true } } });
+          },
         };
       }),
     };

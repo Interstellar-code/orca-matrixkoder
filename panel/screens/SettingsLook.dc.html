@@ -59,7 +59,7 @@ input[type=range]{accent-color:#19e35a;width:110px}
       <a class="ib" href="Main.dc.html" aria-label="Back to Overview"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></a>
       <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
         <h1 style="margin: 0; font-size: 15px; font-weight: 600; color: #e6fff0">Settings</h1>
-        <span style="font-size: 12px; color: #8bbf9a">MatrixKoder · acme-api</span>
+        <span style="font-size: 12px; color: #8bbf9a">MatrixKoder · {{repoName}}</span>
       </div>
     </div>
     <div style="position: relative">
@@ -112,46 +112,74 @@ input[type=range]{accent-color:#19e35a;width:110px}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
-const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
-function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
-function makeRain(seed, k) {
-  const R = rng(seed), out = [];
-  for (let i = 0; i < 30; i++) {
-    const n = 14 + Math.floor(R() * 26), g = [];
-    for (let j = 0; j < n; j++) g.push(GLYPHS[Math.floor(R() * GLYPHS.length)]);
-    const dur = (7 + R() * 9) * k, delay = -R() * dur, op = 0.16 + R() * 0.22;
-    out.push({ glyphs: g.join('\n'), style: 'left:' + (i * 14.6 + R() * 4).toFixed(1) + 'px;opacity:' + op.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's' });
-  }
-  return out;
-}
-const SPEED = { slow: 1.8, normal: 1, fast: 0.55 };
-const RAINS = { slow: makeRain(101, SPEED.slow), normal: makeRain(101, 1), fast: makeRain(101, SPEED.fast) };
-const STABS = [
-  ['general', 'General', 'Settings.dc.html', 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'],
-  ['agents', 'Agents', 'SettingsAgents.dc.html', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8'],
-  ['routing', 'Routing', 'SettingsRouting.dc.html', 'M12 3v18M5 5h11l3 3-3 3H5zM19 13H8l-3 3 3 3h11'],
-  ['safety', 'Safety', 'SettingsSafety.dc.html', 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'],
-  ['alerts', 'Alerts', 'SettingsAlerts.dc.html', 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0'],
-  ['look', 'Theme', 'SettingsLook.dc.html', 'M12 3a9 9 0 1 0 9 9c0-1-1-1.5-2-1.5h-2a2 2 0 0 1-2-2V7c0-2-1.5-4-3-4zM7.5 10.5h.01M10.5 7h.01M15 8h.01'],
-  ['shortcuts', 'Shortcuts', 'SettingsShortcuts.dc.html', 'M13 2 3 14h9l-1 8 10-12h-9z'],
-];
-function stabs(active) { return STABS.map(([id, label, href, icon]) => ({ label, href, icon, cls: 'stab' + (id === active ? ' on' : ''), cur: id === active ? 'page' : 'false' })); }
 class Component extends DCLogic {
-  constructor(p) { super(p); this.state = { rain: true, bright: 60, speed: 'normal', calm: false, orca: false, size: 'M', dens: 'comfy' }; }
-  seg(key, opts) { const s = this.state; return opts.map(([id, label]) => ({ label, cls: s[key] === id ? 'on' : '', p: String(s[key] === id), pick: () => this.setState({ [key]: id }) })); }
-  sw(key) { const v = this.state[key]; return { cls: 'sw' + (v ? ' on' : ''), p: String(v), flip: () => this.setState({ [key]: !v }) }; }
-  renderVals() {
-    const s = this.state, r = this.sw('rain'), c = this.sw('calm'), o = this.sw('orca');
+  constructor(p) {
+    super(p);
+    this.state = {
+      rain: true,
+      bright: 60,
+      speed: 'normal',
+      calm: false,
+      orca: false,
+      size: 'M',
+      dens: 'comfy',
+    };
+  }
+  seg(key, opts) {
+    const s = this.state;
+    return opts.map(([id, label]) => ({
+      label,
+      cls: s[key] === id ? 'on' : '',
+      p: String(s[key] === id),
+      pick: () => {
+        this.setState({ [key]: id });
+        this.action('settings save', { theme: { [key]: id } });
+      },
+    }));
+  }
+  sw(key) {
+    const v = this.state[key];
     return {
-      stabs: stabs('look'),
-      rain: RAINS[s.speed],
+      cls: 'sw' + (v ? ' on' : ''),
+      p: String(v),
+      flip: () => {
+        const next = !v;
+        this.setState({ [key]: next });
+        this.action('settings save', { theme: { [key]: next } });
+      },
+    };
+  }
+  renderVals() {
+    const s = this.state;
+    const proj = this.getData('projects') || {};
+    const repo = (proj.repos && proj.repos[0]) || {};
+    const repoName = repo.name || 'orca-matrixkoder';
+
+    const r = this.sw('rain');
+    const c = this.sw('calm');
+    const o = this.sw('orca');
+
+    return {
+      stabs: window.MK_STABS ? window.MK_STABS('look') : [],
+      repoName,
+      rain: window.MK_RAIN ? window.MK_RAIN(101) : [],
       rainOn: s.rain && !s.calm,
       rainStyle: 'opacity:' + (s.bright / 60).toFixed(2),
-      rainCls: r.cls, rainP: r.p, flipRain: r.flip,
-      calmCls: c.cls, calmP: c.p, flipCalm: c.flip,
-      orcaCls: o.cls, orcaP: o.p, flipOrca: o.flip,
+      rainCls: r.cls,
+      rainP: r.p,
+      flipRain: r.flip,
+      calmCls: c.cls,
+      calmP: c.p,
+      flipCalm: c.flip,
+      orcaCls: o.cls,
+      orcaP: o.p,
+      flipOrca: o.flip,
       bright: s.bright,
-      setBright: (e) => this.setState({ bright: Number(e.target.value) }),
+      setBright: (e) => {
+        const next = Number(e.target.value);
+        this.setState({ bright: next });
+        this.action('settings save', { theme: { bright: next } });
+      },
       speeds: this.seg('speed', [['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast']]),
       sizes: this.seg('size', [['S', 'S'], ['M', 'M'], ['L', 'L']]),
       dens: this.seg('dens', [['compact', 'Compact'], ['comfy', 'Comfortable']]),

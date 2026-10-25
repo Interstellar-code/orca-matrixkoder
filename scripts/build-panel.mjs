@@ -1,16 +1,18 @@
-// Builds web/index.html, the single file Orca loads as the panel, from:
-//   panel/screens/*.dc.html  one file per screen, as exported from the design canvas
-//   panel/runtime.js         renders those screens
-//   panel/fonts/*.woff2      Geist and Geist Mono, inlined (the panel CSP allows data: fonts only)
-// Mock data lives in each screen's script, as in the canvas.
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+// Builds web/index.html and web/launcher.html from:
+//   panel/screens/*.dc.html  one file per screen
+//   panel/runtime.js         renders those screens and data layer
+//   panel/fonts/*.woff2      Geist and Geist Mono inlined
+import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const panel = join(root, 'panel');
+const webDir = join(root, 'web');
+mkdirSync(webDir, { recursive: true });
+
 const START = 'Projects';
-const CSP = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'";
+const CSP = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'self' http://127.0.0.1:* http://localhost:*; base-uri 'none'; form-action 'none'";
 
 function between(src, open, close, file) {
   const a = src.indexOf(open);
@@ -28,7 +30,7 @@ for (const file of screens) {
   const css = between(between(src, '<helmet>', '</helmet>', file), '<style>', '</style>', file);
   let tpl = src.slice(src.indexOf('</helmet>') + 9, src.indexOf('</x-dc>'));
   const js = between(src, '<script type="text/x-dc"', '</script>', file);
-  // The canvas draws a fixed 440×1240 artboard; the panel fills the sidebar and scrolls.
+  // The canvas draws a fixed 440×1240 artboard; the panel fills the container and scrolls.
   tpl = tpl.replace('width: 440px; height: 1240px;', 'width: 100%; height: 100vh;');
   tpl = tpl.replace(/(<main style="[^"]*?)overflow: hidden/, '$1overflow-y: auto');
   if (tpl.includes('<script')) throw new Error(`${file}: template contains a script tag`);
@@ -37,7 +39,9 @@ for (const file of screens) {
 }
 
 const font = (file) => `data:font/woff2;base64,${readFileSync(join(panel, 'fonts', file)).toString('base64')}`;
-const html = `<!doctype html>
+
+// 1. Dashboard page: web/index.html
+const indexHtml = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -50,6 +54,8 @@ const html = `<!doctype html>
 @font-face{font-family:'Geist Mono';src:url(${font('GeistMono-Variable.woff2')}) format('woff2');font-weight:100 900;font-display:block}
 html,body{margin:0;height:100%;background:#020604;overflow:hidden}
 .mk-screen[hidden]{display:none}
+.mk-stale-banner{position:fixed;top:0;left:0;right:0;z-index:9999;background:#3a1512;color:#ff9b8a;border-bottom:1px solid #7a2520;font-family:'Geist',system-ui,sans-serif;font-size:12px;font-weight:600;padding:6px 12px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+.mk-stale-banner svg{flex-shrink:0}
 </style>
 </head>
 <body>
@@ -59,10 +65,73 @@ ${readFileSync(join(panel, 'runtime.js'), 'utf8')}
 window.MK_SCREENS = {};
 window.MK_START = ${JSON.stringify(START)};
 ${scripts.join('\n')}
+if (window.MK_SCREENS['Main'] && !window.MK_SCREENS['Overview']) {
+  window.MK_SCREENS['Overview'] = window.MK_SCREENS['Main'];
+}
 window.MK_BOOT();
 </script>
 </body>
 </html>
 `;
-writeFileSync(join(root, 'web', 'index.html'), html);
-console.log(`Built web/index.html: ${screens.length} screens, ${(html.length / 1024).toFixed(0)} KB`);
+writeFileSync(join(webDir, 'index.html'), indexHtml);
+console.log(`Built web/index.html: ${screens.length} screens, ${(indexHtml.length / 1024).toFixed(0)} KB`);
+
+// 2. Sidebar launcher page: web/launcher.html (WIRE.3)
+const launcherHtml = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="${CSP}">
+<title>MatrixKoder Launcher</title>
+<style>
+@font-face{font-family:'Geist';src:url(${font('Geist-Variable.woff2')}) format('woff2');font-weight:100 900;font-display:block}
+@font-face{font-family:'Geist Mono';src:url(${font('GeistMono-Variable.woff2')}) format('woff2');font-weight:100 900;font-display:block}
+html,body{margin:0;height:100%;background:#020604;color:#b9e8c4;font-family:'Geist',system-ui,sans-serif;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+.mono{font-family:'Geist Mono',ui-monospace,Menlo,monospace}
+.box{border-radius:12px;background:#06150b;border:1px solid #0f2a17;padding:14px;display:flex;flex-direction:column;gap:10px}
+.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:11px;background:#0d2a16;color:#19e35a;font-size:11px;font-weight:600}
+.dot{width:6px;height:6px;border-radius:50%;background:#19e35a;box-shadow:0 0 0 2px rgba(25,227,90,.25)}
+.btn{font-family:'Geist',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid #19e35a;background:#19e35a;color:#021006;text-decoration:none}
+.btn:hover{background:#3bf077}
+.kbd{font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;padding:2px 6px;border-radius:4px;background:#020a05;border:1px solid #143d22;color:#e6fff0}
+</style>
+</head>
+<body style="padding:16px;box-sizing:border-box;gap:14px">
+  <div style="display:flex;align-items:center;gap:10px">
+    <div style="width:32px;height:32px;border-radius:8px;background:#0d2a16;border:1px solid #19e35a;display:flex;align-items:center;justify-content:center;color:#19e35a">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"></path><path d="m2 17 10 5 10-5"></path><path d="m2 12 10 5 10-5"></path></svg>
+    </div>
+    <div style="display:flex;flex-direction:column">
+      <span style="font-size:15px;font-weight:700;color:#e6fff0">MatrixKoder</span>
+      <span style="font-size:11px;color:#7fae8c">Multi-Agent Supervisor</span>
+    </div>
+    <span style="flex:1"></span>
+    <span class="badge"><span class="dot"></span>0.2.0</span>
+  </div>
+
+  <div class="box">
+    <div style="font-size:13px;font-weight:600;color:#e6fff0">Dashboard</div>
+    <div style="font-size:12px;line-height:17px;color:#8bbf9a">
+      MatrixKoder runs in a full browser tab for multi-screen monitoring, lane control, plan execution and decision gates.
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:#8bbf9a">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span>Shortcut</span>
+        <span class="kbd">⌥⌘M</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span>Command</span>
+        <span class="kbd">MatrixKoder: Open Dashboard</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size:11px;color:#5f9a70;text-align:center">
+    Local supervisor active · loopback 127.0.0.1
+  </div>
+</body>
+</html>
+`;
+writeFileSync(join(webDir, 'launcher.html'), launcherHtml);
+console.log(`Built web/launcher.html: ${(launcherHtml.length / 1024).toFixed(1)} KB`);

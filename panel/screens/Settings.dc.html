@@ -54,7 +54,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
       <a class="ib" href="Main.dc.html" aria-label="Back to Overview"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></a>
       <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
         <h1 style="margin: 0; font-size: 15px; font-weight: 600; color: #e6fff0">Settings</h1>
-        <span style="font-size: 12px; color: #8bbf9a">MatrixKoder · acme-api</span>
+        <span style="font-size: 12px; color: #8bbf9a">MatrixKoder · {{repoName}}</span>
       </div>
     </div>
     <div style="position: relative">
@@ -80,22 +80,22 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 
     <section class="card" aria-labelledby="g-proj">
       <h2 id="g-proj" class="sec">Project</h2>
-      <div class="row"><div class="lbl"><span>Repo</span><span>The Orca project this panel follows</span></div><span class="val">acme-api</span></div>
-      <div class="row"><div class="lbl"><span>Default base branch</span><span>New lane worktrees branch from here</span></div><span class="val">main</span><button class="btn">Change</button></div>
-      <div class="row"><div class="lbl"><span>Open on start</span><span>The tab the panel opens on</span></div><span class="val">Projects</span><button class="btn">Change</button></div>
+      <div class="row"><div class="lbl"><span>Repo</span><span>The Orca project this panel follows</span></div><span class="val">{{repoName}}</span></div>
+      <div class="row"><div class="lbl"><span>Default base branch</span><span>New lane worktrees branch from here</span></div><span class="val">{{baseBranch}}</span><button class="btn" onClick="{{changeBaseRef}}">Change</button></div>
+      <div class="row"><div class="lbl"><span>Open on start</span><span>The tab the panel opens on</span></div><span class="val">{{openOnStart}}</span><button class="btn" onClick="{{changeOpenOnStart}}">Change</button></div>
     </section>
 
     <section class="card" aria-labelledby="g-data">
       <h2 id="g-data" class="sec">Data</h2>
-      <div class="row"><div class="lbl"><span>MK data folder</span><span>Plans, runs and briefs</span></div><span class="val">~/.matrixkoder</span><button class="btn">Change</button></div>
-      <div class="row"><div class="lbl"><span>Plan inbox</span><span>Where the Inbox tab looks</span></div><span class="val">~/.matrixkoder/inbox</span><button class="btn">Change</button></div>
-      <div class="row"><div class="lbl"><span>Settings file</span><span>Back up or move to another machine</span></div><button class="btn">Export</button><button class="btn">Import</button></div>
+      <div class="row"><div class="lbl"><span>MK data folder</span><span>Plans, runs and briefs</span></div><span class="val">{{dataFolder}}</span></div>
+      <div class="row"><div class="lbl"><span>Plan inbox</span><span>Where the Inbox tab looks</span></div><span class="val">{{inboxFolder}}</span></div>
+      <div class="row"><div class="lbl"><span>Settings file</span><span>Back up or move to another machine</span></div><button class="btn" onClick="{{exportSettings}}">Export</button><button class="btn" onClick="{{importSettings}}">Import</button></div>
     </section>
 
     <section class="card" aria-labelledby="g-about">
       <h2 id="g-about" class="sec">About</h2>
-      <div class="row"><div class="lbl"><span>MatrixKoder for Orca 0.1.1</span><span>Follows MatrixKoder upstream v0.7.5</span></div><button class="btn">Check for updates</button></div>
-      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Reset all settings</span><span>Back to defaults; plans and runs are kept</span></div><button class="btn" style="color: #ff9b8a">Reset</button></div>
+      <div class="row"><div class="lbl"><span>MatrixKoder for Orca {{version}}</span><span>Plugin version</span></div><button class="btn" onClick="{{checkUpdates}}">Check for updates</button></div>
+      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Reset all settings</span><span>Back to defaults; plans and runs are kept</span></div><button class="btn" style="color: #ff9b8a" onClick="{{resetSettings}}">Reset</button></div>
     </section>
 
   </main>
@@ -103,41 +103,62 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
-const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
-function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
-function makeRain(seed) {
-  const R = rng(seed), out = [];
-  for (let i = 0; i < 30; i++) {
-    const n = 14 + Math.floor(R() * 26), g = [];
-    for (let k = 0; k < n; k++) g.push(GLYPHS[Math.floor(R() * GLYPHS.length)]);
-    const dur = 7 + R() * 9, delay = -R() * dur, op = 0.16 + R() * 0.22;
-    out.push({ glyphs: g.join('\n'), style: 'left:' + (i * 14.6 + R() * 4).toFixed(1) + 'px;opacity:' + op.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's' });
-  }
-  return out;
-}
-const RAIN = makeRain(71);
-const STABS = [
-  ['general', 'General', 'Settings.dc.html', 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'],
-  ['agents', 'Agents', 'SettingsAgents.dc.html', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8'],
-  ['routing', 'Routing', 'SettingsRouting.dc.html', 'M12 3v18M5 5h11l3 3-3 3H5zM19 13H8l-3 3 3 3h11'],
-  ['safety', 'Safety', 'SettingsSafety.dc.html', 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'],
-  ['alerts', 'Alerts', 'SettingsAlerts.dc.html', 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0'],
-  ['look', 'Theme', 'SettingsLook.dc.html', 'M12 3a9 9 0 1 0 9 9c0-1-1-1.5-2-1.5h-2a2 2 0 0 1-2-2V7c0-2-1.5-4-3-4zM7.5 10.5h.01M10.5 7h.01M15 8h.01'],
-  ['shortcuts', 'Shortcuts', 'SettingsShortcuts.dc.html', 'M13 2 3 14h9l-1 8 10-12h-9z'],
-];
-function stabs(active) { return STABS.map(([id, label, href, icon]) => ({ label, href, icon, cls: 'stab' + (id === active ? ' on' : ''), cur: id === active ? 'page' : 'false' })); }
 class Component extends DCLogic {
-  constructor(p) { super(p); this.state = { mode: 'orch' }; }
+  constructor(p) {
+    super(p);
+    this.state = { mode: 'orch' };
+  }
   renderVals() {
-    const orch = this.state.mode === 'orch';
+    const s = this.getData('settings') || {};
+    const proj = this.getData('projects') || {};
+    const repo = (proj.repos && proj.repos[0]) || {};
+    const repoName = repo.name || 'orca-matrixkoder';
+    const baseBranch = s.baseBranch || 'main';
+    const openOnStart = (s.values && s.values.openOnStart) || 'Projects';
+    const version = s.version || '0.1.1';
+    const mode = this.state.mode || (s.values && s.values.mode) || 'orch';
+    const orch = mode === 'orch';
+
     return {
-      rain: RAIN,
-      stabs: stabs('general'),
-      orchCls: orch ? 'on' : '', soloCls: orch ? '' : 'on',
-      orchP: String(orch), soloP: String(!orch),
-      toOrch: () => this.setState({ mode: 'orch' }),
-      toSolo: () => this.setState({ mode: 'solo' }),
+      rain: window.MK_RAIN ? window.MK_RAIN(71) : [],
+      stabs: window.MK_STABS ? window.MK_STABS('general') : [],
+      repoName,
+      baseBranch,
+      openOnStart,
+      dataFolder: '~/.matrixkoder',
+      inboxFolder: repo.path ? repo.path + '/.matrixkoder/inbox' : '~/.matrixkoder/inbox',
+      version,
+      orchCls: orch ? 'on' : '',
+      soloCls: orch ? '' : 'on',
+      orchP: String(orch),
+      soloP: String(!orch),
+      toOrch: () => {
+        this.setState({ mode: 'orch' });
+        this.action('settings save', { mode: 'orch' });
+      },
+      toSolo: () => {
+        this.setState({ mode: 'solo' });
+        this.action('settings save', { mode: 'solo' });
+      },
       modeHint: orch ? 'MK plans the work and hands tasks to lanes in their own worktrees. You approve at the gates.' : 'Everything runs in this session, one task at a time. No lanes or worktrees.',
+      changeBaseRef: () => {
+        this.action('repo set-base-ref', { ref: baseBranch === 'main' ? 'master' : 'main' });
+      },
+      changeOpenOnStart: () => {
+        this.action('settings save', { openOnStart: 'Main' });
+      },
+      exportSettings: () => {
+        this.action('settings save', { export: true });
+      },
+      importSettings: () => {
+        this.action('settings save', { import: true });
+      },
+      checkUpdates: () => {
+        this.action('settings save', { checkUpdates: true });
+      },
+      resetSettings: () => {
+        this.action('settings save', { reset: true });
+      },
     };
   }
 }
