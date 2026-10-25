@@ -16,7 +16,7 @@ Written 2026-10-25 at the end of the planning session. Paste the prompt at the b
 2. USE (lane A, after SCHEMA): routing by size and quota floors (C5), notifier (C6), confirm before high-risk tasks and advisory brief rules (C7), solo mode backend (C8), remaining consumers, route check in import and task.start, then USE.5 task spec templates (C10).
 3. SCREENS (lane B, after SCHEMA merges): rewire the existing canvas screens; SCREENS.1 tab list + bind helper + General, then SCREENS.4 Appearance app-wide, then SCREENS.2 and SCREENS.3 in parallel.
 4. SHIP (main): dead-key test T8 on the merged tree, rebuild `out/` and `web/`, version 0.3.0 (package.json, orca-plugin.json, orca-marketplace.json `plugins[0].source.ref`), CHANGELOG.
-5. Builders: claude sonnet medium (routes are written in the plan; use them, no Jev routing for them). Reviewers: claude opus high for SCHEMA and USE, claude sonnet medium for SCREENS and SHIP; the Critic gate is claude opus medium.
+5. Builders: claude sonnet medium, except SCREENS (lane B) on agy gemini-3.8-flash-medium (routes are written in the plan; use them, no Jev routing for them). Reviewers: claude opus high for SCHEMA and USE, claude sonnet medium for SCREENS and SHIP; the Critic gate is claude opus medium.
 
 ## Next steps, in order
 

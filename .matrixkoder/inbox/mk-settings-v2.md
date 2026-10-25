@@ -330,7 +330,7 @@ owned = ["panel/screens/", "panel/runtime.js", "scripts/build-panel.mjs", "scrip
 commit = "feat(panel): settings v2 tabs rewired to saved values, appearance applied app-wide"
 deps = ["SCHEMA"]
 size = "standard"
-route = "claude sonnet medium"
+route = "agy gemini-3.8-flash-medium"
 reviewer = "claude sonnet medium"
 subagents = true
 /+++
@@ -497,4 +497,5 @@ bundle = "npm run build"
 - 2026-10-25 — amended — second Opus Critic review of C8, C9, C10 and the SCREENS method (REJECT, 21 findings): built-in templates compiled into `src/store/spec-builtin.ts`; migration 2 SQL named, `db.test`/`cli.test`/`import.test`/`actions.test` owned by USE and USE.5's gate runs the full suite; subdispatch only by explicit scenario; `plan.start` refuses `plan_partial`; import route check and its test moved to USE.4/T7 with a settings path into import; lane B snapshot keys fixed by SCHEMA (`general.mode`, `settings.specTemplates` placeholder); SCREENS new-UI list matches its acceptance lines; T8 runs T11; placeholder union, rules append, phase scenario copied to tasks, template path rules, renderer in `src/store`, C1 model/effort rules, MODEL_SEED constant, solo columns named and tested, `task.start` refusal order; G6 served and gated; K5, K6 added — orchestrator
 - 2026-10-25 — amended — gaps from a parallel Opus Critic run (REJECT, 11 findings, 6 overlapping the round above): C9 adds Orca's launch rules (effort needs a model, no effort for omp/opencode or empty-efforts models) and the agy → antigravity `--agent` map; C8 solo hides only controls that exist (Plan has none, Lanes has no new-lane control) plus a shared-checkout hint and K7; SCREENS gets exact file renames, the 16 → 15 screen count in screens.test and contract.test, and CSS zoom for text size; `notify.test` stub in SCHEMA.3 so main stays green whichever lane merges first — orchestrator
 - 2026-10-25 — decision — SCHEMA and USE reviewers `claude opus high` (data-loss risk in the migration); SCREENS and SHIP stay `claude sonnet medium` — user
+- 2026-10-25 — decision — lane B (SCREENS) builder route `agy gemini-3.8-flash-medium` (Antigravity, Gemini 3.8 Flash, effort in the model id); its reviewer stays `claude sonnet medium` — user
 /+++
