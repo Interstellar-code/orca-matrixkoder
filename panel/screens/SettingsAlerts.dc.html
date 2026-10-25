@@ -54,7 +54,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
       <a class="ib" href="Main.dc.html" aria-label="Back to Overview"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></a>
       <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
         <h1 style="margin: 0; font-size: 15px; font-weight: 600; color: #e6fff0">Settings</h1>
-        <span style="font-size: 12px; color: #8bbf9a">MatrixKoder · acme-api</span>
+        <span style="font-size: 12px; color: #8bbf9a">MatrixKoder · {{repoName}}</span>
       </div>
     </div>
     <div style="position: relative">
@@ -98,7 +98,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
     </section>
 
     <div style="display: flex; gap: 8px; align-items: center; padding: 0 2px">
-      <button class="btn">Send a test notification</button>
+      <button class="btn" onClick="{{testNotification}}">Send a test notification</button>
       <span style="font-size: 11.5px; color: #7fae8c">Uses Orca desktop notifications</span>
     </div>
 
@@ -107,58 +107,76 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
-const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
-function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
-function makeRain(seed) {
-  const R = rng(seed), out = [];
-  for (let i = 0; i < 30; i++) {
-    const n = 14 + Math.floor(R() * 26), g = [];
-    for (let k = 0; k < n; k++) g.push(GLYPHS[Math.floor(R() * GLYPHS.length)]);
-    const dur = 7 + R() * 9, delay = -R() * dur, op = 0.16 + R() * 0.22;
-    out.push({ glyphs: g.join('\n'), style: 'left:' + (i * 14.6 + R() * 4).toFixed(1) + 'px;opacity:' + op.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's' });
-  }
-  return out;
-}
-const RAIN = makeRain(97);
-const STABS = [
-  ['general', 'General', 'Settings.dc.html', 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'],
-  ['agents', 'Agents', 'SettingsAgents.dc.html', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8'],
-  ['routing', 'Routing', 'SettingsRouting.dc.html', 'M12 3v18M5 5h11l3 3-3 3H5zM19 13H8l-3 3 3 3h11'],
-  ['safety', 'Safety', 'SettingsSafety.dc.html', 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'],
-  ['alerts', 'Alerts', 'SettingsAlerts.dc.html', 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0'],
-  ['look', 'Theme', 'SettingsLook.dc.html', 'M12 3a9 9 0 1 0 9 9c0-1-1-1.5-2-1.5h-2a2 2 0 0 1-2-2V7c0-2-1.5-4-3-4zM7.5 10.5h.01M10.5 7h.01M15 8h.01'],
-  ['shortcuts', 'Shortcuts', 'SettingsShortcuts.dc.html', 'M13 2 3 14h9l-1 8 10-12h-9z'],
-];
-function stabs(active) { return STABS.map(([id, label, href, icon]) => ({ label, href, icon, cls: 'stab' + (id === active ? ' on' : ''), cur: id === active ? 'page' : 'false' })); }
-const DEFS = {
-  ask: ['A lane is waiting on you', 'Decision gates and push approvals', true],
-  laneDone: ['A lane finishes its task', 'Ready for review or merge', true],
-  gateFail: ['A gate fails', 'Build, test or review', true],
-  runDone: ['A whole plan finishes', 'All phases merged', true],
-  stall: ['A lane goes quiet', 'No output for 10 minutes', false],
-  desktop: ['Desktop notification', 'Shown by Orca, labelled MatrixKoder', true],
-  sound: ['Play a sound', 'Only for "waiting on you"', false],
-};
-function sw(self, keys) {
-  const on = self.state.on;
-  return keys.map((k) => ({ label: DEFS[k][0], desc: DEFS[k][1], cls: 'sw' + (on[k] ? ' on' : ''), p: String(!!on[k]), flip: () => self.setState({ on: { ...on, [k]: !on[k] } }) }));
-}
 class Component extends DCLogic {
   constructor(p) {
     super(p);
-    const on = {};
-    Object.keys(DEFS).forEach((k) => { on[k] = DEFS[k][2]; });
-    this.state = { on, quiet: true, wake: false };
+    this.state = {
+      on: {
+        ask: true,
+        laneDone: true,
+        gateFail: true,
+        runDone: true,
+        stall: false,
+        desktop: true,
+        sound: false,
+      },
+      quiet: true,
+      wake: false,
+    };
   }
   renderVals() {
     const s = this.state;
+    const proj = this.getData('projects') || {};
+    const repo = (proj.repos && proj.repos[0]) || {};
+    const repoName = repo.name || 'orca-matrixkoder';
+
+    const defs = {
+      ask: ['A lane is waiting on you', 'Decision gates and push approvals'],
+      laneDone: ['A lane finishes its task', 'Ready for review or merge'],
+      gateFail: ['A gate fails', 'Build, test or review'],
+      runDone: ['A whole plan finishes', 'All phases merged'],
+      stall: ['A lane goes quiet', 'No output for 10 minutes'],
+      desktop: ['Desktop notification', 'Shown by Orca, labelled MatrixKoder'],
+      sound: ['Play a sound', 'Only for "waiting on you"'],
+    };
+
+    const makeSw = (keys) => keys.map((k) => ({
+      label: defs[k][0],
+      desc: defs[k][1],
+      cls: 'sw' + (s.on[k] ? ' on' : ''),
+      p: String(!!s.on[k]),
+      flip: () => {
+        const next = !s.on[k];
+        const nextOn = Object.assign({}, s.on, { [k]: next });
+        this.setState({ on: nextOn });
+        this.action('settings save', { alerts: nextOn });
+      },
+    }));
+
     return {
-      rain: RAIN,
-      stabs: stabs('alerts'),
-      events: sw(this, ['ask', 'laneDone', 'gateFail', 'runDone', 'stall']),
-      how: sw(this, ['desktop', 'sound']),
-      quiet: s.quiet, quietCls: 'sw' + (s.quiet ? ' on' : ''), quietP: String(s.quiet), flipQuiet: () => this.setState({ quiet: !s.quiet }),
-      wakeCls: 'sw' + (s.wake ? ' on' : ''), wakeP: String(s.wake), flipWake: () => this.setState({ wake: !s.wake }),
+      rain: window.MK_RAIN ? window.MK_RAIN(97) : [],
+      stabs: window.MK_STABS ? window.MK_STABS('alerts') : [],
+      repoName,
+      events: makeSw(['ask', 'laneDone', 'gateFail', 'runDone', 'stall']),
+      how: makeSw(['desktop', 'sound']),
+      quiet: s.quiet,
+      quietCls: 'sw' + (s.quiet ? ' on' : ''),
+      quietP: String(s.quiet),
+      flipQuiet: () => {
+        const next = !s.quiet;
+        this.setState({ quiet: next });
+        this.action('settings save', { quietHours: next });
+      },
+      wakeCls: 'sw' + (s.wake ? ' on' : ''),
+      wakeP: String(s.wake),
+      flipWake: () => {
+        const next = !s.wake;
+        this.setState({ wake: next });
+        this.action('settings save', { wakeOrchestrator: next });
+      },
+      testNotification: () => {
+        this.action('settings testNotification');
+      },
     };
   }
 }

@@ -60,7 +60,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
       <a class="ib" href="Main.dc.html" aria-label="Back to Overview"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></a>
       <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
         <h1 style="margin: 0; font-size: 15px; font-weight: 600; color: #e6fff0">Settings</h1>
-        <span style="font-size: 12px; color: #8bbf9a">MatrixKoder · acme-api</span>
+        <span style="font-size: 12px; color: #8bbf9a">MatrixKoder · {{repoName}}</span>
       </div>
     </div>
     <div style="position: relative">
@@ -104,7 +104,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
       <sc-for list="{{cmds}}" as="c" hint-placeholder-count="4">
         <div class="cmd"><span class="mono" style="font-size: 12px; color: #ffc4b8; flex: 1">{{c}}</span></div>
       </sc-for>
-      <div class="cmd"><button class="btn" style="border-style: dashed; color: #8bbf9a">+ Add a command</button></div>
+      <div class="cmd"><button class="btn" style="border-style: dashed; color: #8bbf9a" onClick="{{addCmd}}">+ Add a command</button></div>
     </section>
 
   </main>
@@ -112,54 +112,65 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
-const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
-function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
-function makeRain(seed) {
-  const R = rng(seed), out = [];
-  for (let i = 0; i < 30; i++) {
-    const n = 14 + Math.floor(R() * 26), g = [];
-    for (let k = 0; k < n; k++) g.push(GLYPHS[Math.floor(R() * GLYPHS.length)]);
-    const dur = 7 + R() * 9, delay = -R() * dur, op = 0.16 + R() * 0.22;
-    out.push({ glyphs: g.join('\n'), style: 'left:' + (i * 14.6 + R() * 4).toFixed(1) + 'px;opacity:' + op.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's' });
-  }
-  return out;
-}
-const RAIN = makeRain(89);
-const STABS = [
-  ['general', 'General', 'Settings.dc.html', 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'],
-  ['agents', 'Agents', 'SettingsAgents.dc.html', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8'],
-  ['routing', 'Routing', 'SettingsRouting.dc.html', 'M12 3v18M5 5h11l3 3-3 3H5zM19 13H8l-3 3 3 3h11'],
-  ['safety', 'Safety', 'SettingsSafety.dc.html', 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'],
-  ['alerts', 'Alerts', 'SettingsAlerts.dc.html', 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0'],
-  ['look', 'Theme', 'SettingsLook.dc.html', 'M12 3a9 9 0 1 0 9 9c0-1-1-1.5-2-1.5h-2a2 2 0 0 1-2-2V7c0-2-1.5-4-3-4zM7.5 10.5h.01M10.5 7h.01M15 8h.01'],
-  ['shortcuts', 'Shortcuts', 'SettingsShortcuts.dc.html', 'M13 2 3 14h9l-1 8 10-12h-9z'],
-];
-function stabs(active) { return STABS.map(([id, label, href, icon]) => ({ label, href, icon, cls: 'stab' + (id === active ? ' on' : ''), cur: id === active ? 'page' : 'false' })); }
-const GUARDS = [
-  ['gitHard', 'Block destructive git', 'reset --hard, push --force, branch -D', true],
-  ['rmrf', 'Block deletes outside the worktree', 'A lane can only remove files in its own worktree', true],
-  ['push', 'Ask before git push', 'Every push waits for you in Waiting', true],
-  ['secrets', 'Scan diffs for secrets', 'Stops a commit that adds keys or tokens', true],
-];
-const CMDS = ['git reset --hard', 'git push --force', 'git clean -fdx', 'rm -rf ~', 'npm publish'];
 class Component extends DCLogic {
   constructor(p) {
     super(p);
-    const on = {};
-    GUARDS.forEach((g) => { on[g[0]] = g[3]; });
-    this.state = { on, branches: ['main', 'release/*'], draft: '' };
+    this.state = {
+      on: { gitHard: true, rmrf: true, push: true, secrets: true },
+      branches: ['main', 'release/*'],
+      draft: '',
+      cmds: ['git reset --hard', 'git push --force', 'git clean -fdx', 'rm -rf ~', 'npm publish'],
+    };
   }
   renderVals() {
     const s = this.state;
+    const proj = this.getData('projects') || {};
+    const repo = (proj.repos && proj.repos[0]) || {};
+    const repoName = repo.name || 'orca-matrixkoder';
+
+    const guardDefs = [
+      ['gitHard', 'Block destructive git', 'reset --hard, push --force, branch -D'],
+      ['rmrf', 'Block deletes outside the worktree', 'A lane can only remove files in its own worktree'],
+      ['push', 'Ask before git push', 'Every push waits for you in Waiting'],
+      ['secrets', 'Scan diffs for secrets', 'Stops a commit that adds keys or tokens'],
+    ];
+
     return {
-      rain: RAIN,
-      stabs: stabs('safety'),
-      guards: GUARDS.map(([k, label, desc]) => ({ label, desc, cls: 'sw' + (s.on[k] ? ' on' : ''), p: String(!!s.on[k]), flip: () => this.setState({ on: { ...s.on, [k]: !s.on[k] } }) })),
-      branches: s.branches.map((name) => ({ name, remove: () => this.setState({ branches: s.branches.filter((b) => b !== name) }) })),
+      rain: window.MK_RAIN ? window.MK_RAIN(89) : [],
+      stabs: window.MK_STABS ? window.MK_STABS('safety') : [],
+      repoName,
+      guards: guardDefs.map(([k, label, desc]) => ({
+        label,
+        desc,
+        cls: 'sw' + (s.on[k] ? ' on' : ''),
+        p: String(!!s.on[k]),
+        flip: () => {
+          const next = !s.on[k];
+          const nextOn = Object.assign({}, s.on, { [k]: next });
+          this.setState({ on: nextOn });
+          this.action('settings save', { safety: nextOn });
+        },
+      })),
+      branches: s.branches.map((name) => ({
+        name,
+        remove: () => {
+          const next = s.branches.filter((b) => b !== name);
+          this.setState({ branches: next });
+          this.action('settings save', { protectedBranches: next });
+        },
+      })),
       draft: s.draft,
       setDraft: (e) => this.setState({ draft: e.target.value }),
-      addBranch: () => { const v = s.draft.trim(); if (v && s.branches.indexOf(v) < 0) this.setState({ branches: [...s.branches, v], draft: '' }); },
-      cmds: CMDS,
+      addBranch: () => {
+        if (!s.draft.trim()) return;
+        const next = [...s.branches, s.draft.trim()];
+        this.setState({ branches: next, draft: '' });
+        this.action('settings save', { protectedBranches: next });
+      },
+      cmds: s.cmds,
+      addCmd: () => {
+        this.action('settings save', { addCommand: true });
+      },
     };
   }
 }

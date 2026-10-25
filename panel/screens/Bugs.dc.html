@@ -34,24 +34,16 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 .fchip{font-family:'Geist',system-ui,sans-serif;height:30px;padding:0 12px;border-radius:15px;border:1px solid #143d22;background:rgba(6,21,11,.85);color:#8bbf9a;font-size:12px;cursor:pointer}
 .fchip:hover{color:#e6fff0}
 .fchip.on{background:#0d2a16;border-color:#19e35a;color:#e6fff0}
-.segc{display:flex;padding:3px;border-radius:10px;background:#040e07;border:1px solid #0f2a17}
-.segc button{font-family:'Geist',system-ui,sans-serif;flex:1;height:30px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:#8bbf9a;font-size:12.5px;font-weight:500;cursor:pointer}
-.segc button.on{background:#0d2a16;color:#e6fff0}
-.inp{font-family:'Geist',system-ui,sans-serif;flex:1;min-width:0;height:36px;box-sizing:border-box;padding:0 12px;border-radius:9px;border:1px solid #1c4a2b;background:#020a05;color:#e6fff0;font-size:13px;outline:none}
+.inp{font-family:'Geist',system-ui,sans-serif;height:36px;box-sizing:border-box;padding:0 12px;border-radius:9px;border:1px solid #1c4a2b;background:#020a05;color:#e6fff0;font-size:13px;outline:none;flex:1;min-width:0}
 .inp:focus{border-color:#19e35a}
-.inp::placeholder{color:#5f9a70}
-.risk{display:flex;gap:2px}
-.risk span{width:4px;height:14px;border-radius:1px}
-.bug{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid #0d2414}
-.todo{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid #0d2414;cursor:pointer}
-.todo input{width:18px;height:18px;accent-color:#19e35a;margin:0;cursor:pointer}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.bbar{width:3px;height:10px;border-radius:1.5px}
 </style>
 </helmet>
 <div class="mk" style="width: 440px; height: 1240px; box-sizing: border-box; background: #020604; display: flex; flex-direction: column; border-left: 1px solid #0f2a17; position: relative; overflow: hidden">
 
   <div class="rain" aria-hidden="true">
-    <sc-for list="{{rain}}" as="c" hint-placeholder-count="0">
+    <sc-for list="{{rain}}" as="c">
       <div class="rcol" style="{{c.style}}">{{c.glyphs}}</div>
     </sc-for>
   </div>
@@ -62,26 +54,26 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
     </div>
     <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
       <span style="font-size: 14px; font-weight: 700; letter-spacing: .02em; color: #e6fff0">MatrixKoder</span>
-      <span style="font-size: 12px; color: #8bbf9a">acme-api · whole repo, all plans</span>
+      <button style="font-family: 'Geist', system-ui, sans-serif; align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; padding: 0; color: #8bbf9a; font-size: 12px; cursor: pointer; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{planTitle}} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
     </div>
-    <button class="ib" aria-label="Refresh bugs"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg></button>
-    <a class="ib" href="Settings.dc.html" aria-label="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"></path></svg></a>
+    <button class="ib" aria-label="Sweep lanes now" onClick="{{sweepLanes}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg></button>
+    <a class="ib" href="Settings.dc.html" aria-label="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1.0 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></a>
   </header>
 
   <nav aria-label="MatrixKoder sections" style="position: relative; z-index: 1; display: flex; gap: 2px; margin: 0 10px; padding: 4px; border-radius: 12px; background: rgba(4,14,7,.86); backdrop-filter: blur(3px); border: 1px solid #0f2a17">
-    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="8">
-      <sc-if value="{{t.isLink}}" hint-placeholder-val="{{true}}">
+    <sc-for list="{{tabs}}" as="t">
+      <sc-if value="{{t.isLink}}">
       <a class="{{t.cls}}" href="{{t.href}}" aria-current="{{t.cur}}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{t.icon}}"></path></svg>
         <span>{{t.label}}</span>
-        <sc-if value="{{t.hasBadge}}" hint-placeholder-val="{{false}}"><span class="badge" style="{{t.badgeStyle}}">{{t.badge}}</span></sc-if>
+        <sc-if value="{{t.hasBadge}}"><span class="badge" style="{{t.badgeStyle}}">{{t.badge}}</span></sc-if>
       </a>
       </sc-if>
-      <sc-if value="{{t.isBtn}}" hint-placeholder-val="{{false}}">
+      <sc-if value="{{t.isBtn}}">
       <button class="{{t.cls}}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{t.icon}}"></path></svg>
         <span>{{t.label}}</span>
-        <sc-if value="{{t.hasBadge}}" hint-placeholder-val="{{false}}"><span class="badge" style="{{t.badgeStyle}}">{{t.badge}}</span></sc-if>
+        <sc-if value="{{t.hasBadge}}"><span class="badge" style="{{t.badgeStyle}}">{{t.badge}}</span></sc-if>
       </button>
       </sc-if>
     </sc-for>
@@ -91,40 +83,40 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 
     <div style="display: flex; align-items: baseline; gap: 8px">
       <h1 style="margin: 0; font-size: 15px; font-weight: 600; color: #e6fff0">Bugs</h1>
-      <span style="font-size: 12px; color: #7fae8c">7 in this repo · 5 need work</span>
+      <span style="font-size: 12px; color: #7fae8c">{{bugsSummary}}</span>
     </div>
 
     <div style="display: flex; flex-direction: column; gap: 12px">
       <div style="display: flex; gap: 8px">
         <label for="bugq" class="sr">Describe a bug</label>
-        <input id="bugq" class="inp" placeholder="Describe a bug, add file:line if you know it">
-        <button class="btn">Add</button>
+        <input id="bugq" class="inp" placeholder="Describe a bug, add file:line if you know it" value="{{draft}}" onChange="{{changeDraft}}">
+        <button class="btn" onClick="{{addBug}}">Add</button>
       </div>
 
       <div role="group" aria-label="Filter bugs" style="display: flex; gap: 6px; flex-wrap: wrap">
-        <sc-for list="{{filters}}" as="f" hint-placeholder-count="5">
+        <sc-for list="{{filters}}" as="f">
           <button class="{{f.cls}}" aria-pressed="{{f.p}}" onClick="{{f.pick}}">{{f.label}}</button>
         </sc-for>
       </div>
 
       <section class="card" aria-label="Bugs" style="overflow: hidden">
-        <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #7fae8c">
-          <span style="width: 22px">Risk</span><span style="flex: 1">Bug</span><span>Status</span>
-        </div>
-        <sc-for list="{{bugs}}" as="b" hint-placeholder-count="7">
-          <div class="bug">
-            <span class="risk" role="img" aria-label="{{b.riskLabel}}">
-              <sc-for list="{{b.bars}}" as="r" hint-placeholder-count="5"><span style="{{r.style}}"></span></sc-for>
-            </span>
+        <sc-for list="{{bugs}}" as="b">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid #0d2414">
+            <span class="mono" style="font-size: 11px; font-weight: 600; color: #4fd1c5; width: 36px; flex-shrink: 0">{{b.id}}</span>
             <div style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
-              <span style="font-size: 12.5px; line-height: 17px; color: #e6fff0"><span class="mono" style="font-size: 11px; color: #7fae8c">{{b.id}}</span> {{b.title}}</span>
-              <span class="mono" style="font-size: 11px; color: #7fae8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{b.where}}{{b.lane}}</span>
+              <span style="font-size: 13px; font-weight: 500; color: #e6fff0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{b.title}}</span>
+              <span class="mono" style="font-size: 11px; color: #7fae8c">{{b.where}}{{b.lane}}</span>
             </div>
-            <sc-if value="{{b.canFix}}" hint-placeholder-val="{{false}}"><button class="btn sm" style="height: 26px; padding: 0 9px; font-size: 11.5px" onClick="{{b.fix}}">Fix</button></sc-if>
+            <div style="display: flex; align-items: center; gap: 2px" aria-label="{{b.riskLabel}}">
+              <sc-for list="{{b.bars}}" as="bar"><span class="bbar" style="{{bar.style}}"></span></sc-for>
+            </div>
             <span class="pill" style="{{b.statusStyle}}">{{b.status}}</span>
+            <sc-if value="{{b.canFix}}"><button class="btn sm" onClick="{{b.fix}}">Fix</button></sc-if>
           </div>
         </sc-for>
-        <sc-if value="{{noBugs}}" hint-placeholder-val="{{false}}"><div style="padding: 18px 12px; font-size: 12.5px; color: #8bbf9a; border-top: 1px solid #0d2414">Nothing in this group.</div></sc-if>
+        <sc-if value="{{noBugs}}">
+          <div style="padding: 24px; text-align: center; color: #7fae8c; font-size: 13px">No bugs found in this view</div>
+        </sc-if>
       </section>
     </div>
 
@@ -132,8 +124,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 
   <footer style="position: relative; z-index: 1; border-top: 1px solid #0f2a17; background: rgba(3,10,6,.92); backdrop-filter: blur(4px)">
     <div role="toolbar" aria-label="Shortcuts" style="display: flex; gap: 8px; padding: 12px 16px 16px; flex-wrap: wrap">
-      <button class="btn pri" aria-label="Improve prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path><path d="M19 17v4M17 19h4"></path></svg>Improve<span class="kbd">⌃I</span></button>
-      <button class="btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M7 21h10M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path><path d="m16 16 3-8 3 8c-.9.6-1.9 1-3 1s-2.1-.4-3-1z"></path><path d="m2 16 3-8 3 8c-.9.6-1.9 1-3 1s-2.1-.4-3-1z"></path></svg>Ask Jev<span class="kbd">⌃J</span></button>
+      <button class="btn pri" aria-label="Improve prompt" onClick="{{sweepLanes}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path><path d="M19 17v4M17 19h4"></path></svg>Sweep<span class="kbd">⌃I</span></button>
       <button class="slot" disabled="" aria-label="Empty shortcut slot">+ shortcut</button>
       <button class="slot" disabled="" aria-label="Empty shortcut slot">+</button>
     </div>
@@ -142,76 +133,110 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
-const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
-function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
-function makeRain(seed) {
-  const R = rng(seed), out = [];
-  for (let i = 0; i < 30; i++) {
-    const n = 14 + Math.floor(R() * 26), g = [];
-    for (let k = 0; k < n; k++) g.push(GLYPHS[Math.floor(R() * GLYPHS.length)]);
-    const dur = 7 + R() * 9, delay = -R() * dur, op = 0.16 + R() * 0.22;
-    out.push({ glyphs: g.join('\n'), style: 'left:' + (i * 14.6 + R() * 4).toFixed(1) + 'px;opacity:' + op.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's' });
-  }
-  return out;
-}
-const RAIN = makeRain(59);
-const TABS = [
-  ['projects', 'Projects', 'M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z', 'Projects.dc.html'],
-  ['overview', 'Overview', 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z', 'Main.dc.html'],
-  ['lanes', 'Lanes', 'M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9', 'Lanes.dc.html'],
-  ['plan', 'Plan', 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01', 'Plan.dc.html'],
-  ['waiting', 'Waiting', 'M12 8v4M12 16h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z', 'Waiting.dc.html'],
-  ['events', 'Events', 'M22 12h-4l-3 9L9 3l-3 9H2', 'Events.dc.html'],
-  ['inbox', 'Inbox', 'M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z', 'Inbox.dc.html'],
-  ['bugs', 'Bugs', 'M8 2l1.9 1.9M16 2l-1.9 1.9M9 7.1V6a3 3 0 0 1 6 0v1.1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6zM12 20v-9M6.5 13H3M21 13h-3.5M6 7.5 3.5 6M18 7.5 20.5 6', 'Bugs.dc.html'],
-  ['todo', 'Todo', 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11', 'Todo.dc.html'],
-];
-const BADGES = { lanes: ['3', 'background:#0a2f2c;color:#4fd1c5'], waiting: ['1', 'background:#e8b04a;color:#1a1204'], inbox: ['2', 'background:#0f2a17;color:#b9e8c4'], bugs: ['4', 'background:#3a1512;color:#ff9b8a'] };
-function tabs(active) {
-  return TABS.map(([id, label, icon, href]) => {
-    const b = BADGES[id];
-    return { label, icon, href, isLink: !!href, isBtn: !href, cur: id === active ? 'page' : 'false', cls: 'tab' + (id === active ? ' on' : ''), hasBadge: !!b, badge: b ? b[0] : '', badgeStyle: b ? b[1] : '' };
-  });
-}
-const STATUS = {
-  open: ['Open', 'background:#0b1c10;color:#b9e8c4'],
-  fixing: ['Fixing', 'background:#0a2f2c;color:#4fd1c5'],
-  waiting: ['Waiting on you', 'background:#221b08;color:#e8b04a'],
-  fixed: ['Fixed', 'background:#123a1e;color:#19e35a'],
-};
-const BUGS = [
-  ['B-14', 'Refresh token still valid after logout', 'src/auth/token.ts:88', 5, 'fixing', 'P1'],
-  ['B-13', '/debug/session reachable without auth', 'src/middleware.ts:41', 5, 'waiting', 'P2'],
-  ['B-10', 'Login error tells whether a user exists', 'src/auth/login.ts:57', 4, 'open', ''],
-  ['B-11', 'Session cookie has no SameSite flag', 'src/session.ts:12', 3, 'open', ''],
-  ['B-12', 'Rate limiter counts OPTIONS requests', 'src/rate.ts:19', 2, 'open', ''],
-  ['B-9', 'Flaky token rotation test', 'test/token.test.ts:120', 1, 'fixed', ''],
-  ['B-8', 'Migration 004 has no down step', 'db/migrations/004.sql', 2, 'fixed', ''],
-];
-function riskColor(r) { return r >= 5 ? '#ff7a66' : r >= 4 ? '#ff9b5a' : r >= 3 ? '#e8b04a' : '#4fd1c5'; }
 class Component extends DCLogic {
-  constructor(p) { super(p); this.state = { f: 'all', sent: {} }; }
+  constructor(p) {
+    super(p);
+    this.state = { f: 'all', sent: {}, draft: '' };
+  }
+
+  statusInfo(st) {
+    const s = String(st || 'open').toLowerCase();
+    if (s === 'fixing') return ['Fixing', 'background:#0a2f2c;color:#4fd1c5'];
+    if (s === 'waiting') return ['Waiting on you', 'background:#221b08;color:#e8b04a'];
+    if (s === 'fixed') return ['Fixed', 'background:#123a1e;color:#19e35a'];
+    return ['Open', 'background:#0b1c10;color:#b9e8c4'];
+  }
+
+  riskColor(r) {
+    const n = Number(r) || 1;
+    return n >= 5 ? '#ff7a66' : (n >= 4 ? '#ff9b5a' : (n >= 3 ? '#e8b04a' : '#4fd1c5'));
+  }
+
   renderVals() {
     const s = this.state;
-    const withStatus = BUGS.map((b) => (s.sent[b[0]] && b[4] === 'open') ? [b[0], b[1], b[2], b[3], 'fixing', 'P4'] : b);
-    const counts = { all: withStatus.length };
-    withStatus.forEach((b) => { counts[b[4]] = (counts[b[4]] || 0) + 1; });
-    const FILTERS = [['all', 'All'], ['open', 'Open'], ['fixing', 'Fixing'], ['waiting', 'Waiting'], ['fixed', 'Fixed']];
-    const list = withStatus.filter((b) => s.f === 'all' || b[4] === s.f);
+    const bugData = this.getData('bugs') || {};
+    const badges = this.getBadges() || {};
+    const meta = this.getMeta() || {};
+
+    const rawRows = bugData.rows || [];
+    const withStatus = rawRows.map((b) => {
+      const id = b.id || (Array.isArray(b) ? b[0] : 'B');
+      const title = b.title || (Array.isArray(b) ? b[1] : '');
+      const where = b.where || (b.file ? `${b.file}:${b.line}` : (Array.isArray(b) ? b[2] : ''));
+      const risk = b.risk != null ? b.risk : (Array.isArray(b) ? b[3] : 1);
+      let status = b.status || (Array.isArray(b) ? b[4] : 'open');
+      let lane = b.lane || (Array.isArray(b) ? b[5] : '');
+
+      if (s.sent[id] && status === 'open') {
+        status = 'fixing';
+        lane = 'P1';
+      }
+      return { id, title, where, risk, status, lane };
+    });
+
+    const counts = { all: withStatus.length, open: 0, fixing: 0, waiting: 0, fixed: 0 };
+    for (const b of withStatus) {
+      if (counts[b.status] != null) counts[b.status]++;
+    }
+
+    const filterDefs = [
+      ['all', 'All'],
+      ['open', 'Open'],
+      ['fixing', 'Fixing'],
+      ['waiting', 'Waiting'],
+      ['fixed', 'Fixed'],
+    ];
+
+    const list = withStatus.filter((b) => s.f === 'all' || b.status === s.f);
+
+    const bugList = list.map((b) => {
+      const st = this.statusInfo(b.status);
+      const rVal = Number(b.risk) || 1;
+      const bars = [1, 2, 3, 4, 5].map((i) => ({
+        style: `background:${i <= rVal ? this.riskColor(rVal) : '#143d22'}`,
+      }));
+
+      return {
+        id: b.id,
+        title: b.title,
+        where: b.where,
+        lane: b.lane ? ` · ${b.lane}` : '',
+        riskLabel: `Risk ${rVal} of 5`,
+        bars,
+        status: st[0],
+        statusStyle: st[1],
+        canFix: b.status === 'open',
+        fix: () => {
+          this.action('bug fix', { bugId: b.id });
+          this.setState({ sent: { ...s.sent, [b.id]: true } });
+        },
+      };
+    });
+
+    const needWork = counts.open + counts.fixing + counts.waiting;
+
     return {
-      rain: RAIN,
-      tabs: tabs('bugs'),
-      filters: FILTERS.map(([id, label]) => ({ label: label + ' ' + (counts[id] || 0), cls: 'fchip' + (s.f === id ? ' on' : ''), p: String(s.f === id), pick: () => this.setState({ f: id }) })),
-      bugs: list.map(([id, title, where, risk, st, lane]) => ({
-        id, title, where,
-        lane: lane ? ' · ' + lane : '',
-        riskLabel: 'Risk ' + risk + ' of 5',
-        bars: [1, 2, 3, 4, 5].map((i) => ({ style: 'background:' + (i <= risk ? riskColor(risk) : '#143d22') })),
-        status: STATUS[st][0], statusStyle: STATUS[st][1],
-        canFix: st === 'open',
-        fix: () => this.setState({ sent: { ...s.sent, [id]: true } }),
+      rain: window.MK_RAIN(59),
+      tabs: window.MK_TABS('bugs', badges, (t) => {}),
+      planTitle: meta.planId || 'MatrixKoder Plan',
+      bugsSummary: `${withStatus.length} in this repo · ${needWork} need work`,
+      draft: s.draft,
+      changeDraft: (e) => this.setState({ draft: e.target.value }),
+      addBug: () => {
+        const text = (s.draft || '').trim();
+        if (!text) return;
+        this.action('bug add', { title: text, file: '', line: 0, risk: 3 });
+        this.setState({ draft: '' });
+      },
+      filters: filterDefs.map(([id, label]) => ({
+        label: `${label} ${counts[id] || 0}`,
+        cls: 'fchip' + (s.f === id ? ' on' : ''),
+        p: String(s.f === id),
+        pick: () => this.setState({ f: id }),
       })),
-      noBugs: list.length === 0,
+      bugs: bugList,
+      noBugs: bugList.length === 0,
+      sweepLanes: () => this.action('sweep-lanes', {}),
     };
   }
 }

@@ -19,9 +19,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 .btn{font-family:'Geist',system-ui,sans-serif;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid #143d22;background:#06150b;color:#b9e8c4;text-decoration:none;box-sizing:border-box}
 .btn:hover{background:#0c2414;color:#b9e8c4}
 .btn.pri{background:#19e35a;border-color:#19e35a;color:#021006;font-weight:600}
-.btn.pri:hover{background:#3bf077;color:#021006}
 .btn.sm{height:30px;padding:0 10px;font-size:12px}
-.btn[disabled]{opacity:.45;cursor:not-allowed}
 .tab{font-family:'Geist',system-ui,sans-serif;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 9px;border:0;border-radius:9px;background:transparent;color:#7fae8c;font-size:10px;font-weight:500;letter-spacing:-.01em;cursor:pointer;position:relative;white-space:nowrap;text-decoration:none}
 .tab:hover{color:#b9e8c4;background:#06150b}
 .tab.on{background:#0d2a16;color:#e6fff0}
@@ -32,13 +30,13 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 .slot{font-family:'Geist',system-ui,sans-serif;display:inline-flex;align-items:center;gap:4px;height:36px;padding:0 12px;border-radius:9px;border:1px dashed #1c4a2b;background:transparent;color:#5f9a70;font-size:12px;cursor:default}
 .kbd{font-family:'Geist Mono',ui-monospace,monospace;font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(0,0,0,.18);margin-left:2px}
 .card{border-radius:14px;background:rgba(4,17,10,.84);backdrop-filter:blur(3px);border:1px solid #0f2a17}
-.pill{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:11px;font-size:11px;font-weight:600;white-space:nowrap}
+.pill{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:11px;font-size:11px;font-weight:600;white-space:nowrap}
 </style>
 </helmet>
 <div class="mk" style="width: 440px; height: 1240px; box-sizing: border-box; background: #020604; display: flex; flex-direction: column; border-left: 1px solid #0f2a17; position: relative; overflow: hidden">
 
   <div class="rain" aria-hidden="true">
-    <sc-for list="{{rain}}" as="c" hint-placeholder-count="0">
+    <sc-for list="{{rain}}" as="c">
       <div class="rcol" style="{{c.style}}">{{c.glyphs}}</div>
     </sc-for>
   </div>
@@ -49,26 +47,26 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
     </div>
     <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
       <span style="font-size: 14px; font-weight: 700; letter-spacing: .02em; color: #e6fff0">MatrixKoder</span>
-      <span style="font-size: 12px; color: #8bbf9a">acme-api · plans not started yet</span>
+      <button style="font-family: 'Geist', system-ui, sans-serif; align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; padding: 0; color: #8bbf9a; font-size: 12px; cursor: pointer; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{planTitle}} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
     </div>
-    <button class="ib" aria-label="Rescan inbox folder"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg></button>
-    <a class="ib" href="Settings.dc.html" aria-label="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"></path></svg></a>
+    <button class="ib" aria-label="Sweep lanes now" onClick="{{sweepLanes}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg></button>
+    <a class="ib" href="Settings.dc.html" aria-label="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1.0 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></a>
   </header>
 
   <nav aria-label="MatrixKoder sections" style="position: relative; z-index: 1; display: flex; gap: 2px; margin: 0 10px; padding: 4px; border-radius: 12px; background: rgba(4,14,7,.86); backdrop-filter: blur(3px); border: 1px solid #0f2a17">
-    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="8">
-      <sc-if value="{{t.isLink}}" hint-placeholder-val="{{true}}">
+    <sc-for list="{{tabs}}" as="t">
+      <sc-if value="{{t.isLink}}">
       <a class="{{t.cls}}" href="{{t.href}}" aria-current="{{t.cur}}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{t.icon}}"></path></svg>
         <span>{{t.label}}</span>
-        <sc-if value="{{t.hasBadge}}" hint-placeholder-val="{{false}}"><span class="badge" style="{{t.badgeStyle}}">{{t.badge}}</span></sc-if>
+        <sc-if value="{{t.hasBadge}}"><span class="badge" style="{{t.badgeStyle}}">{{t.badge}}</span></sc-if>
       </a>
       </sc-if>
-      <sc-if value="{{t.isBtn}}" hint-placeholder-val="{{false}}">
+      <sc-if value="{{t.isBtn}}">
       <button class="{{t.cls}}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{t.icon}}"></path></svg>
         <span>{{t.label}}</span>
-        <sc-if value="{{t.hasBadge}}" hint-placeholder-val="{{false}}"><span class="badge" style="{{t.badgeStyle}}">{{t.badge}}</span></sc-if>
+        <sc-if value="{{t.hasBadge}}"><span class="badge" style="{{t.badgeStyle}}">{{t.badge}}</span></sc-if>
       </button>
       </sc-if>
     </sc-for>
@@ -79,9 +77,9 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
     <div style="display: flex; align-items: center; gap: 8px">
       <div style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
         <h1 style="margin: 0; font-size: 15px; font-weight: 600; color: #e6fff0">Inbox</h1>
-        <span class="mono" style="font-size: 11.5px; color: #7fae8c">{{countLabel}} · ~/.matrixkoder/inbox</span>
+        <span class="mono" style="font-size: 11.5px; color: #7fae8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{countLabel}} · {{inboxDir}}</span>
       </div>
-      <button class="btn sm"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>New plan</button>
+      <button class="btn sm" onClick="{{newPlan}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>New plan</button>
     </div>
 
     <div style="border-radius: 12px; border: 1px dashed #1c4a2b; background: rgba(2,10,5,.75); padding: 14px; display: flex; align-items: center; gap: 12px">
@@ -89,54 +87,56 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
       <span style="font-size: 12.5px; line-height: 18px; color: #8bbf9a">Drop a plan <span class="mono" style="font-size: 11.5px">.md</span> here, or start one from the MK plan template. Files stay on this machine.</span>
     </div>
 
-    <sc-for list="{{files}}" as="f" hint-placeholder-count="3">
+    <sc-for list="{{filesList}}" as="f">
       <article class="card" style="padding: 12px; display: flex; flex-direction: column; gap: 10px">
         <div style="display: flex; align-items: flex-start; gap: 10px">
           <div style="width: 32px; height: 32px; border-radius: 9px; background: #0b1c10; color: #8bbf9a; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6M8 13h8M8 17h5"></path></svg>
           </div>
           <div style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
-            <span style="font-size: 13px; font-weight: 600; color: #e6fff0">{{f.title}}</span>
+            <span style="font-size: 13px; font-weight: 600; color: #e6fff0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{f.title}}</span>
             <span class="mono" style="font-size: 11px; color: #7fae8c">{{f.name}} · {{f.when}}</span>
           </div>
           <span class="pill" style="{{f.checkStyle}}">{{f.check}}</span>
         </div>
-        <sc-if value="{{f.hasMissing}}" hint-placeholder-val="{{false}}">
+        <sc-if value="{{f.hasMissing}}">
           <div style="border-radius: 10px; background: #120e04; border: 1px solid #3d2f10; padding: 8px 10px; font-size: 12px; line-height: 17px; color: #f0d9a8">Missing sections: {{f.missing}}. Import is off until the template check passes.</div>
         </sc-if>
-        <sc-if value="{{f.imported}}" hint-placeholder-val="{{false}}">
+        <sc-if value="{{f.imported}}">
           <div style="border-radius: 10px; background: #08190d; border: 1px solid #145a2a; padding: 8px 10px; display: flex; align-items: center; gap: 8px">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#19e35a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
             <span style="font-size: 12px; color: #b9e8c4; flex: 1">Imported as plan <span class="mono">{{f.slug}}</span></span>
             <a href="Main.dc.html" style="font-size: 12px; font-weight: 600; text-decoration: none">Open</a>
           </div>
         </sc-if>
-        <sc-if value="{{f.notImported}}" hint-placeholder-val="{{true}}">
+        <sc-if value="{{f.notImported}}">
         <div style="display: flex; gap: 6px; align-items: center">
-          <sc-if value="{{f.pass}}" hint-placeholder-val="{{true}}"><button class="btn sm pri" onClick="{{f.doImport}}">Import</button></sc-if>
-          <sc-if value="{{f.fail}}" hint-placeholder-val="{{false}}"><button class="btn sm" disabled="">Import</button></sc-if>
-          <button class="btn sm">Open</button>
+          <sc-if value="{{f.pass}}"><button class="btn sm pri" onClick="{{f.doImport}}">Import</button></sc-if>
+          <sc-if value="{{f.fail}}"><button class="btn sm" disabled="">Import</button></sc-if>
           <button class="btn sm" onClick="{{f.doArchive}}">Archive</button>
           <span style="flex: 1"></span>
-          <button class="ib" style="width: 30px; height: 30px; color: #ff9b8a" aria-label="Delete {{f.name}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"></path></svg></button>
+          <button class="ib" style="width: 30px; height: 30px; color: #ff9b8a" aria-label="Delete {{f.name}}" onClick="{{f.doDelete}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"></path></svg></button>
         </div>
         </sc-if>
       </article>
     </sc-for>
 
-    <sc-if value="{{hasArchived}}" hint-placeholder-val="{{false}}">
+    <sc-if value="{{hasArchived}}">
       <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #8bbf9a; padding: 0 2px">
         <span style="flex: 1">{{archivedLabel}} in <span class="mono" style="font-size: 11.5px">inbox/archive</span></span>
         <button onClick="{{restore}}" style="font-family: 'Geist', system-ui, sans-serif; border: 0; background: transparent; color: #4fd1c5; font-size: 12px; cursor: pointer; padding: 0">Restore</button>
       </div>
     </sc-if>
 
+    <sc-if value="{{hasNoFiles}}">
+      <div style="border-radius: 12px; background: rgba(4,17,10,.84); border: 1px solid #0f2a17; padding: 24px; text-align: center; color: #7fae8c; font-size: 13px">No plan files in inbox</div>
+    </sc-if>
+
   </main>
 
   <footer style="position: relative; z-index: 1; border-top: 1px solid #0f2a17; background: rgba(3,10,6,.92); backdrop-filter: blur(4px)">
     <div role="toolbar" aria-label="Shortcuts" style="display: flex; gap: 8px; padding: 12px 16px 16px; flex-wrap: wrap">
-      <button class="btn pri" aria-label="Improve prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path><path d="M19 17v4M17 19h4"></path></svg>Improve<span class="kbd">⌃I</span></button>
-      <button class="btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M7 21h10M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path><path d="m16 16 3-8 3 8c-.9.6-1.9 1-3 1s-2.1-.4-3-1z"></path><path d="m2 16 3-8 3 8c-.9.6-1.9 1-3 1s-2.1-.4-3-1z"></path></svg>Ask Jev<span class="kbd">⌃J</span></button>
+      <button class="btn pri" aria-label="Improve prompt" onClick="{{sweepLanes}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path><path d="M19 17v4M17 19h4"></path></svg>Sweep<span class="kbd">⌃I</span></button>
       <button class="slot" disabled="" aria-label="Empty shortcut slot">+ shortcut</button>
       <button class="slot" disabled="" aria-label="Empty shortcut slot">+</button>
     </div>
@@ -145,68 +145,73 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
-const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
-function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
-function makeRain(seed) {
-  const R = rng(seed), out = [];
-  for (let i = 0; i < 30; i++) {
-    const n = 14 + Math.floor(R() * 26), g = [];
-    for (let k = 0; k < n; k++) g.push(GLYPHS[Math.floor(R() * GLYPHS.length)]);
-    const dur = 7 + R() * 9, delay = -R() * dur, op = 0.16 + R() * 0.22;
-    out.push({ glyphs: g.join('\n'), style: 'left:' + (i * 14.6 + R() * 4).toFixed(1) + 'px;opacity:' + op.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's' });
-  }
-  return out;
-}
-const RAIN = makeRain(47);
-const TABS = [
-  ['projects', 'Projects', 'M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z', 'Projects.dc.html'],
-  ['overview', 'Overview', 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z', 'Main.dc.html'],
-  ['lanes', 'Lanes', 'M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9', 'Lanes.dc.html'],
-  ['plan', 'Plan', 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01', 'Plan.dc.html'],
-  ['waiting', 'Waiting', 'M12 8v4M12 16h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z', 'Waiting.dc.html'],
-  ['events', 'Events', 'M22 12h-4l-3 9L9 3l-3 9H2', 'Events.dc.html'],
-  ['inbox', 'Inbox', 'M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z', 'Inbox.dc.html'],
-  ['bugs', 'Bugs', 'M8 2l1.9 1.9M16 2l-1.9 1.9M9 7.1V6a3 3 0 0 1 6 0v1.1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6zM12 20v-9M6.5 13H3M21 13h-3.5M6 7.5 3.5 6M18 7.5 20.5 6', 'Bugs.dc.html'],
-  ['todo', 'Todo', 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11', 'Todo.dc.html'],
-];
-const BADGES = { lanes: ['3', 'background:#0a2f2c;color:#4fd1c5'], waiting: ['1', 'background:#e8b04a;color:#1a1204'], inbox: ['2', 'background:#0f2a17;color:#b9e8c4'], bugs: ['4', 'background:#3a1512;color:#ff9b8a'] };
-function tabs(active) {
-  return TABS.map(([id, label, icon, href]) => {
-    const b = BADGES[id];
-    return { label, icon, href, isLink: !!href, isBtn: !href, cur: id === active ? 'page' : 'false', cls: 'tab' + (id === active ? ' on' : ''), hasBadge: !!b, badge: b ? b[0] : '', badgeStyle: b ? b[1] : '' };
-  });
-}
-const FILES = [
-  { id: 'a', name: 'rate-limit-v1.md', slug: 'rate-limit-v1', title: 'Rate limiting for public routes', when: 'edited 20m ago', pass: true, missing: '' },
-  { id: 'b', name: 'billing-webhooks.md', slug: 'billing-webhooks', title: 'Retry and dedupe Stripe webhooks', when: 'edited 2h ago', pass: false, missing: 'QA plan, Rollback' },
-  { id: 'c', name: 'search-reindex.md', slug: 'search-reindex', title: 'Nightly search reindex job', when: 'edited yesterday', pass: true, missing: '' },
-];
 class Component extends DCLogic {
-  constructor(p) { super(p); this.state = { imported: {}, archived: {} }; }
+  constructor(p) {
+    super(p);
+    this.state = { imported: {}, archived: {} };
+  }
+
   renderVals() {
     const s = this.state;
-    const shown = FILES.filter((f) => !s.archived[f.id]);
-    const nArch = FILES.length - shown.length;
+    const inb = this.getData('inbox') || {};
+    const badges = this.getBadges() || {};
+    const meta = this.getMeta() || {};
+
+    const rawFiles = inb.files || [];
+    const shown = rawFiles.filter((f) => !s.archived[f.id || f.name]);
+    const nArch = (inb.archived || 0) + (rawFiles.length - shown.length);
+
+    const filesList = shown.map((f) => {
+      const fId = f.id || f.name || 'f';
+      const isPass = f.fit === 'pass' || f.pass === true;
+      const isImp = !!s.imported[fId] || f.state === 'imported' || !!f.planId;
+      const miss = Array.isArray(f.missing) ? f.missing.join(', ') : String(f.missing || '');
+
+      return {
+        id: fId,
+        name: f.name || 'plan.md',
+        slug: f.planId || f.id || f.name || '',
+        title: f.title || f.name || 'Untitled Plan',
+        when: f.mtime ? `${Math.max(1, Math.round((Date.now() - f.mtime) / 60000))}m ago` : 'recently',
+        pass: isPass,
+        fail: !isPass,
+        check: isPass ? 'Template pass' : 'Partial',
+        checkStyle: isPass ? 'background:#123a1e;color:#19e35a' : 'background:#221b08;color:#e8b04a',
+        hasMissing: !isPass && !isImp && !!miss,
+        missing: miss,
+        imported: isImp,
+        notImported: !isImp,
+        doImport: () => {
+          this.action('inbox import', { file: f.name });
+          this.setState({ imported: { ...s.imported, [fId]: true } });
+        },
+        doArchive: () => {
+          this.action('inbox archive', { file: f.name });
+          this.setState({ archived: { ...s.archived, [fId]: true } });
+        },
+        doDelete: () => {
+          this.action('inbox delete', { file: f.name });
+          this.setState({ archived: { ...s.archived, [fId]: true } });
+        },
+      };
+    });
+
     return {
-      rain: RAIN,
-      tabs: tabs('inbox'),
-      countLabel: shown.length + (shown.length === 1 ? ' plan file' : ' plan files'),
-      files: shown.map((f) => {
-        const imp = !!s.imported[f.id];
-        return {
-          ...f,
-          check: f.pass ? 'Template pass' : 'Partial',
-          checkStyle: f.pass ? 'background:#123a1e;color:#19e35a' : 'background:#221b08;color:#e8b04a',
-          hasMissing: !f.pass && !imp,
-          fail: !f.pass,
-          imported: imp, notImported: !imp,
-          doImport: () => this.setState({ imported: { ...s.imported, [f.id]: true } }),
-          doArchive: () => this.setState({ archived: { ...s.archived, [f.id]: true } }),
-        };
-      }),
+      rain: window.MK_RAIN(47),
+      tabs: window.MK_TABS('inbox', badges, (t) => {}),
+      planTitle: meta.planId || 'MatrixKoder Plan',
+      inboxDir: inb.dir || '~/.matrixkoder/inbox',
+      countLabel: `${shown.length} ${shown.length === 1 ? 'plan file' : 'plan files'}`,
+      filesList,
+      hasNoFiles: filesList.length === 0,
       hasArchived: nArch > 0,
-      archivedLabel: nArch + (nArch === 1 ? ' file archived' : ' files archived'),
-      restore: () => this.setState({ archived: {} }),
+      archivedLabel: `${nArch} ${nArch === 1 ? 'file archived' : 'files archived'}`,
+      restore: () => {
+        this.action('inbox restore', { file: 'all' });
+        this.setState({ archived: {} });
+      },
+      newPlan: () => this.action('inbox import', { file: 'new-plan.md' }),
+      sweepLanes: () => this.action('sweep-lanes', {}),
     };
   }
 }
