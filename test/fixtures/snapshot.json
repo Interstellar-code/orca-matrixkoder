@@ -1,0 +1,728 @@
+{
+  "meta": {
+    "schema": 1,
+    "at": 1792911008371,
+    "orca": "1.4.239",
+    "runtimeOk": true,
+    "repoId": "4d01f6f8-887c-47fb-af0d-5387e7248caf",
+    "planId": "orca-dashboard-wiring",
+    "runId": "run_aa8ea15012d0",
+    "stale": {
+      "ps": 1200,
+      "orchestration": 4300,
+      "git": 8000,
+      "quota": 41000
+    }
+  },
+  "badges": {
+    "lanes": 2,
+    "waiting": 2,
+    "inbox": 2,
+    "bugs": 3
+  },
+  "projects": {
+    "machine": "Rohit’s Mac mini",
+    "active": 2,
+    "total": 4,
+    "lanesLive": 2,
+    "waiting": 2,
+    "waitingList": [
+      {
+        "askId": "msg_f88fb4c95475",
+        "title": "Rewrite one spec that tested the old stale-engine behaviour?",
+        "repo": "orca-matrixkoder",
+        "plan": "orca-dashboard-wiring",
+        "lane": "P1",
+        "agent": "claude",
+        "ageMs": 20694371
+      },
+      {
+        "askId": "msg_1f703a46756a",
+        "title": "Keep the old migration path for v2 databases?",
+        "repo": "orca-matrixkoder",
+        "plan": "orca-dashboard-wiring",
+        "lane": "P2",
+        "agent": "claude",
+        "ageMs": 27172371
+      }
+    ],
+    "repos": [
+      {
+        "id": "0f9e5bfb-0a2f-4d68-ab7d-0717f29a63ab",
+        "name": "cc-workflows",
+        "path": "~/Development/cc-workflows",
+        "worktrees": 1,
+        "lastActivityAt": 1792828378880,
+        "plans": [],
+        "idleWorktrees": 1
+      },
+      {
+        "id": "3b490a08-b835-42d4-b2b7-acc983a33433",
+        "name": "matrixkoder",
+        "path": "~/Development/matrixkoder",
+        "worktrees": 1,
+        "lastActivityAt": 1792865445467,
+        "plans": [],
+        "idleWorktrees": 1
+      },
+      {
+        "id": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91",
+        "name": "claude-mnemosyne",
+        "path": "~/Development/claude-mnemosyne",
+        "worktrees": 4,
+        "lastActivityAt": 1792910993371,
+        "plans": [],
+        "idleWorktrees": 4
+      },
+      {
+        "id": "4d01f6f8-887c-47fb-af0d-5387e7248caf",
+        "name": "orca-matrixkoder",
+        "path": "~/Development/orca-matrixkoder",
+        "worktrees": 3,
+        "lastActivityAt": 1792910984079,
+        "plans": [
+          {
+            "id": "orca-dashboard-wiring",
+            "stage": "build",
+            "wave": [
+              2,
+              3
+            ],
+            "lanes": 2,
+            "tasks": [
+              2,
+              9
+            ],
+            "waiting": 2,
+            "pr": null
+          }
+        ],
+        "idleWorktrees": 0
+      }
+    ]
+  },
+  "overview": {
+    "stage": "build",
+    "stageProgress": {
+      "plan": 1,
+      "build": 0.22,
+      "verify": 0,
+      "merge": 0
+    },
+    "wave": [
+      2,
+      3
+    ],
+    "lanesLive": 2,
+    "tasks": [
+      2,
+      9
+    ],
+    "needsYou": 2,
+    "bus": {
+      "id": "msg_8836c4e1d220",
+      "at": 1792892297000
+    },
+    "decision": {
+      "askId": "msg_f88fb4c95475",
+      "kind": "question",
+      "title": "Rewrite one spec that tested the old stale-engine behaviour?",
+      "body": "A worker asks before it changes a file outside its list.",
+      "lane": "P1",
+      "agent": "claude",
+      "ageMs": 20694371
+    },
+    "waves": [
+      {
+        "title": "Prove the worker and the build",
+        "done": 2,
+        "total": 2,
+        "segments": {
+          "done": 2,
+          "working": 0,
+          "waiting": 0
+        }
+      },
+      {
+        "title": "Data layer and Orca adapter",
+        "done": 0,
+        "total": 5,
+        "segments": {
+          "done": 0,
+          "working": 2,
+          "waiting": 0
+        }
+      },
+      {
+        "title": "Server and screens",
+        "done": 0,
+        "total": 2,
+        "segments": {
+          "done": 0,
+          "working": 0,
+          "waiting": 0
+        }
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "label": "P1",
+      "dispatchId": null,
+      "paneKey": "a2821d1f-32dc-4e71-a184-89ae0f97373d:b8810a9c-3bad-4cfe-9d47-c0b7bf25f46f",
+      "worktreeId": "4d01f6f8-887c-47fb-af0d-5387e7248caf::/Users/rohits/orca/workspaces/orca-matrixkoder/lane-store",
+      "terminalHandle": "term_e7fbbcd3-36a8-438d-956d-264ff7ff114e",
+      "agent": "claude",
+      "model": "sonnet 5.5",
+      "effort": "medium",
+      "branch": "Interstellar-code/lane-store",
+      "head": "d53f708",
+      "path": "~/orca/workspaces/orca-matrixkoder/lane-store",
+      "state": "working",
+      "phase": "implementing",
+      "turns": 4,
+      "startedAt": 1792910927915,
+      "task": {
+        "id": "STORE.1",
+        "title": "Database schema and migrations",
+        "wave": 2,
+        "orcaTaskId": "task_0store0001"
+      },
+      "git": {
+        "ahead": 2,
+        "files": 9,
+        "added": 410,
+        "removed": 12
+      },
+      "checks": [
+        {
+          "name": "build",
+          "status": "passed",
+          "at": 1792910888371
+        },
+        {
+          "name": "test",
+          "status": "running",
+          "passed": 41,
+          "total": 63
+        }
+      ],
+      "activity": [
+        {
+          "at": 1792910985955,
+          "kind": "tool",
+          "text": "Bash"
+        }
+      ],
+      "askId": null
+    },
+    {
+      "label": "P2",
+      "dispatchId": null,
+      "paneKey": "83d5ecc2-4afb-4d0a-ac4c-b83e55dd7bcb:19ffb6ca-122d-412f-b560-70b11b751747",
+      "worktreeId": "4d01f6f8-887c-47fb-af0d-5387e7248caf::/Users/rohits/orca/workspaces/orca-matrixkoder/lane-orca",
+      "terminalHandle": "term_873fa34d-789f-4300-a522-c24d4401c540",
+      "agent": "claude",
+      "model": "sonnet 5.5",
+      "effort": "low",
+      "branch": "Interstellar-code/lane-orca",
+      "head": "d53f708",
+      "path": "~/orca/workspaces/orca-matrixkoder/lane-orca",
+      "state": "working",
+      "phase": "implementing",
+      "turns": 5,
+      "startedAt": 1792910927407,
+      "task": {
+        "id": "ORCA.1",
+        "title": "Read functions and projections",
+        "wave": 2,
+        "orcaTaskId": "task_0orca00001"
+      },
+      "git": {
+        "ahead": 3,
+        "files": 6,
+        "added": 182,
+        "removed": 40
+      },
+      "checks": [],
+      "activity": [
+        {
+          "at": 1792910997440,
+          "kind": "tool",
+          "text": "Bash"
+        }
+      ],
+      "askId": null
+    }
+  ],
+  "plan": {
+    "title": "orca-dashboard-wiring",
+    "done": 2,
+    "total": 9,
+    "subtasks": 6,
+    "phases": [
+      {
+        "id": "ph1",
+        "title": "Prove the worker and the build",
+        "status": "done",
+        "tasks": [
+          {
+            "id": "SPIKE.1",
+            "title": "Worker serves a tab",
+            "status": "done",
+            "meta": "merged",
+            "after": null,
+            "subs": [],
+            "attempts": 0
+          },
+          {
+            "id": "SPIKE.2",
+            "title": "npm test and the mk bin entry",
+            "status": "done",
+            "meta": "merged",
+            "after": "SPIKE.1",
+            "subs": [],
+            "attempts": 0
+          }
+        ],
+        "done": 2,
+        "total": 2
+      },
+      {
+        "id": "ph2",
+        "title": "Data layer and Orca adapter",
+        "status": "working",
+        "tasks": [
+          {
+            "id": "STORE.1",
+            "title": "Database schema and migrations",
+            "status": "working",
+            "meta": "P2 claude · turn 5",
+            "after": null,
+            "subs": [
+              [
+                "STORE.1.1",
+                "create tables",
+                "done",
+                ""
+              ],
+              [
+                "STORE.1.2",
+                "two writers at once",
+                "working",
+                "now"
+              ]
+            ],
+            "attempts": 0
+          },
+          {
+            "id": "STORE.4",
+            "title": "Plan import and re-import keeps links to started tasks and their attempt history across every plan version",
+            "status": "failed",
+            "meta": "attempt 2 · gate failed",
+            "after": "STORE.1",
+            "subs": [
+              [
+                "STORE.4.1",
+                "parse blocks",
+                "done",
+                ""
+              ],
+              [
+                "STORE.4.2",
+                "merge by column ownership",
+                "failed",
+                "gate failed"
+              ]
+            ],
+            "attempts": 2
+          },
+          {
+            "id": "ORCA.1",
+            "title": "Read functions and projections",
+            "status": "working",
+            "meta": "P1 claude · turn 4",
+            "after": null,
+            "subs": [
+              [
+                "ORCA.1.1",
+                "read functions",
+                "done",
+                ""
+              ],
+              [
+                "ORCA.1.2",
+                "drop prompt fields",
+                "working",
+                "now"
+              ]
+            ],
+            "attempts": 0
+          },
+          {
+            "id": "ORCA.2",
+            "title": "Action allowlist",
+            "status": "pending",
+            "meta": "no lane yet",
+            "after": "ORCA.1",
+            "subs": [],
+            "attempts": 0
+          },
+          {
+            "id": "ORCA.3",
+            "title": "Sample snapshot for the screens",
+            "status": "pending",
+            "meta": "no lane yet",
+            "after": "ORCA.1",
+            "subs": [],
+            "attempts": 0
+          }
+        ],
+        "done": 0,
+        "total": 5
+      },
+      {
+        "id": "ph3",
+        "title": "Server and screens",
+        "status": "pending",
+        "tasks": [
+          {
+            "id": "SERVE.1",
+            "title": "HTTP server with token and Host checks",
+            "status": "pending",
+            "meta": "waits for phase 2",
+            "after": null,
+            "subs": [],
+            "attempts": 0
+          },
+          {
+            "id": "WIRE.1",
+            "title": "Screens read the snapshot",
+            "status": "pending",
+            "meta": "waits for phase 2",
+            "after": "SERVE.1",
+            "subs": [],
+            "attempts": 0
+          }
+        ],
+        "done": 0,
+        "total": 2
+      }
+    ]
+  },
+  "waiting": {
+    "open": [
+      {
+        "id": "msg_f88fb4c95475",
+        "kind": "question",
+        "title": "Rewrite one spec that tested the old stale-engine behaviour?",
+        "body": "A worker asks before it changes a file outside its list.",
+        "rec": "",
+        "options": [
+          "yes-rewrite-that-one-spec",
+          "no-other-way"
+        ],
+        "lane": "P1",
+        "agent": "claude",
+        "task": "task_a10a9e46cf3b",
+        "ageMs": 20694371
+      },
+      {
+        "id": "msg_1f703a46756a",
+        "kind": "question",
+        "title": "Keep the old migration path for v2 databases?",
+        "body": "A worker asks before it changes a file outside its list.",
+        "rec": "",
+        "options": [
+          "1-add-retire-to-the-union",
+          "2-log-as-update"
+        ],
+        "lane": "P2",
+        "agent": "claude",
+        "task": "task_a93a33ac66fc",
+        "ageMs": 27172371
+      }
+    ],
+    "resolved": [
+      {
+        "title": "Use the 10 s delay window for approvals?",
+        "outcome": "Approved",
+        "src": "orchestrator · 11:58",
+        "canUndo": false,
+        "undoUntil": null
+      }
+    ]
+  },
+  "events": {
+    "cursor": 128,
+    "rows": [
+      {
+        "id": 128,
+        "at": 1792892297000,
+        "kind": "done",
+        "text": "worker done: succeeded",
+        "src": "term_e808e888",
+        "payloadRef": 128
+      },
+      {
+        "id": 127,
+        "at": 1792891959000,
+        "kind": "done",
+        "text": "worker done: failed",
+        "src": "term_61f26767",
+        "payloadRef": 127
+      },
+      {
+        "id": 126,
+        "at": 1792891485000,
+        "kind": "done",
+        "text": "worker done: succeeded",
+        "src": "term_e808e888",
+        "payloadRef": 126
+      },
+      {
+        "id": 125,
+        "at": 1792890928000,
+        "kind": "done",
+        "text": "worker done: succeeded",
+        "src": "term_064fd6b2",
+        "payloadRef": 125
+      },
+      {
+        "id": 123,
+        "at": 1792890331000,
+        "kind": "status",
+        "text": "status: update",
+        "src": "run:run_aa2cc",
+        "payloadRef": 123
+      },
+      {
+        "id": 122,
+        "at": 1792890314000,
+        "kind": "ask",
+        "text": "worker asks a question",
+        "src": "dispatch:ctx_",
+        "payloadRef": 122
+      },
+      {
+        "id": 100,
+        "at": 1792883855000,
+        "kind": "status",
+        "text": "status: update",
+        "src": "run:run_aa2cc",
+        "payloadRef": 100
+      },
+      {
+        "id": 99,
+        "at": 1792883836000,
+        "kind": "ask",
+        "text": "worker asks a question",
+        "src": "dispatch:ctx_",
+        "payloadRef": 99
+      },
+      {
+        "id": 93,
+        "at": 1792882176000,
+        "kind": "status",
+        "text": "status: update",
+        "src": "run:run_aa2cc",
+        "payloadRef": 93
+      },
+      {
+        "id": 91,
+        "at": 1792882160000,
+        "kind": "ask",
+        "text": "worker asks a question",
+        "src": "dispatch:ctx_",
+        "payloadRef": 91
+      },
+      {
+        "id": 89,
+        "at": 1792881801000,
+        "kind": "status",
+        "text": "status: update",
+        "src": "term_a71fd963",
+        "payloadRef": 89
+      },
+      {
+        "id": 65,
+        "at": 1792877799000,
+        "kind": "ask",
+        "text": "worker asks a question",
+        "src": "dispatch:ctx_",
+        "payloadRef": 65
+      }
+    ]
+  },
+  "inbox": {
+    "dir": "~/Development/orca-matrixkoder/.matrixkoder/inbox",
+    "archived": 1,
+    "files": [
+      {
+        "name": "orca-dashboard-wiring.md",
+        "title": "Wire the dashboard to real Orca data",
+        "editedAt": 1792907408371,
+        "check": "pass",
+        "missing": [],
+        "state": "imported",
+        "planId": "orca-dashboard-wiring"
+      },
+      {
+        "name": "rate-limit-v1.md",
+        "title": "Rate limit the public API",
+        "editedAt": 1792909808371,
+        "check": "partial",
+        "missing": [
+          "Gates",
+          "Risks"
+        ],
+        "state": "new",
+        "planId": null
+      },
+      {
+        "name": "notes-for-later.md",
+        "title": "Notes",
+        "editedAt": 1792824608371,
+        "check": "not_a_plan",
+        "missing": [],
+        "state": "changed",
+        "planId": null
+      }
+    ]
+  },
+  "bugs": {
+    "total": 4,
+    "needWork": 3,
+    "rows": [
+      {
+        "id": "B-14",
+        "title": "Token rotation skips the leeway check",
+        "where": "src/auth/token.ts:88",
+        "risk": 5,
+        "status": "fixing",
+        "lane": "P1"
+      },
+      {
+        "id": "B-13",
+        "title": "Settings save drops unknown keys when the file has a BOM",
+        "where": "src/store/settings.ts:41",
+        "risk": 3,
+        "status": "open",
+        "lane": null
+      },
+      {
+        "id": "B-12",
+        "title": "Lane card shows the wrong branch for a worktree whose branch name is longer than eighty characters because the label is cut in the middle",
+        "where": "panel/Lanes.dc.html:212",
+        "risk": 2,
+        "status": "waiting",
+        "lane": null
+      },
+      {
+        "id": "B-9",
+        "title": "Empty plan imports as one phase",
+        "where": "src/store/import.ts:130",
+        "risk": 1,
+        "status": "fixed",
+        "lane": null
+      }
+    ]
+  },
+  "todo": {
+    "open": 3,
+    "done": 1,
+    "rows": [
+      {
+        "id": 1,
+        "text": "Check the Orca release notes for commands.invoke",
+        "group": "today",
+        "done": false,
+        "link": null
+      },
+      {
+        "id": 2,
+        "text": "Answer the stale-engine question",
+        "group": "today",
+        "done": false,
+        "link": {
+          "kind": "task",
+          "ref": "ORCA.1",
+          "label": "ORCA.1 · orca-dashboard-wiring"
+        }
+      },
+      {
+        "id": 3,
+        "text": "Look at B-12 with a long branch name",
+        "group": "soon",
+        "done": false,
+        "link": {
+          "kind": "bug",
+          "ref": "B-12",
+          "label": "B-12"
+        }
+      },
+      {
+        "id": 4,
+        "text": "Archive the old plan files",
+        "group": "soon",
+        "done": true,
+        "link": null
+      }
+    ]
+  },
+  "settings": {
+    "values": {
+      "schema": 2
+    },
+    "agents": [
+      {
+        "id": "claude",
+        "cli": "/usr/local/bin/claude",
+        "found": true,
+        "quota": [
+          {
+            "label": "5h window",
+            "leftPct": 96,
+            "resetsAt": 1792921799934
+          },
+          {
+            "label": "Weekly",
+            "leftPct": 38,
+            "resetsAt": 1793077199934
+          }
+        ]
+      },
+      {
+        "id": "codex",
+        "cli": "/usr/local/bin/codex",
+        "found": true,
+        "quota": []
+      },
+      {
+        "id": "agy",
+        "cli": "/usr/local/bin/agy",
+        "found": true,
+        "quota": [
+          {
+            "label": "5h window",
+            "leftPct": 93,
+            "resetsAt": 1792922372000
+          },
+          {
+            "label": "Weekly",
+            "leftPct": 0,
+            "resetsAt": 1793356464000
+          }
+        ]
+      },
+      {
+        "id": "opencode",
+        "cli": "/usr/local/bin/opencode",
+        "found": true,
+        "quota": []
+      }
+    ],
+    "baseBranch": "main",
+    "version": "0.1.1"
+  }
+}

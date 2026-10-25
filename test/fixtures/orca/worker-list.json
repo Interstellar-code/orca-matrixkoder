@@ -1,0 +1,553 @@
+{
+  "_source": {
+    "command": "orca orchestration worker-list --limit 100 --json",
+    "date": "2026-10-25",
+    "orcaVersion": "1.4.239",
+    "note": "recorded from the real CLI; free text replaced by [redacted …] placeholders, ids and paths kept; long lists trimmed to a sample"
+  },
+  "id": "4f0a7bae-e760-48fe-b2eb-e926101f5036",
+  "ok": true,
+  "result": {
+    "workers": [
+      {
+        "dispatchId": "ctx_f18a42f2381f",
+        "taskId": "task_482f4dae657a",
+        "runId": "run_aa2cc2982670",
+        "workerState": "succeeded",
+        "dispatchStatus": "completed",
+        "agentTerminalHandle": "term_e808e888-0e79-4b98-accc-17bc3b933fa4",
+        "terminalState": "released",
+        "resource": {
+          "id": "wtr_74812df32fc5",
+          "ownershipState": "released",
+          "releaseState": "released",
+          "retainedReason": null,
+          "terminalHandle": "term_e808e888-0e79-4b98-accc-17bc3b933fa4",
+          "worktreeId": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-c",
+          "endpointId": "50d2e435-3531-4145-a844-b65d9d21b499",
+          "endpointIncarnation": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-c@@5409d075:76aad13a-a7f1-41d8-afd9-21c8c5d1a680",
+          "originDispatchId": "ctx_d01a991ff665",
+          "ownerDispatchId": "ctx_f18a42f2381f",
+          "releaseRequestedAt": "2026-10-25 01:42:50",
+          "releaseCompletedAt": "2026-10-25 01:42:53",
+          "releaseError": null,
+          "recoveryAttemptCount": 0,
+          "lastRecoveryAt": null,
+          "archive": {
+            "source": "transcript",
+            "status": "captured"
+          }
+        },
+        "projection": {
+          "id": "ctx_f18a42f2381f",
+          "dispatchId": "ctx_f18a42f2381f",
+          "taskId": "task_482f4dae657a",
+          "runId": "run_aa2cc2982670",
+          "role": "worker",
+          "parent": null,
+          "provider": null,
+          "host": {
+            "kind": "local",
+            "id": "local"
+          },
+          "workspace": {
+            "id": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-c",
+            "kind": "folder_or_worktree"
+          },
+          "stage": {
+            "worker": "succeeded",
+            "dispatch": "completed",
+            "detail": "settled",
+            "activity": "unknown"
+          },
+          "outcome": "succeeded",
+          "liveness": {
+            "verdict": "exited",
+            "source": "resource_release"
+          },
+          "evidence": {
+            "durable": true,
+            "liveStatus": "unavailable",
+            "lastObservedAt": null
+          },
+          "resource": {
+            "state": "released"
+          },
+          "nextAction": {
+            "kind": "none",
+            "argv": []
+          },
+          "attention": {
+            "categories": [
+              "root_completion"
+            ],
+            "requiresAction": false
+          }
+        }
+      },
+      {
+        "dispatchId": "ctx_2687d8528e0e",
+        "taskId": "task_7b5c4101aa92",
+        "runId": "run_aa2cc2982670",
+        "workerState": "succeeded",
+        "dispatchStatus": "completed",
+        "agentTerminalHandle": "term_e808e888-0e79-4b98-accc-17bc3b933fa4",
+        "terminalState": "retained",
+        "resource": null,
+        "projection": {
+          "id": "ctx_2687d8528e0e",
+          "dispatchId": "ctx_2687d8528e0e",
+          "taskId": "task_7b5c4101aa92",
+          "runId": "run_aa2cc2982670",
+          "role": "worker",
+          "parent": null,
+          "provider": null,
+          "host": {
+            "kind": "local",
+            "id": "local"
+          },
+          "workspace": {
+            "id": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-c",
+            "kind": "folder_or_worktree"
+          },
+          "stage": {
+            "worker": "succeeded",
+            "dispatch": "completed",
+            "detail": "settled",
+            "activity": "unknown"
+          },
+          "outcome": "succeeded",
+          "liveness": {
+            "verdict": "unverifiable",
+            "reason": "missing_status"
+          },
+          "evidence": {
+            "durable": true,
+            "liveStatus": "unavailable",
+            "lastObservedAt": null
+          },
+          "resource": {
+            "state": "absent",
+            "reason": "not_materialized"
+          },
+          "nextAction": {
+            "kind": "none",
+            "argv": []
+          },
+          "attention": {
+            "categories": [
+              "unverifiable",
+              "root_completion"
+            ],
+            "requiresAction": true
+          }
+        }
+      },
+      {
+        "dispatchId": "ctx_e99242139a78",
+        "taskId": "task_0016baa5caae",
+        "runId": "run_aa2cc2982670",
+        "workerState": "succeeded",
+        "dispatchStatus": "completed",
+        "agentTerminalHandle": "term_064fd6b2-abb0-4244-800c-7cd4cb7d182f",
+        "terminalState": "retained",
+        "resource": {
+          "id": "wtr_528cf9c321fa",
+          "ownershipState": "external",
+          "releaseState": "not_requested",
+          "retainedReason": "external_terminal",
+          "terminalHandle": "term_064fd6b2-abb0-4244-800c-7cd4cb7d182f",
+          "worktreeId": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-b",
+          "endpointId": "50d2e435-3531-4145-a844-b65d9d21b499",
+          "endpointIncarnation": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-b@@094c75df:c1c85d30-4168-4945-a652-3c6d0b0b8920",
+          "originDispatchId": "ctx_e99242139a78",
+          "ownerDispatchId": "ctx_e99242139a78",
+          "releaseRequestedAt": null,
+          "releaseCompletedAt": null,
+          "releaseError": null,
+          "recoveryAttemptCount": 0,
+          "lastRecoveryAt": null,
+          "archive": {
+            "source": null,
+            "status": null
+          }
+        },
+        "projection": {
+          "id": "ctx_e99242139a78",
+          "dispatchId": "ctx_e99242139a78",
+          "taskId": "task_0016baa5caae",
+          "runId": "run_aa2cc2982670",
+          "role": "worker",
+          "parent": null,
+          "provider": null,
+          "host": {
+            "kind": "local",
+            "id": "local"
+          },
+          "workspace": {
+            "id": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-b",
+            "kind": "folder_or_worktree"
+          },
+          "stage": {
+            "worker": "succeeded",
+            "dispatch": "completed",
+            "detail": "settled",
+            "activity": "unknown"
+          },
+          "outcome": "succeeded",
+          "liveness": {
+            "verdict": "unverifiable",
+            "reason": "missing_status"
+          },
+          "evidence": {
+            "durable": true,
+            "liveStatus": "unavailable",
+            "lastObservedAt": null
+          },
+          "resource": {
+            "state": "external"
+          },
+          "nextAction": {
+            "kind": "none",
+            "argv": []
+          },
+          "attention": {
+            "categories": [
+              "unverifiable",
+              "root_completion"
+            ],
+            "requiresAction": true
+          }
+        }
+      },
+      {
+        "dispatchId": "ctx_0f608ca03fb9",
+        "taskId": "task_a10a9e46cf3b",
+        "runId": "run_aa2cc2982670",
+        "workerState": "succeeded",
+        "dispatchStatus": "completed",
+        "agentTerminalHandle": "term_61f26767-62fd-4e43-a634-5a491840a989",
+        "terminalState": "retained",
+        "resource": {
+          "id": "wtr_57bfb265abc2",
+          "ownershipState": "external",
+          "releaseState": "not_requested",
+          "retainedReason": "external_terminal",
+          "terminalHandle": "term_61f26767-62fd-4e43-a634-5a491840a989",
+          "worktreeId": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a",
+          "endpointId": "50d2e435-3531-4145-a844-b65d9d21b499",
+          "endpointIncarnation": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a@@dccb3d51:086c6fa8-afa6-4cbe-a39a-c67ad78c85ab",
+          "originDispatchId": "ctx_0f608ca03fb9",
+          "ownerDispatchId": "ctx_0f608ca03fb9",
+          "releaseRequestedAt": null,
+          "releaseCompletedAt": null,
+          "releaseError": null,
+          "recoveryAttemptCount": 0,
+          "lastRecoveryAt": null,
+          "archive": {
+            "source": null,
+            "status": null
+          }
+        },
+        "projection": {
+          "id": "ctx_0f608ca03fb9",
+          "dispatchId": "ctx_0f608ca03fb9",
+          "taskId": "task_a10a9e46cf3b",
+          "runId": "run_aa2cc2982670",
+          "role": "worker",
+          "parent": null,
+          "provider": null,
+          "host": {
+            "kind": "local",
+            "id": "local"
+          },
+          "workspace": {
+            "id": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a",
+            "kind": "folder_or_worktree"
+          },
+          "stage": {
+            "worker": "succeeded",
+            "dispatch": "completed",
+            "detail": "settled",
+            "activity": "unknown"
+          },
+          "outcome": "succeeded",
+          "liveness": {
+            "verdict": "unverifiable",
+            "reason": "missing_status"
+          },
+          "evidence": {
+            "durable": true,
+            "liveStatus": "unavailable",
+            "lastObservedAt": null
+          },
+          "resource": {
+            "state": "external"
+          },
+          "nextAction": {
+            "kind": "none",
+            "argv": []
+          },
+          "attention": {
+            "categories": [
+              "unverifiable",
+              "root_completion"
+            ],
+            "requiresAction": true
+          }
+        }
+      },
+      {
+        "dispatchId": "ctx_110dcf08ae68",
+        "taskId": "task_8df9c493a30b",
+        "runId": "run_aa2cc2982670",
+        "workerState": "failed",
+        "dispatchStatus": "failed",
+        "agentTerminalHandle": "term_61f26767-62fd-4e43-a634-5a491840a989",
+        "terminalState": "retained",
+        "resource": {
+          "id": "wtr_cb25bb76318c",
+          "ownershipState": "external",
+          "releaseState": "not_requested",
+          "retainedReason": "external_terminal",
+          "terminalHandle": "term_61f26767-62fd-4e43-a634-5a491840a989",
+          "worktreeId": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a",
+          "endpointId": "50d2e435-3531-4145-a844-b65d9d21b499",
+          "endpointIncarnation": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a@@dccb3d51:086c6fa8-afa6-4cbe-a39a-c67ad78c85ab",
+          "originDispatchId": "ctx_110dcf08ae68",
+          "ownerDispatchId": "ctx_110dcf08ae68",
+          "releaseRequestedAt": null,
+          "releaseCompletedAt": null,
+          "releaseError": null,
+          "recoveryAttemptCount": 0,
+          "lastRecoveryAt": null,
+          "archive": {
+            "source": null,
+            "status": null
+          }
+        },
+        "projection": {
+          "id": "ctx_110dcf08ae68",
+          "dispatchId": "ctx_110dcf08ae68",
+          "taskId": "task_8df9c493a30b",
+          "runId": "run_aa2cc2982670",
+          "role": "worker",
+          "parent": null,
+          "provider": null,
+          "host": {
+            "kind": "local",
+            "id": "local"
+          },
+          "workspace": {
+            "id": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a",
+            "kind": "folder_or_worktree"
+          },
+          "stage": {
+            "worker": "failed",
+            "dispatch": "failed",
+            "detail": "settled",
+            "activity": "unknown"
+          },
+          "outcome": "failed",
+          "liveness": {
+            "verdict": "unverifiable",
+            "reason": "missing_status"
+          },
+          "evidence": {
+            "durable": true,
+            "liveStatus": "unavailable",
+            "lastObservedAt": null
+          },
+          "resource": {
+            "state": "external"
+          },
+          "nextAction": {
+            "kind": "none",
+            "argv": []
+          },
+          "attention": {
+            "categories": [
+              "failure",
+              "unverifiable"
+            ],
+            "requiresAction": true
+          }
+        }
+      },
+      {
+        "dispatchId": "ctx_0c1ce903237a",
+        "taskId": "task_57987872867b",
+        "runId": "run_aa2cc2982670",
+        "workerState": "failed",
+        "dispatchStatus": "failed",
+        "agentTerminalHandle": "term_064fd6b2-abb0-4244-800c-7cd4cb7d182f",
+        "terminalState": "retained",
+        "resource": {
+          "id": "wtr_9ee7cf8a1cae",
+          "ownershipState": "external",
+          "releaseState": "not_requested",
+          "retainedReason": "external_terminal",
+          "terminalHandle": "term_064fd6b2-abb0-4244-800c-7cd4cb7d182f",
+          "worktreeId": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-b",
+          "endpointId": "50d2e435-3531-4145-a844-b65d9d21b499",
+          "endpointIncarnation": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-b@@094c75df:c1c85d30-4168-4945-a652-3c6d0b0b8920",
+          "originDispatchId": "ctx_0c1ce903237a",
+          "ownerDispatchId": "ctx_0c1ce903237a",
+          "releaseRequestedAt": null,
+          "releaseCompletedAt": null,
+          "releaseError": null,
+          "recoveryAttemptCount": 0,
+          "lastRecoveryAt": null,
+          "archive": {
+            "source": null,
+            "status": null
+          }
+        },
+        "projection": {
+          "id": "ctx_0c1ce903237a",
+          "dispatchId": "ctx_0c1ce903237a",
+          "taskId": "task_57987872867b",
+          "runId": "run_aa2cc2982670",
+          "role": "worker",
+          "parent": null,
+          "provider": null,
+          "host": {
+            "kind": "local",
+            "id": "local"
+          },
+          "workspace": {
+            "id": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-b",
+            "kind": "folder_or_worktree"
+          },
+          "stage": {
+            "worker": "failed",
+            "dispatch": "failed",
+            "detail": "settled",
+            "activity": "unknown"
+          },
+          "outcome": "failed",
+          "liveness": {
+            "verdict": "unverifiable",
+            "reason": "missing_status"
+          },
+          "evidence": {
+            "durable": true,
+            "liveStatus": "unavailable",
+            "lastObservedAt": null
+          },
+          "resource": {
+            "state": "external"
+          },
+          "nextAction": {
+            "kind": "none",
+            "argv": []
+          },
+          "attention": {
+            "categories": [
+              "failure",
+              "unverifiable"
+            ],
+            "requiresAction": true
+          }
+        }
+      },
+      {
+        "dispatchId": "ctx_2c65168d6c32",
+        "taskId": "task_c376a5347713",
+        "runId": "run_a903c5fa8f20",
+        "workerState": "stopped",
+        "dispatchStatus": "failed",
+        "agentTerminalHandle": "term_3a3f4d36-4655-4b04-82f2-3b3395f6a871",
+        "terminalState": "retained",
+        "resource": {
+          "id": "wtr_600f4aa123ea",
+          "ownershipState": "owned",
+          "releaseState": "not_requested",
+          "retainedReason": null,
+          "terminalHandle": "term_3a3f4d36-4655-4b04-82f2-3b3395f6a871",
+          "worktreeId": "3b490a08-b835-42d4-b2b7-acc983a33433::/Users/rohits/orca/workspaces/matrixkoder/pfr-docs",
+          "endpointId": "8935af28-ca8d-451c-b4a2-3b1d1839f496",
+          "endpointIncarnation": "3b490a08-b835-42d4-b2b7-acc983a33433::/Users/rohits/orca/workspaces/matrixkoder/pfr-docs@@c3807d37:ae1ee05f-83da-450b-890e-ff3e423bb1f7",
+          "originDispatchId": "ctx_2c65168d6c32",
+          "ownerDispatchId": "ctx_2c65168d6c32",
+          "releaseRequestedAt": null,
+          "releaseCompletedAt": null,
+          "releaseError": null,
+          "recoveryAttemptCount": 0,
+          "lastRecoveryAt": null,
+          "archive": {
+            "source": null,
+            "status": null
+          }
+        },
+        "projection": {
+          "id": "ctx_2c65168d6c32",
+          "dispatchId": "ctx_2c65168d6c32",
+          "taskId": "task_c376a5347713",
+          "runId": "run_a903c5fa8f20",
+          "role": "worker",
+          "parent": null,
+          "provider": null,
+          "host": {
+            "kind": "local",
+            "id": "local"
+          },
+          "workspace": {
+            "id": "3b490a08-b835-42d4-b2b7-acc983a33433::/Users/rohits/orca/workspaces/matrixkoder/pfr-docs",
+            "kind": "folder_or_worktree"
+          },
+          "stage": {
+            "worker": "stopped",
+            "dispatch": "failed",
+            "detail": "process_stopped",
+            "activity": "unknown"
+          },
+          "outcome": "failed",
+          "liveness": {
+            "verdict": "exited",
+            "source": "worker_stop"
+          },
+          "evidence": {
+            "durable": true,
+            "liveStatus": "unavailable",
+            "lastObservedAt": null
+          },
+          "resource": {
+            "state": "owned"
+          },
+          "nextAction": {
+            "kind": "release",
+            "argv": [
+              "orchestration",
+              "worker-release",
+              "--dispatch",
+              "ctx_2c65168d6c32"
+            ]
+          },
+          "attention": {
+            "categories": [
+              "failure"
+            ],
+            "requiresAction": true
+          }
+        }
+      }
+    ],
+    "counts": {
+      "retained": 59,
+      "released": 7
+    },
+    "page": {
+      "limit": 100,
+      "total": 66,
+      "hasMore": false,
+      "nextCursor": null
+    },
+    "scope": {
+      "source": "all"
+    }
+  },
+  "_meta": {
+    "runtimeId": "50d2e435-3531-4145-a844-b65d9d21b499"
+  }
+}

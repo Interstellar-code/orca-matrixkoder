@@ -1,0 +1,109 @@
+{
+  "_source": {
+    "command": "orca host list --json",
+    "date": "2026-10-25",
+    "orcaVersion": "1.4.239",
+    "note": "recorded from the real CLI; free text replaced by [redacted …] placeholders, ids and paths kept"
+  },
+  "id": "local",
+  "ok": true,
+  "result": {
+    "hosts": [
+      {
+        "kind": "local",
+        "name": "this machine",
+        "id": "local",
+        "selector": "--host local",
+        "machineName": "Rohit’s Mac mini",
+        "platform": "darwin"
+      },
+      {
+        "kind": "ssh",
+        "name": "virtualmin",
+        "id": "ssh-1792462802357-vkq5ca",
+        "selector": "--host ssh:ssh-1792462802357-vkq5ca",
+        "connected": false
+      },
+      {
+        "kind": "ssh",
+        "name": "192.168.0.59",
+        "id": "ssh-1792462802357-4a3he3",
+        "selector": "--host ssh:ssh-1792462802357-4a3he3",
+        "connected": false
+      },
+      {
+        "kind": "ssh",
+        "name": "prod",
+        "id": "ssh-1792462802357-pnnxqu",
+        "selector": "--host ssh:ssh-1792462802357-pnnxqu",
+        "connected": false
+      },
+      {
+        "kind": "ssh",
+        "name": "hetzner-webhosting",
+        "id": "ssh-1792462802357-tc6im7",
+        "selector": "--host ssh:ssh-1792462802357-tc6im7",
+        "connected": false
+      },
+      {
+        "kind": "ssh",
+        "name": "opnsense",
+        "id": "ssh-1792462802357-41vyts",
+        "selector": "--host ssh:ssh-1792462802357-41vyts",
+        "connected": false
+      },
+      {
+        "kind": "ssh",
+        "name": "unraid",
+        "id": "ssh-1792462802357-8q1qe9",
+        "selector": "--host ssh:ssh-1792462802357-8q1qe9",
+        "connected": false
+      },
+      {
+        "kind": "ssh",
+        "name": "192.168.0.200",
+        "id": "ssh-1792462802357-r34jjw",
+        "selector": "--host ssh:ssh-1792462802357-r34jjw",
+        "connected": false
+      },
+      {
+        "kind": "ssh",
+        "name": "unraid-deepspace9",
+        "id": "ssh-1792462802357-so5x4b",
+        "selector": "--host ssh:ssh-1792462802357-so5x4b",
+        "connected": false
+      },
+      {
+        "kind": "ssh",
+        "name": "192.168.0.201",
+        "id": "ssh-1792462802357-fgdfox",
+        "selector": "--host ssh:ssh-1792462802357-fgdfox",
+        "connected": false
+      },
+      {
+        "kind": "ssh",
+        "name": "nomadpc",
+        "id": "ssh-1792462802357-renwby",
+        "selector": "--host ssh:ssh-1792462802357-renwby",
+        "connected": false
+      },
+      {
+        "kind": "ssh",
+        "name": "192.168.0.58",
+        "id": "ssh-1792462802357-7kmu0u",
+        "selector": "--host ssh:ssh-1792462802357-7kmu0u",
+        "connected": false
+      },
+      {
+        "kind": "ssh",
+        "name": "coolify",
+        "id": "ssh-1792462802357-wkcf5c",
+        "selector": "--host ssh:ssh-1792462802357-wkcf5c",
+        "connected": false
+      }
+    ]
+  },
+  "_meta": {
+    "runtimeId": "local"
+  }
+}

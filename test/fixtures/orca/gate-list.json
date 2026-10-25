@@ -1,0 +1,18 @@
+{
+  "_source": {
+    "command": "orca orchestration gate-list --run run_aa8ea15012d0 --json (no gates; empty list)",
+    "date": "2026-10-25",
+    "orcaVersion": "1.4.239",
+    "note": "recorded from the real CLI; free text replaced by [redacted …] placeholders, ids and paths kept"
+  },
+  "id": "451e91ca-66af-42eb-afda-962a254c42eb",
+  "ok": true,
+  "result": {
+    "runId": "run_aa8ea15012d0",
+    "gates": [],
+    "count": 0
+  },
+  "_meta": {
+    "runtimeId": "50d2e435-3531-4145-a844-b65d9d21b499"
+  }
+}

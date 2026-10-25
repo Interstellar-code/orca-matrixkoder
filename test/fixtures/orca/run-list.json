@@ -1,0 +1,54 @@
+{
+  "_source": {
+    "command": "orca orchestration run-list --json",
+    "date": "2026-10-25",
+    "orcaVersion": "1.4.239",
+    "note": "recorded from the real CLI; free text replaced by [redacted …] placeholders, ids and paths kept"
+  },
+  "id": "a3f3f7df-debf-4cfc-8ee3-cf2aba993d34",
+  "ok": true,
+  "result": {
+    "runs": [
+      {
+        "id": "run_aa2cc2982670",
+        "objective": "[redacted run objective 20]",
+        "coordinator_handle": "term_a71fd963-abb7-4896-a991-c5a5fd0ced11",
+        "consumer_generation": 1,
+        "legacy": 0,
+        "created_at": "2026-10-24T21:22:31Z",
+        "updated_at": "2026-10-24T21:22:31Z"
+      },
+      {
+        "id": "run_aa8ea15012d0",
+        "objective": "[redacted run objective 21]",
+        "coordinator_handle": "term_62308db3-254e-4a07-a471-15395a15e58e",
+        "consumer_generation": 1,
+        "legacy": 0,
+        "created_at": "2026-10-24T20:47:46Z",
+        "updated_at": "2026-10-24T20:47:46Z"
+      },
+      {
+        "id": "run_a903c5fa8f20",
+        "objective": "[redacted run objective 22]",
+        "coordinator_handle": "term_886a8ac4-4278-4c6a-b431-d2a0d24fe85c",
+        "consumer_generation": 1,
+        "legacy": 0,
+        "created_at": "2026-10-24T10:47:59Z",
+        "updated_at": "2026-10-24T10:47:59Z"
+      },
+      {
+        "id": "run_legacy_local",
+        "objective": "[redacted run objective 23]",
+        "coordinator_handle": null,
+        "consumer_generation": 0,
+        "legacy": 1,
+        "created_at": "2026-10-20T02:20:06Z",
+        "updated_at": "2026-10-20T02:20:06Z"
+      }
+    ],
+    "nextCursor": null
+  },
+  "_meta": {
+    "runtimeId": "50d2e435-3531-4145-a844-b65d9d21b499"
+  }
+}
