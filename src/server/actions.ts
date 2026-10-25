@@ -17,7 +17,7 @@ import type { ActionArgs } from '../orca/index.js';
 import { main as cliMain, realOrca } from '../store/cli.js';
 import { one, tx, type Row } from '../store/db.js';
 import { ImportError, importFile, scanInbox } from '../store/import.js';
-import { loadSettings, saveSettings, SettingsError, type Settings } from '../store/settings.js';
+import { loadSettings, saveSettings, setting, SettingsError, type Settings } from '../store/settings.js';
 import { CANCELLED_RESULT, cut, fail, J, parseJson, type ActionError, type ActionOutcome, type ServerCtx } from './common.js';
 import { Decisions } from './decisions.js';
 import { callOrca, orcaFailure, receiptId } from './orca-call.js';
@@ -240,7 +240,7 @@ export class Actions {
     const model = optStr(a, 'model', 80) ?? route[1];
     const effort = optStr(a, 'effort', 20) ?? route[2];
 
-    const max = Number(((loadSettings(this.c.dir).routing ?? {}) as { maxLanes?: unknown }).maxLanes ?? 3);
+    const max = setting<number>(loadSettings(this.c.dir), 'routing.maxLanes');
     const live = Number(one(this.c.db, "SELECT COUNT(*) AS n FROM lane WHERE ended_at IS NULL AND state IN ('working','waiting','blocked')")!.n);
     if (live >= max) refuse('conflict', `${live} lanes are already running (the limit is ${max}); raise "Lanes at once" in Settings or wait`, { code: 'max_lanes' });
 

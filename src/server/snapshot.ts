@@ -7,7 +7,7 @@
  * and the snapshot rebuilt, down to one row per list.
  */
 import { all, one, type Db, type Row } from '../store/db.js';
-import { defaultSettings, loadSettings } from '../store/settings.js';
+import { defaultSettings, describeSettings, loadSettingsDetailed, setting, SPEC_SCENARIOS, type Settings } from '../store/settings.js';
 import { cut, homeAbbrev, maybeNum, num, parseJson, type ServerCtx } from './common.js';
 
 export const SCREENS = ['projects', 'overview', 'lanes', 'plan', 'waiting', 'events', 'inbox', 'bugs', 'todo', 'settings'] as const;
@@ -81,14 +81,18 @@ class Builder {
   private repo: Row | undefined;
   private plan: Row | undefined;
   private settings: Obj = {};
+  private migrationNotes: string[] = [];
 
   constructor(private readonly c: ServerCtx, private readonly q: StateQuery, private readonly screen: string, private readonly caps: Caps, private readonly info: SnapshotInfo) {
     this.db = c.db;
     this.at = c.clock.now();
     try {
-      this.settings = loadSettings(c.dir) as Obj;
-    } catch {
+      const loaded = loadSettingsDetailed(c.dir);
+      this.settings = loaded.settings as Obj;
+      this.migrationNotes = loaded.migrationNotes;
+    } catch (e) {
       this.settings = {};
+      this.migrationNotes = [cut(`mk-settings.json was not used: ${(e as Error).message}`, 300)];
     }
     this.select();
   }
@@ -98,7 +102,7 @@ class Builder {
   private select(): void {
     const { db } = this;
     const live = (id: string): Row | undefined => one(db, 'SELECT * FROM repo WHERE id = ? AND gone_at IS NULL', id);
-    const active = ((this.settings.general ?? {}) as { activeRepo?: unknown }).activeRepo;
+    const active = setting(this.settings as Settings, 'general.activeRepo');
     this.repo =
       (this.q.repoId ? live(this.q.repoId) : undefined) ??
       (typeof active === 'string' ? live(active) : undefined) ??
@@ -552,6 +556,11 @@ class Builder {
     const clis = all(this.db, 'SELECT * FROM agent_cli ORDER BY agent_id');
     return {
       values: knownSettings(this.settings, defaultSettings()),
+      schema: describeSettings(this.settings as Settings),
+      migrationNotes: this.migrationNotes.slice(0, 40),
+      lastScreen: one(this.db, "SELECT value FROM kv WHERE key = 'panel.lastScreen'")?.value ?? null,
+      // placeholder until USE.5 fills in the real template status for the active repo (C10)
+      specTemplates: Object.fromEntries(SPEC_SCENARIOS.map((k) => [k, { path: '', source: 'builtin', ok: true, issue: null }])),
       agents: clis.map((a) => ({
         id: String(a.agent_id), found: num(a.found) === 1, cli: a.cli_path ?? null, version: a.version ?? null,
         quota: quota.filter((q) => q.provider === providerOf[String(a.agent_id)]).map((q) => ({
