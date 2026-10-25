@@ -1,0 +1,210 @@
+{
+  "_source": {
+    "command": "orca orchestration worker-show --dispatch ctx_110dcf08ae68 --json",
+    "date": "2026-10-25",
+    "orcaVersion": "1.4.239",
+    "note": "recorded from the real CLI; free text replaced by [redacted …] placeholders, ids and paths kept"
+  },
+  "id": "3ccebd1e-1f30-4a0a-833b-d30012161162",
+  "ok": true,
+  "result": {
+    "dispatch": {
+      "id": "ctx_110dcf08ae68",
+      "runId": "run_aa2cc2982670",
+      "taskId": "task_8df9c493a30b",
+      "task_id": "task_8df9c493a30b",
+      "contractVersion": 1,
+      "assigneeHandle": "term_61f26767-62fd-4e43-a634-5a491840a989",
+      "assigneePaneKey": "28500ae4-82b6-4117-b1ea-d2ea5d7b9887:fe221e51-e040-4d66-9732-b16fe4111a4c",
+      "processIncarnation": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a@@dccb3d51:086c6fa8-afa6-4cbe-a39a-c67ad78c85ab",
+      "capabilityRevokedAt": "2026-10-25T01:32:39.494Z",
+      "retryOfDispatchId": null,
+      "creatorDispatchId": null,
+      "hostScope": {
+        "kind": "local",
+        "hostId": "local"
+      },
+      "status": "failed",
+      "failureCount": 0,
+      "lastFailure": "{\"provenance\":\"worker_report\",\"outcome\":\"failed\",\"messageId\":\"msg_87ccc5e4045d\",\"reportedBy\":\"term_61f26767-62fd-4e43-a634-5a491840a989\",\"subject\":\"[redacted subject 40]\",\"body\":\"[redacted message body 41]\",\"completedBy\":\"term_61f26767-62fd-4e43-a634-5a491840a989\",\"filesModified\":[],\"reportPath\":\"/tmp/v3-review-rel8.md\",\"completedAt\":\"2026-10-25T01:32:39.492Z\"}",
+      "terminationReason": null,
+      "depth": 1,
+      "dispatchedAt": "2026-10-25 01:25:14",
+      "completedAt": "2026-10-25T01:32:39.494Z",
+      "createdAt": "2026-10-25 01:25:14",
+      "lastHeartbeatAt": null
+    },
+    "worker": {
+      "dispatchId": "ctx_110dcf08ae68",
+      "runtimeEpoch": "50d2e435-3531-4145-a844-b65d9d21b499",
+      "state": "failed",
+      "stage": "settled",
+      "worktreeId": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a",
+      "agentTerminalHandle": "term_61f26767-62fd-4e43-a634-5a491840a989",
+      "setupState": "not_applicable",
+      "effects": [
+        {
+          "kind": "worktree",
+          "action": "reused",
+          "id": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a"
+        },
+        {
+          "kind": "setup",
+          "action": "not_applicable",
+          "state": "not_applicable"
+        },
+        {
+          "kind": "terminal",
+          "role": "agent",
+          "action": "reused",
+          "id": "term_61f26767-62fd-4e43-a634-5a491840a989"
+        },
+        {
+          "kind": "dispatch_input",
+          "role": "agent",
+          "id": "term_61f26767-62fd-4e43-a634-5a491840a989",
+          "state": "accepted"
+        }
+      ],
+      "residualResources": [],
+      "startOptions": {
+        "worktree": "id:1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a",
+        "mode": {
+          "mode": "terminal",
+          "preferred": "terminal",
+          "reason": "user_default",
+          "detail": "Started a terminal agent worker, the default for new agent tabs in your settings."
+        },
+        "resolvedWorktreeId": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a",
+        "name": null,
+        "repo": null,
+        "baseBranch": null,
+        "terminal": "term_61f26767-62fd-4e43-a634-5a491840a989",
+        "agent": null,
+        "launch": {
+          "requested": {
+            "agent": null,
+            "model": null,
+            "effort": null
+          },
+          "effective": {
+            "agent": null,
+            "model": null,
+            "effort": null
+          }
+        },
+        "timeoutMs": 60000,
+        "setup": "not_applicable",
+        "setupSource": "existing_worktree"
+      },
+      "lastError": null,
+      "createdAt": "2026-10-25 01:25:14",
+      "updatedAt": "2026-10-25T01:32:39.496Z"
+    },
+    "projection": {
+      "id": "ctx_110dcf08ae68",
+      "dispatchId": "ctx_110dcf08ae68",
+      "taskId": "task_8df9c493a30b",
+      "runId": "run_aa2cc2982670",
+      "role": "worker",
+      "parent": null,
+      "provider": {
+        "id": "claude",
+        "model": null
+      },
+      "host": {
+        "kind": "local",
+        "id": "local"
+      },
+      "workspace": {
+        "id": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a",
+        "kind": "folder_or_worktree"
+      },
+      "stage": {
+        "worker": "failed",
+        "dispatch": "failed",
+        "detail": "settled",
+        "activity": "unknown"
+      },
+      "outcome": "failed",
+      "liveness": {
+        "verdict": "unverifiable",
+        "reason": "stale_status",
+        "observedAt": 1792895247780
+      },
+      "evidence": {
+        "durable": true,
+        "liveStatus": "stale",
+        "lastObservedAt": 1792895247780
+      },
+      "resource": {
+        "state": "external",
+        "id": "wtr_cb25bb76318c",
+        "ownerDispatchId": "ctx_110dcf08ae68",
+        "releaseState": "not_requested",
+        "terminalState": "retained"
+      },
+      "nextAction": {
+        "kind": "none",
+        "argv": []
+      },
+      "attention": {
+        "categories": [
+          "failure",
+          "stale"
+        ],
+        "requiresAction": true
+      }
+    },
+    "terminal": {
+      "handle": "term_61f26767-62fd-4e43-a634-5a491840a989",
+      "ptyId": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a@@dccb3d51",
+      "incarnationId": "086c6fa8-afa6-4cbe-a39a-c67ad78c85ab",
+      "orphaned": false,
+      "worktreeId": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a",
+      "worktreePath": "/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a",
+      "branch": "refs/heads/v3/upgrade",
+      "tabId": "28500ae4-82b6-4117-b1ea-d2ea5d7b9887",
+      "leafId": "fe221e51-e040-4d66-9732-b16fe4111a4c",
+      "title": "Trim scope guard in engine store",
+      "connected": true,
+      "writable": true,
+      "lastOutputAt": 1792910755111,
+      "preview": "[redacted terminal preview 42]",
+      "executionHostId": "local",
+      "agentIdentity": "claude",
+      "paneRuntimeId": 1,
+      "rendererGraphEpoch": 1,
+      "agentWait": null
+    },
+    "observation": {
+      "status": "live",
+      "exactWorker": true,
+      "agentWait": null
+    },
+    "terminalResource": {
+      "id": "wtr_cb25bb76318c",
+      "ownershipState": "external",
+      "releaseState": "not_requested",
+      "retainedReason": "external_terminal",
+      "terminalHandle": "term_61f26767-62fd-4e43-a634-5a491840a989",
+      "worktreeId": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a",
+      "endpointId": "50d2e435-3531-4145-a844-b65d9d21b499",
+      "endpointIncarnation": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91::/Users/rohits/orca/workspaces/claude-mnemosyne/v3-lane-a@@dccb3d51:086c6fa8-afa6-4cbe-a39a-c67ad78c85ab",
+      "originDispatchId": "ctx_110dcf08ae68",
+      "ownerDispatchId": "ctx_110dcf08ae68",
+      "releaseRequestedAt": null,
+      "releaseCompletedAt": null,
+      "releaseError": null,
+      "recoveryAttemptCount": 0,
+      "lastRecoveryAt": null,
+      "archive": {
+        "source": null,
+        "status": null
+      }
+    }
+  },
+  "_meta": {
+    "runtimeId": "50d2e435-3531-4145-a844-b65d9d21b499"
+  }
+}

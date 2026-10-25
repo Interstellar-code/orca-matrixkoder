@@ -1,0 +1,34 @@
+{
+  "_source": {
+    "command": "orca orchestration task-list --json (no Run bound; error envelope)",
+    "date": "2026-10-25",
+    "orcaVersion": "1.4.239",
+    "note": "recorded from the real CLI; free text replaced by [redacted …] placeholders, ids and paths kept"
+  },
+  "id": "38b8a183-bcec-4833-8151-f109b7c53d79",
+  "ok": false,
+  "error": {
+    "code": "run_required",
+    "message": "No Run is bound. Use orchestration run-create or run-use first. No effects were applied.",
+    "data": {
+      "effectsApplied": false,
+      "guide": {
+        "topic": "orchestration",
+        "full": true
+      },
+      "nextCommandArgs": [
+        "skills",
+        "get",
+        "orchestration",
+        "--full"
+      ],
+      "nextSteps": [
+        "Using this same Orca CLI executable, run: skills get orchestration --full",
+        "Read the returned guide completely and do not retry the previous command unchanged."
+      ]
+    }
+  },
+  "_meta": {
+    "runtimeId": "50d2e435-3531-4145-a844-b65d9d21b499"
+  }
+}

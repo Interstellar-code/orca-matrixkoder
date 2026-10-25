@@ -1,0 +1,143 @@
+{
+  "_source": {
+    "command": "orca repo list --json",
+    "date": "2026-10-25",
+    "orcaVersion": "1.4.239",
+    "note": "recorded from the real CLI; free text replaced by [redacted …] placeholders, ids and paths kept"
+  },
+  "id": "2cd2feda-32a6-481e-940a-b334b754ec4c",
+  "ok": true,
+  "result": {
+    "repos": [
+      {
+        "id": "0f9e5bfb-0a2f-4d68-ab7d-0717f29a63ab",
+        "path": "/Users/rohits/Development/cc-workflows",
+        "displayName": "cc-workflows",
+        "badgeColor": "#737373",
+        "addedAt": 1792462996211,
+        "kind": "git",
+        "externalWorktreeVisibilityLegacy": false,
+        "gitUsername": "Interstellar-code",
+        "repoIcon": {
+          "type": "image",
+          "src": "https://github.com/Interstellar-code.png?size=64",
+          "source": "github",
+          "label": "Interstellar-code/cc-workflows"
+        },
+        "upstream": null,
+        "gitRemoteIdentity": {
+          "canonicalKey": "github.com/Interstellar-code/cc-workflows",
+          "remoteName": "origin",
+          "remoteUrl": "https://github.com/Interstellar-code/cc-workflows.git"
+        },
+        "projectHostSetupMethod": "imported-existing-folder",
+        "hookSettings": {
+          "mode": "auto",
+          "setupRunPolicy": "run-by-default",
+          "setupAgentStartupPolicy": "start-immediately",
+          "scripts": {
+            "setup": "",
+            "archive": ""
+          }
+        },
+        "externalWorktreeVisibility": "hide"
+      },
+      {
+        "id": "3b490a08-b835-42d4-b2b7-acc983a33433",
+        "path": "/Users/rohits/Development/matrixkoder",
+        "displayName": "matrixkoder",
+        "badgeColor": "#737373",
+        "addedAt": 1792828486347,
+        "kind": "git",
+        "externalWorktreeVisibilityLegacy": false,
+        "externalWorktreeVisibility": "show",
+        "gitUsername": "Interstellar-code",
+        "repoIcon": {
+          "type": "image",
+          "src": "https://github.com/Interstellar-code.png?size=64",
+          "source": "github",
+          "label": "Interstellar-code/matrixkoder"
+        },
+        "upstream": null,
+        "gitRemoteIdentity": {
+          "canonicalKey": "github.com/Interstellar-code/matrixkoder",
+          "remoteName": "origin",
+          "remoteUrl": "https://github.com/Interstellar-code/matrixkoder.git"
+        },
+        "projectHostSetupMethod": "imported-existing-folder",
+        "hookSettings": {
+          "mode": "auto",
+          "setupRunPolicy": "run-by-default",
+          "setupAgentStartupPolicy": "start-immediately",
+          "scripts": {
+            "setup": "",
+            "archive": ""
+          }
+        }
+      },
+      {
+        "id": "1c81ec98-9bdd-4f6c-b1a5-f2eb8171dd91",
+        "path": "/Users/rohits/Development/claude-mnemosyne",
+        "displayName": "claude-mnemosyne",
+        "badgeColor": "#737373",
+        "addedAt": 1792828803938,
+        "kind": "git",
+        "externalWorktreeVisibilityLegacy": false,
+        "externalWorktreeVisibility": "show",
+        "gitUsername": "Interstellar-code",
+        "repoIcon": {
+          "type": "image",
+          "src": "https://github.com/Interstellar-code.png?size=64",
+          "source": "github",
+          "label": "Interstellar-code/claude-mnemosyne"
+        },
+        "upstream": null,
+        "gitRemoteIdentity": {
+          "canonicalKey": "github.com/Interstellar-code/claude-mnemosyne",
+          "remoteName": "origin",
+          "remoteUrl": "https://github.com/Interstellar-code/claude-mnemosyne.git"
+        },
+        "projectHostSetupMethod": "imported-existing-folder",
+        "hookSettings": {
+          "mode": "auto",
+          "setupRunPolicy": "run-by-default",
+          "setupAgentStartupPolicy": "start-immediately",
+          "scripts": {
+            "setup": "",
+            "archive": ""
+          }
+        }
+      },
+      {
+        "id": "4d01f6f8-887c-47fb-af0d-5387e7248caf",
+        "path": "/Users/rohits/Development/orca-matrixkoder",
+        "displayName": "orca-matrixkoder",
+        "badgeColor": "#737373",
+        "addedAt": 1792837438548,
+        "kind": "git",
+        "externalWorktreeVisibilityLegacy": false,
+        "gitUsername": "Interstellar-code",
+        "upstream": null,
+        "gitRemoteIdentity": {
+          "canonicalKey": "github.com/Interstellar-code/matrixkoder",
+          "remoteName": "upstream",
+          "remoteUrl": "https://github.com/Interstellar-code/matrixkoder.git"
+        },
+        "projectHostSetupMethod": "imported-existing-folder",
+        "hookSettings": {
+          "mode": "auto",
+          "setupRunPolicy": "run-by-default",
+          "setupAgentStartupPolicy": "start-immediately",
+          "scripts": {
+            "setup": "",
+            "archive": ""
+          }
+        },
+        "externalWorktreeVisibility": "hide"
+      }
+    ]
+  },
+  "_meta": {
+    "runtimeId": "50d2e435-3531-4145-a844-b65d9d21b499"
+  }
+}
