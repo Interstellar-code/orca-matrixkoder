@@ -85,12 +85,23 @@ A1 fallback was a bundled SQLite build or the `sqlite3` CLI. Not needed: the Orc
 
 `spike/host-harness.mjs`, `spike/a1-probe.mjs`, `spike/writer-core.mjs`, `spike/sqlite-concurrency.mjs`, `spike/sqlite-cli-writer.mjs`, `spike/sqlite-cli-writer.py`, `spike/plugin/out/worker.mjs` (throwaway worker), `spike/tmp/` (extracted Orca host code in `spike/tmp/asar/`, temp DBs, run outputs, `summ.py`). `spike/tmp/` is not git-ignored; do not commit `spike/tmp/asar/` (Orca's own code).
 
-## Status and resume (2026-10-24, parked)
+## Live-app results (2026-10-25, done)
 
-1. A1 node:sqlite — PASS (above).
-2. A2 orca on PATH — PASS in the harness: `orca` 1.4.239, `claude`, `codex`, `sqlite3`, `git`, `gh` found; `orca status --json` ok. Not yet confirmed in the running app (PATH may be shorter when Orca starts from the Dock).
-3. A3 127.0.0.1 server — PASS in the harness: page 200 with token, 403 with a wrong token. Not yet loaded in an Orca tab.
-4. A4 worker lifetime — not tested. Source finding: any host call resets the idle timer (`v1.4.239:src/main/plugins/plugin-host-process.ts:215-223`), so a once-a-minute `workspace.readContext` should keep the worker alive.
-5. A6 actions unbound — not tested.
+Run in the real Orca 1.4.239 app on the Mac, plugin `interstellar.matrixkoder-spike` loaded from `spike/live-plugin`.
 
-To resume: on the Mac itself (not over a remote Orca connection), add `spike/live-plugin` under Orca Settings > Plugins > Development, run `MK Spike: Start probes`, then tell the orchestrator. Results land in `spike/tmp/live/`. Remove the plugin when the spike is done.
+1. A1 node:sqlite — PASS (harness, above).
+2. A2 orca on PATH — PASS in the live worker: `orca` 1.4.239 found, `orca status --json` ok, plus `claude`, `codex`, `sqlite3`, `git`, `gh`.
+3. A3 127.0.0.1 server — PASS in the live app: `orca tab create --url http://127.0.0.1:52153/?t=…` loaded the page in an Orca tab (Chromium user agent), its token fetch to `/api/ping` returned 200, and a request with no token (`/favicon.ico`) got 403.
+4. A4 worker lifetime — PASS with keep-alive: worker pid 81846 ran 605 s (past the 5 min idle reap) with a `workspace.readContext` call every 60 s; it stopped only when the plugin was removed and re-added (logged `deactivate`). With keep-alive off (06:01:12 to 06:08:35 UTC, 7 min 23 s) worker pid 41647 also stayed alive, but 51 `agent.status.changed` events arrived in that time, so event delivery probably counts as activity (inferred, not read in the source). Decision: keep the 60 s keep-alive in the real worker, since a quiet Orca sends no events.
+5. Events — PASS: `agent.status.changed` reaches the worker (many per minute while agents work).
+6. Commands — PASS: plugin commands run from the `Cmd+J` palette ("MK Spike: Stop keep-alive" logged `keepalive-off`).
+7. A6 actions with no bound terminal — not tested here; carried by ORCA (T6) as planned.
+
+### Lessons for the build
+
+1. Orca runs a copy of a local-path plugin from `~/Library/Application Support/Orca/plugins/<publisher.id>/<contentHash>/`. Paths relative to the worker file land there, not in the repo. The real worker must write only to absolute paths (`~/.matrixkoder/`).
+2. Turning a plugin off and on does not reload changed code; remove and re-add it. Plan a dev-loop cost for every worker change.
+3. The worker starts only when one of its commands runs or a subscribed event arrives, not when the plugin is enabled.
+4. Plugin commands live in the `Cmd+J` palette, not `Cmd+Shift+P`.
+
+To clean up: remove "MatrixKoder Spike (throwaway)" in Orca Settings > Plugins.

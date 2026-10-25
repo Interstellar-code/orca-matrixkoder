@@ -583,4 +583,5 @@ bundle = "npm run build"
 - 2026-10-24 — parked — SPIKE paused: A1 passed, A2/A3 passed in the harness; live-app proofs (A2-A4, A6) need the throwaway plugin loaded on the Mac, not over a remote connection — user
 - 2026-10-24 — amended — mk-data.db schema v1 from mk-data-schema.md: panes, inbox files, plans with phases, light-link tasks like bugs; dashboard reads only the db, a sync loop fills it; new STORE.4 import, T10, T11, K13-K17, A7, A8, Q9-Q11 — user
 - 2026-10-24 — answer — Q9 keep bug.last_state_at; Q10 inbox fit rules as proposed; Q11 bug ids global across repos — user
+- 2026-10-25 — done — SPIKE live proofs: A2, A3, A4 (with 60 s keep-alive) and events PASS in the real app; A6 stays with ORCA T6; lessons: worker runs from Orca's plugin copy so use absolute paths, code changes need remove and re-add, worker starts on command or event only — user
 /+++
