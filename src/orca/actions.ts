@@ -6,12 +6,14 @@ import type { OrcaError, Runner } from './types.js';
 // The only Orca commands the dashboard may run. Each name maps to a fixed argv prefix and a fixed set
 // of flags. Anything else (an unknown name, `orchestration check`, an unknown flag, text that is not
 // exactly an allowlisted name) is refused before a process starts. There is no shell: the argv goes
-// to `execFile` as separate strings.
+// to `execFile` as separate strings. Every value rides in the same element as its flag (`--body=--json`),
+// so a value that starts with `--` can never be read by Orca as the next flag.
 
 type FlagKind = 'string' | 'number' | 'boolean' | 'json';
 interface FlagSpec {
   kind: FlagKind;
   required?: boolean;
+  oneOf?: readonly string[]; // the only values accepted
 }
 interface ActionSpec {
   argv: readonly string[];
@@ -22,6 +24,7 @@ interface ActionSpec {
 
 const s = (required = false): FlagSpec => ({ kind: 'string', required });
 const n = (): FlagSpec => ({ kind: 'number' });
+const e = (values: readonly string[]): FlagSpec => ({ kind: 'string', oneOf: values });
 const b = (): FlagSpec => ({ kind: 'boolean' });
 const j = (): FlagSpec => ({ kind: 'json' });
 
@@ -45,7 +48,7 @@ export const ACTIONS: Readonly<Record<string, ActionSpec>> = {
     flags: {
       task: s(), spec: s(), on: s(), worktree: s(), agent: s(), terminal: s(), 'task-title': s(), deps: j(), parent: s(),
       model: s(), effort: s(), name: s(), repo: s(), 'base-branch': s(), 'display-name': s(), comment: s(),
-      setup: s(), 'retry-of': s(), 'timeout-ms': n(), run: s(), from: s(), 'retry-request': s(),
+      setup: e(['run', 'skip', 'inherit']), 'retry-of': s(), 'timeout-ms': n(), run: s(), from: s(), 'retry-request': s(),
     },
     oneOf: [['task', 'spec'], ['agent', 'terminal']],
   },
@@ -60,12 +63,12 @@ export const ACTIONS: Readonly<Record<string, ActionSpec>> = {
   'terminal send': {
     argv: ['terminal', 'send'],
     flags: {
-      terminal: s(), text: s(), enter: b(), interrupt: b(), 'wait-submit': n(), 'retry-request': s(),
+      terminal: s(true), text: s(true), enter: b(), interrupt: b(), 'wait-submit': n(), 'retry-request': s(),
     },
   },
   'tab create': {
     argv: ['tab', 'create'],
-    flags: { url: s(), worktree: s(), profile: s() },
+    flags: { url: s(true), worktree: s(), profile: s() },
   },
   'repo set-base-ref': {
     argv: ['repo', 'set-base-ref'],
@@ -102,11 +105,12 @@ export function buildActionArgv(name: string, args: ActionArgs = {}): { ok: true
     switch (f.kind) {
       case 'string':
         if (typeof v !== 'string' || v === '' || v.includes('\0')) return fail('bad_args', `"${key}" must be a non-empty string`);
-        argv.push(`--${key}`, v);
+        if (f.oneOf && !f.oneOf.includes(v)) return fail('bad_args', `"${key}" must be one of: ${f.oneOf.join(', ')}`);
+        argv.push(`--${key}=${v}`);
         break;
       case 'number':
         if (typeof v !== 'number' || !Number.isFinite(v)) return fail('bad_args', `"${key}" must be a number`);
-        argv.push(`--${key}`, String(v));
+        argv.push(`--${key}=${v}`);
         break;
       case 'boolean':
         if (v !== true) return fail('bad_args', `"${key}" must be true or left out`);
@@ -114,8 +118,8 @@ export function buildActionArgv(name: string, args: ActionArgs = {}): { ok: true
         break;
       case 'json':
         // JSON array text (Orca's --deps); an array is encoded here
-        if (Array.isArray(v)) argv.push(`--${key}`, JSON.stringify(v));
-        else if (typeof v === 'string' && v !== '') argv.push(`--${key}`, v);
+        if (Array.isArray(v)) argv.push(`--${key}=${JSON.stringify(v)}`);
+        else if (typeof v === 'string' && v !== '') argv.push(`--${key}=${v}`);
         else return fail('bad_args', `"${key}" must be an array or JSON text`);
         break;
     }

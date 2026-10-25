@@ -88,7 +88,7 @@ test('taskList: passes --run, parses deps and keeps failed tasks', async () => {
   const runner = stub(raw);
   const r = await taskList(runner, { runId: 'run_aa2cc2982670' });
   assert.equal(r.ok, true);
-  assert.deepEqual(runner.calls[0].argv, ['orchestration', 'task-list', '--run', 'run_aa2cc2982670', '--json']);
+  assert.deepEqual(runner.calls[0].argv, ['orchestration', 'task-list', '--run=run_aa2cc2982670', '--json']);
   assert.equal(r.value.tasks.length, raw.result.tasks.length);
   assert.equal(r.value.runId, raw.result.runId);
   const failed = r.value.tasks.filter((t) => t.status === 'failed');
@@ -110,7 +110,7 @@ test('workerList: workers with state, outcome, attention and the worktree', asyn
   const runner = stub(raw);
   const r = await workerList(runner, { limit: 100 });
   assert.equal(r.ok, true);
-  assert.deepEqual(runner.calls[0].argv, ['orchestration', 'worker-list', '--limit', '100', '--json']);
+  assert.deepEqual(runner.calls[0].argv, ['orchestration', 'worker-list', '--limit=100', '--json']);
   assert.equal(r.value.workers.length, raw.result.workers.length);
   const w0 = r.value.workers[0];
   assert.equal(w0.dispatchId, raw.result.workers[0].dispatchId);
@@ -127,7 +127,7 @@ test('workerShow: dispatch, worker and a safe lastFailure (no report body)', asy
   const runner = stub(fx('worker-show-failed'));
   const r = await workerShow(runner, { dispatchId: 'ctx_110dcf08ae68' });
   assert.equal(r.ok, true);
-  assert.deepEqual(runner.calls[0].argv, ['orchestration', 'worker-show', '--dispatch', 'ctx_110dcf08ae68', '--json']);
+  assert.deepEqual(runner.calls[0].argv, ['orchestration', 'worker-show', '--dispatch=ctx_110dcf08ae68', '--json']);
   assert.equal(r.value.dispatch.id, 'ctx_110dcf08ae68');
   assert.equal(r.value.dispatch.status, 'failed');
   assert.equal(r.value.dispatch.lastFailure.outcome, 'failed');
@@ -142,7 +142,7 @@ test('gateList: an empty list comes back empty with its run id', async () => {
   const runner = stub(fx('gate-list'));
   const r = await gateList(runner, { runId: 'run_aa8ea15012d0' });
   assert.equal(r.ok, true);
-  assert.deepEqual(runner.calls[0].argv, ['orchestration', 'gate-list', '--run', 'run_aa8ea15012d0', '--json']);
+  assert.deepEqual(runner.calls[0].argv, ['orchestration', 'gate-list', '--run=run_aa8ea15012d0', '--json']);
   assert.deepEqual(r.value, { runId: 'run_aa8ea15012d0', count: 0, gates: [] });
 });
 
@@ -165,7 +165,7 @@ test('inbox: messages keep type, sequence and a small payload; the bus is read w
   const runner = stub(raw);
   const r = await inbox(runner, { limit: 100 });
   assert.equal(r.ok, true);
-  assert.deepEqual(runner.calls[0].argv, ['orchestration', 'inbox', '--limit', '100', '--json']);
+  assert.deepEqual(runner.calls[0].argv, ['orchestration', 'inbox', '--limit=100', '--json']);
   assert.equal(r.value.messages.length, raw.result.messages.length);
   const types = new Set(r.value.messages.map((m) => m.type));
   for (const t of ['question', 'worker_done', 'heartbeat', 'status']) assert.ok(types.has(t), `has a ${t} message`);
@@ -301,17 +301,17 @@ test('an {ok:true} reply without a result object is bad_shape', async () => {
 const RECEIPT = { id: 'abc', ok: true, result: { id: 'thing_1', note: 'receipt kept as is', nested: { prompt: 'Orca said this' } }, _meta: { runtimeId: 'rt' } };
 
 const ALLOWED = [
-  ['run-create', { objective: 'ship it', 'retry-request': 'rr1' }, ['orchestration', 'run-create', '--objective', 'ship it', '--retry-request', 'rr1', '--json']],
+  ['run-create', { objective: 'ship it', 'retry-request': 'rr1' }, ['orchestration', 'run-create', '--objective=ship it', '--retry-request=rr1', '--json']],
   ['task-create', { spec: 'mk-ref: B-1\nfix it', 'task-title': 'Fix', deps: ['task_a'], run: 'run_1', 'retry-request': 'rr2' },
-    ['orchestration', 'task-create', '--spec', 'mk-ref: B-1\nfix it', '--task-title', 'Fix', '--deps', '["task_a"]', '--run', 'run_1', '--retry-request', 'rr2', '--json']],
-  ['task-update', { id: 'task_1', status: 'completed', result: 'done' }, ['orchestration', 'task-update', '--id', 'task_1', '--status', 'completed', '--result', 'done', '--json']],
+    ['orchestration', 'task-create', '--spec=mk-ref: B-1\nfix it', '--task-title=Fix', '--deps=["task_a"]', '--run=run_1', '--retry-request=rr2', '--json']],
+  ['task-update', { id: 'task_1', status: 'completed', result: 'done' }, ['orchestration', 'task-update', '--id=task_1', '--status=completed', '--result=done', '--json']],
   ['worker-start', { task: 'task_1', agent: 'claude', model: 'sonnet', effort: 'low', worktree: 'new-child', 'timeout-ms': 60000 },
-    ['orchestration', 'worker-start', '--task', 'task_1', '--worktree', 'new-child', '--agent', 'claude', '--model', 'sonnet', '--effort', 'low', '--timeout-ms', '60000', '--json']],
-  ['reply', { id: 'msg_1', body: 'yes, go', run: 'run_1' }, ['orchestration', 'reply', '--id', 'msg_1', '--body', 'yes, go', '--run', 'run_1', '--json']],
-  ['gate-resolve', { id: 'gate_1', resolution: 'approved', 'retry-request': 'rr3' }, ['orchestration', 'gate-resolve', '--id', 'gate_1', '--resolution', 'approved', '--retry-request', 'rr3', '--json']],
-  ['terminal send', { terminal: 'term_1', text: 'hello', enter: true }, ['terminal', 'send', '--terminal', 'term_1', '--text', 'hello', '--enter', '--json']],
-  ['tab create', { url: 'http://127.0.0.1:5173/', worktree: 'active' }, ['tab', 'create', '--url', 'http://127.0.0.1:5173/', '--worktree', 'active', '--json']],
-  ['repo set-base-ref', { repo: 'id:r1', ref: 'main' }, ['repo', 'set-base-ref', '--repo', 'id:r1', '--ref', 'main', '--json']],
+    ['orchestration', 'worker-start', '--task=task_1', '--worktree=new-child', '--agent=claude', '--model=sonnet', '--effort=low', '--timeout-ms=60000', '--json']],
+  ['reply', { id: 'msg_1', body: 'yes, go', run: 'run_1' }, ['orchestration', 'reply', '--id=msg_1', '--body=yes, go', '--run=run_1', '--json']],
+  ['gate-resolve', { id: 'gate_1', resolution: 'approved', 'retry-request': 'rr3' }, ['orchestration', 'gate-resolve', '--id=gate_1', '--resolution=approved', '--retry-request=rr3', '--json']],
+  ['terminal send', { terminal: 'term_1', text: 'hello', enter: true }, ['terminal', 'send', '--terminal=term_1', '--text=hello', '--enter', '--json']],
+  ['tab create', { url: 'http://127.0.0.1:5173/', worktree: 'active' }, ['tab', 'create', '--url=http://127.0.0.1:5173/', '--worktree=active', '--json']],
+  ['repo set-base-ref', { repo: 'id:r1', ref: 'main' }, ['repo', 'set-base-ref', '--repo=id:r1', '--ref=main', '--json']],
 ];
 
 test('the allowlist is exactly the nine C5 actions', () => {
@@ -358,7 +358,7 @@ test('bad arguments are refused before any process starts', async () => {
     ['gate-resolve', { id: 'g', resolution: '' }, /non-empty string|needs/],
     ['worker-start', { agent: 'claude' }, /one of: task, spec/],
     ['worker-start', { task: 't' }, /one of: agent, terminal/],
-    ['terminal send', { terminal: 't', enter: 'yes' }, /true or left out/],
+    ['terminal send', { terminal: 't', text: 'x', enter: 'yes' }, /true or left out/],
     ['task-update', { id: 't', status: 'a\0b' }, /non-empty string/],
     ['repo set-base-ref', { repo: 'r' }, /needs "ref"/],
   ];
@@ -385,4 +385,101 @@ test('an action that times out or prints non-JSON returns a typed error', async 
   const slow = async () => { throw Object.assign(new Error('x'), { code: 'ETIMEDOUT' }); };
   assert.equal((await runAction('reply', { id: 'm', body: 'b' }, slow)).error.kind, 'timeout');
   assert.equal((await runAction('reply', { id: 'm', body: 'b' }, stub('not json'))).error.kind, 'invalid_json');
+});
+
+// ---------- fix round 2 ----------
+
+test('finding 1: a value that starts with -- stays inside its own --key=value element', () => {
+  const r = buildActionArgv('reply', { id: 'x', body: '--json' });
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.argv, ['orchestration', 'reply', '--id=x', '--body=--json', '--json']);
+  assert.equal(r.argv.filter((a) => a === '--json').length, 1, 'only the trailing --json is a bare flag');
+  const steer = buildActionArgv('reply', { id: '--run', body: '--json' });
+  assert.deepEqual(steer.argv, ['orchestration', 'reply', '--id=--run', '--body=--json', '--json']);
+  const dep = buildActionArgv('task-create', { spec: '--spec', deps: ['--x'] });
+  assert.deepEqual(dep.argv, ['orchestration', 'task-create', '--spec=--spec', '--deps=["--x"]', '--json']);
+});
+
+test('finding 1: no flag name is ever a separate element before its value, for every action', () => {
+  for (const [name, args] of ALLOWED.map(([n, a]) => [n, a])) {
+    const { argv } = buildActionArgv(name, args);
+    const bare = argv.slice(argv.indexOf(argv.find((a) => a.startsWith('--'))));
+    for (const a of bare) assert.ok(a === '--json' || a === '--enter' || a.includes('='), `${name}: "${a}" is a bare value-less element`);
+  }
+});
+
+test('finding 2: reads pass values as --key=value too', async () => {
+  const runner = stub(fx('task-list'));
+  await taskList(runner, { runId: '--status', status: '--json' });
+  assert.deepEqual(runner.calls[0].argv, ['orchestration', 'task-list', '--status=--json', '--run=--status', '--json']);
+  const w = stub(fx('worker-list'));
+  await workerList(w, { runId: 'run_1', terminalState: 'active', cursor: 'c', limit: 5 });
+  assert.deepEqual(w.calls[0].argv, ['orchestration', 'worker-list', '--run=run_1', '--terminal-state=active', '--cursor=c', '--limit=5', '--json']);
+  const b = stub(fx('task-list'));
+  await taskList(b, { runId: 'run_1', brief: true });
+  assert.deepEqual(b.calls[0].argv, ['orchestration', 'task-list', '--run=run_1', '--brief', '--json']);
+});
+
+test('finding 2: a missing, null or empty required id is a bad_args error and the runner is not called', async () => {
+  for (const opts of [{}, { dispatchId: undefined }, { dispatchId: null }, { dispatchId: '' }, { dispatchId: 5 }, { dispatchId: {} }, null, undefined]) {
+    const runner = stub(fx('worker-show'));
+    const r = await workerShow(runner, opts);
+    assert.equal(r.ok, false, JSON.stringify(opts));
+    assert.equal(r.error.kind, 'bad_args', JSON.stringify(opts));
+    assert.equal(runner.calls.length, 0);
+  }
+  // a bad optional value is refused the same way
+  for (const bad of [null, '', NaN, Infinity, {}, []]) {
+    const runner = stub(fx('task-list'));
+    const r = await taskList(runner, { runId: bad });
+    assert.equal(r.ok, false);
+    assert.equal(r.error.kind, 'bad_args');
+    assert.equal(runner.calls.length, 0);
+  }
+});
+
+test('finding 3: workerShow with no arguments at all returns a typed error and never throws', async () => {
+  const r = await workerShow();
+  assert.equal(r.ok, false);
+  assert.equal(r.error.kind, 'bad_args');
+  assert.match(r.error.message, /dispatch/);
+  assert.equal((await workerShow(undefined, undefined)).error.kind, 'bad_args');
+});
+
+test('finding 4: stage, liveness and observation keep known keys only', async () => {
+  const env = { ok: true, result: {
+    dispatch: { id: 'd' }, worker: {}, terminal: {},
+    projection: { outcome: 'failed', stage: { worker: 'failed', dispatch: 'failed', detail: 'settled', activity: 'unknown', note: 'SECRET-STAGE' },
+      liveness: { verdict: 'exited', source: 'resource_release', reason: 'stale_status', observedAt: 5, text: 'SECRET-LIVE' }, attention: { categories: [], requiresAction: false }, nextAction: { kind: 'none' } },
+    observation: { status: 'live', exactWorker: true, agentWait: { question: 'SECRET-WAIT' }, tail: 'SECRET-OBS' },
+  } };
+  const r = await workerShow(stub(env), { dispatchId: 'd' });
+  assert.equal(r.ok, true);
+  assert.ok(!JSON.stringify(r.value).includes('SECRET'));
+  assert.deepEqual(r.value.projection.stage, { worker: 'failed', dispatch: 'failed', detail: 'settled', activity: 'unknown' });
+  assert.deepEqual(r.value.projection.liveness, { verdict: 'exited', source: 'resource_release', reason: 'stale_status', observedAt: 5 });
+  assert.deepEqual(r.value.observation, { status: 'live', exactWorker: true, agentWait: true });
+  const list = await workerList(stub({ ok: true, result: { workers: [{ dispatchId: 'd', projection: env.result.projection }], counts: {}, page: {} } }));
+  assert.ok(!JSON.stringify(list.value).includes('SECRET'));
+});
+
+test('finding 4: the recorded fixtures project to the same known keys', async () => {
+  const r = await workerList(stub(fx('worker-list')));
+  for (const w of r.value.workers) {
+    assert.deepEqual(Object.keys(w.stage), ['worker', 'dispatch', 'detail', 'activity']);
+    assert.deepEqual(Object.keys(w.liveness), ['verdict', 'source', 'reason', 'observedAt']);
+  }
+  const s = await workerShow(stub(fx('worker-show')), { dispatchId: 'ctx_f18a42f2381f' });
+  assert.deepEqual(s.value.observation, { status: 'exited', exactWorker: true, agentWait: false });
+});
+
+test('finding 5: terminal send needs terminal and text, tab create needs url, --setup is restricted', () => {
+  assert.equal(buildActionArgv('terminal send', { text: 'x' }).error.kind, 'bad_args');
+  assert.match(buildActionArgv('terminal send', { terminal: 't' }).error.message, /needs "text"/);
+  assert.match(buildActionArgv('tab create', {}).error.message, /needs "url"/);
+  const base = { task: 't', agent: 'claude' };
+  assert.match(buildActionArgv('worker-start', { ...base, setup: 'bogus' }).error.message, /one of: run, skip, inherit/);
+  for (const ok of ['run', 'skip', 'inherit']) {
+    assert.ok(buildActionArgv('worker-start', { ...base, setup: ok }).argv.includes(`--setup=${ok}`));
+  }
 });

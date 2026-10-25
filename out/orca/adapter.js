@@ -1,4 +1,4 @@
-import { read } from './call.js';
+import { fail, read } from './call.js';
 import { execOrca } from './runner.js';
 import { arr, bool, cap, capOrNull, num, numOrNull, rec, shortBranch, str, strOrNull, strings, } from './sanitize.js';
 // Read side of the Orca adapter. Each function runs `orca ... --json` through the runner (default:
@@ -9,12 +9,37 @@ const BODY_MAX = 400;
 const OBJECTIVE_MAX = 200;
 const RESULT_MAX = 300;
 const COMMENT_MAX = 200;
-function flag(name, value) {
-    return value === undefined ? [] : [name, String(value)];
+// Builds `base --key=value ... [bare flags] --json`. Each value rides in the SAME argv element as its
+// key, so a value that starts with `--` (a body, a spec, a bad id) can never be read as the next flag.
+// `undefined` leaves the flag out; null, an empty string, or anything but a string or finite number is
+// a bad_args error, and so is a missing flag named in `required`.
+function buildReadArgv(base, flags, required = [], bare = []) {
+    const argv = [...base];
+    for (const name of required) {
+        if (flags[name] === undefined)
+            return fail('bad_args', `${base.join(' ')} needs "${name}"`);
+    }
+    for (const [name, v] of Object.entries(flags)) {
+        if (v === undefined)
+            continue;
+        // a required flag is an id: a string only
+        const okValue = (typeof v === 'string' && v !== '' && !v.includes('\0')) || (typeof v === 'number' && Number.isFinite(v) && !required.includes(name));
+        if (!okValue)
+            return fail('bad_args', `${base.join(' ')}: "${name}" must be a non-empty string or a number`);
+        argv.push(`--${name}=${v}`);
+    }
+    argv.push(...bare, '--json');
+    return { ok: true, argv };
+}
+async function readCmd(base, flags, runner, project, required = [], bare = []) {
+    const built = buildReadArgv(base, flags, required, bare);
+    if (!built.ok)
+        return built;
+    return read(built.argv, runner, project);
 }
 // ---- worktrees ----
 export function worktreePs(runner = execOrca, opts = {}) {
-    return read(['worktree', 'ps', ...flag('--limit', opts.limit), '--json'], runner, (r) => ({
+    return readCmd(['worktree', 'ps'], { limit: opts.limit }, runner, (r) => ({
         worktrees: arr(r.worktrees).map((w) => {
             const x = rec(w);
             return {
@@ -57,7 +82,7 @@ export function worktreePs(runner = execOrca, opts = {}) {
     }));
 }
 export function worktreeList(runner = execOrca) {
-    return read(['worktree', 'list', '--json'], runner, (r) => ({
+    return readCmd(['worktree', 'list'], {}, runner, (r) => ({
         worktrees: arr(r.worktrees).map((w) => {
             const x = rec(w);
             return {
@@ -82,7 +107,7 @@ export function worktreeList(runner = execOrca) {
 }
 // ---- orchestration ----
 export function runList(runner = execOrca, opts = {}) {
-    return read(['orchestration', 'run-list', ...flag('--limit', opts.limit), ...flag('--cursor', opts.cursor), '--json'], runner, (r) => ({
+    return readCmd(['orchestration', 'run-list'], { limit: opts.limit, cursor: opts.cursor }, runner, (r) => ({
         runs: arr(r.runs).map((run) => {
             const x = rec(run);
             return {
@@ -99,8 +124,7 @@ export function runList(runner = execOrca, opts = {}) {
 }
 // Without a Run bound to the shell, Orca answers run_required: pass `runId`.
 export function taskList(runner = execOrca, opts = {}) {
-    const argv = ['orchestration', 'task-list', ...flag('--status', opts.status), ...(opts.brief ? ['--brief'] : []), ...flag('--run', opts.runId), '--json'];
-    return read(argv, runner, (r) => {
+    return readCmd(['orchestration', 'task-list'], { status: opts.status, run: opts.runId }, runner, (r) => {
         const tasks = arr(r.tasks).map((t) => {
             const x = rec(t);
             return {
@@ -118,7 +142,7 @@ export function taskList(runner = execOrca, opts = {}) {
             };
         });
         return { runId: str(r.runId), legacyReadOnly: bool(r.legacyReadOnly), count: num(r.count, tasks.length), tasks };
-    });
+    }, [], opts.brief ? ['--brief'] : []);
 }
 function projectWorker(x) {
     const p = rec(x.projection);
@@ -135,23 +159,31 @@ function projectWorker(x) {
         ...projectionBits(p),
     };
 }
+// stage, liveness and observation are free-form objects in Orca's JSON: keep the keys seen in the
+// recorded fixtures and drop the rest, so a new text-bearing key cannot ride through.
+function projectStage(x) {
+    return { worker: str(x.worker), dispatch: str(x.dispatch), detail: strOrNull(x.detail), activity: strOrNull(x.activity) };
+}
+function projectLiveness(x) {
+    return { verdict: str(x.verdict), source: strOrNull(x.source), reason: strOrNull(x.reason), observedAt: numOrNull(x.observedAt) };
+}
+function projectObservation(x) {
+    // agentWait may carry what the agent is waiting on; only whether it is waiting is kept
+    return { status: str(x.status), exactWorker: bool(x.exactWorker), agentWait: x.agentWait !== null && x.agentWait !== undefined };
+}
 function projectionBits(p) {
     const attention = rec(p.attention);
     return {
         outcome: strOrNull(p.outcome),
-        stage: rec(p.stage),
-        liveness: rec(p.liveness),
+        stage: projectStage(rec(p.stage)),
+        liveness: projectLiveness(rec(p.liveness)),
         attention: { categories: strings(attention.categories), requiresAction: bool(attention.requiresAction) },
         nextActionKind: strOrNull(rec(p.nextAction).kind),
     };
 }
 export function workerList(runner = execOrca, opts = {}) {
-    const argv = [
-        'orchestration', 'worker-list',
-        ...flag('--run', opts.runId), ...flag('--terminal-state', opts.terminalState),
-        ...flag('--cursor', opts.cursor), ...flag('--limit', opts.limit), '--json',
-    ];
-    return read(argv, runner, (r) => {
+    const flags = { run: opts.runId, 'terminal-state': opts.terminalState, cursor: opts.cursor, limit: opts.limit };
+    return readCmd(['orchestration', 'worker-list'], flags, runner, (r) => {
         const page = rec(r.page);
         const counts = {};
         for (const [k, v] of Object.entries(rec(r.counts)))
@@ -169,7 +201,9 @@ export function workerList(runner = execOrca, opts = {}) {
     });
 }
 export function workerShow(runner = execOrca, opts) {
-    return read(['orchestration', 'worker-show', '--dispatch', opts.dispatchId, '--json'], runner, (r) => {
+    // no opts, a missing, null or empty dispatch id: a typed bad_args error, the runner is not called
+    const dispatch = opts && typeof opts === 'object' ? opts.dispatchId : undefined;
+    return readCmd(['orchestration', 'worker-show'], { dispatch }, runner, (r) => {
         const d = rec(r.dispatch);
         const w = rec(r.worker);
         const t = rec(r.terminal);
@@ -201,13 +235,12 @@ export function workerShow(runner = execOrca, opts) {
                 orphaned: bool(t.orphaned),
                 title: cap(t.title, SUBJECT_MAX),
             },
-            observation: rec(r.observation),
+            observation: projectObservation(rec(r.observation)),
         };
-    });
+    }, ['dispatch']);
 }
 export function gateList(runner = execOrca, opts = {}) {
-    const argv = ['orchestration', 'gate-list', ...flag('--task', opts.taskId), ...flag('--status', opts.status), ...flag('--run', opts.runId), '--json'];
-    return read(argv, runner, (r) => {
+    return readCmd(['orchestration', 'gate-list'], { task: opts.taskId, status: opts.status, run: opts.runId }, runner, (r) => {
         const gates = arr(r.gates).map((g) => {
             const x = rec(g);
             return {
@@ -226,7 +259,7 @@ export function gateList(runner = execOrca, opts = {}) {
     });
 }
 export function inbox(runner = execOrca, opts = {}) {
-    return read(['orchestration', 'inbox', ...flag('--limit', opts.limit), '--json'], runner, (r) => {
+    return readCmd(['orchestration', 'inbox'], { limit: opts.limit }, runner, (r) => {
         const messages = arr(r.messages).map((m) => {
             const x = rec(m);
             const p = parsePayload(x.payload);
@@ -265,7 +298,7 @@ function rateWindow(v) {
 }
 // Account emails and workspace labels are not carried: only counts, the active id and quota windows.
 export function accountList(runner = execOrca) {
-    return read(['account', 'list', '--json'], runner, (r) => ({
+    return readCmd(['account', 'list'], {}, runner, (r) => ({
         agents: AGENT_KEYS.filter((k) => k in r).map((k) => {
             const x = rec(r[k]);
             return { agent: k, accounts: arr(x.accounts).length, activeAccountId: strOrNull(x.activeAccountId) };
@@ -286,7 +319,7 @@ export function accountList(runner = execOrca) {
     }));
 }
 export function terminalList(runner = execOrca) {
-    return read(['terminal', 'list', '--json'], runner, (r) => ({
+    return readCmd(['terminal', 'list'], {}, runner, (r) => ({
         terminals: arr(r.terminals).map((t) => {
             const x = rec(t);
             return {
@@ -307,7 +340,7 @@ export function terminalList(runner = execOrca) {
     }));
 }
 export function repoList(runner = execOrca) {
-    return read(['repo', 'list', '--json'], runner, (r) => ({
+    return readCmd(['repo', 'list'], {}, runner, (r) => ({
         repos: arr(r.repos).map((p) => {
             const x = rec(p);
             return {
@@ -322,7 +355,7 @@ export function repoList(runner = execOrca) {
     }));
 }
 export function hostList(runner = execOrca) {
-    return read(['host', 'list', '--json'], runner, (r) => ({
+    return readCmd(['host', 'list'], {}, runner, (r) => ({
         hosts: arr(r.hosts).map((h) => {
             const x = rec(h);
             return {

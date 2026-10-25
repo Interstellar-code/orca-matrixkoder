@@ -124,6 +124,24 @@ export interface TaskListProjection {
   tasks: TaskInfo[];
 }
 
+export interface WorkerStage {
+  worker: string;
+  dispatch: string;
+  detail: string | null;
+  activity: string | null;
+}
+export interface WorkerLiveness {
+  verdict: string;
+  source: string | null;
+  reason: string | null;
+  observedAt: number | null;
+}
+export interface WorkerObservation {
+  status: string;
+  exactWorker: boolean;
+  agentWait: boolean;
+}
+
 export interface WorkerInfo {
   dispatchId: string;
   taskId: string;
@@ -134,8 +152,8 @@ export interface WorkerInfo {
   terminalState: string;
   worktreeId: string | null;
   outcome: string | null;
-  stage: Record<string, unknown>;
-  liveness: Record<string, unknown>;
+  stage: WorkerStage;
+  liveness: WorkerLiveness;
   attention: { categories: string[]; requiresAction: boolean };
   nextActionKind: string | null;
 }
@@ -176,7 +194,7 @@ export interface WorkerShowProjection {
   };
   projection: Omit<WorkerInfo, 'dispatchId' | 'taskId' | 'runId' | 'workerState' | 'dispatchStatus' | 'terminalHandle' | 'terminalState' | 'worktreeId'>;
   terminal: { handle: string | null; connected: boolean; orphaned: boolean; title: string };
-  observation: Record<string, unknown>;
+  observation: WorkerObservation;
 }
 
 export interface GateInfo {

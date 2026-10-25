@@ -2,6 +2,7 @@ import { fail, invoke } from './call.js';
 import { execOrca } from './runner.js';
 const s = (required = false) => ({ kind: 'string', required });
 const n = () => ({ kind: 'number' });
+const e = (values) => ({ kind: 'string', oneOf: values });
 const b = () => ({ kind: 'boolean' });
 const j = () => ({ kind: 'json' });
 export const ACTIONS = {
@@ -24,7 +25,7 @@ export const ACTIONS = {
         flags: {
             task: s(), spec: s(), on: s(), worktree: s(), agent: s(), terminal: s(), 'task-title': s(), deps: j(), parent: s(),
             model: s(), effort: s(), name: s(), repo: s(), 'base-branch': s(), 'display-name': s(), comment: s(),
-            setup: s(), 'retry-of': s(), 'timeout-ms': n(), run: s(), from: s(), 'retry-request': s(),
+            setup: e(['run', 'skip', 'inherit']), 'retry-of': s(), 'timeout-ms': n(), run: s(), from: s(), 'retry-request': s(),
         },
         oneOf: [['task', 'spec'], ['agent', 'terminal']],
     },
@@ -39,12 +40,12 @@ export const ACTIONS = {
     'terminal send': {
         argv: ['terminal', 'send'],
         flags: {
-            terminal: s(), text: s(), enter: b(), interrupt: b(), 'wait-submit': n(), 'retry-request': s(),
+            terminal: s(true), text: s(true), enter: b(), interrupt: b(), 'wait-submit': n(), 'retry-request': s(),
         },
     },
     'tab create': {
         argv: ['tab', 'create'],
-        flags: { url: s(), worktree: s(), profile: s() },
+        flags: { url: s(true), worktree: s(), profile: s() },
     },
     'repo set-base-ref': {
         argv: ['repo', 'set-base-ref'],
@@ -75,12 +76,14 @@ export function buildActionArgv(name, args = {}) {
             case 'string':
                 if (typeof v !== 'string' || v === '' || v.includes('\0'))
                     return fail('bad_args', `"${key}" must be a non-empty string`);
-                argv.push(`--${key}`, v);
+                if (f.oneOf && !f.oneOf.includes(v))
+                    return fail('bad_args', `"${key}" must be one of: ${f.oneOf.join(', ')}`);
+                argv.push(`--${key}=${v}`);
                 break;
             case 'number':
                 if (typeof v !== 'number' || !Number.isFinite(v))
                     return fail('bad_args', `"${key}" must be a number`);
-                argv.push(`--${key}`, String(v));
+                argv.push(`--${key}=${v}`);
                 break;
             case 'boolean':
                 if (v !== true)
@@ -90,9 +93,9 @@ export function buildActionArgv(name, args = {}) {
             case 'json':
                 // JSON array text (Orca's --deps); an array is encoded here
                 if (Array.isArray(v))
-                    argv.push(`--${key}`, JSON.stringify(v));
+                    argv.push(`--${key}=${JSON.stringify(v)}`);
                 else if (typeof v === 'string' && v !== '')
-                    argv.push(`--${key}`, v);
+                    argv.push(`--${key}=${v}`);
                 else
                     return fail('bad_args', `"${key}" must be an array or JSON text`);
                 break;
