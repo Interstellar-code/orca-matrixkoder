@@ -9,10 +9,14 @@
     "build": "tsc && node scripts/build-panel.mjs && node scripts/stage-plugin.mjs",
     "build:panel": "node scripts/build-panel.mjs",
     "watch": "tsc -w",
-    "sync:orca": "bash scripts/sync-orca-upstream.sh"
+    "sync:orca": "bash scripts/sync-orca-upstream.sh",
+    "test": "node --test \"test/**/*.test.mjs\""
   },
   "devDependencies": {
     "typescript": "^5.4.0",
     "@types/node": "^20.11.0"
+  },
+  "bin": {
+    "mk": "bin/mk.mjs"
   }
 }

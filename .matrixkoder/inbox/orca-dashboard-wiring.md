@@ -147,7 +147,7 @@ id = "SPIKE.2"
 title = "test runner"
 covers = []
 acceptance = [
-  "`npm test` runs node --test over test/ and passes with one smoke test",
+  "`npm test` runs node --test over test/**/*.test.mjs and passes with one smoke test",
   "package.json already has everything later phases need: `bin.mk = bin/mk.mjs` and the test script, so no later phase edits package.json",
 ]
 risk = 1
