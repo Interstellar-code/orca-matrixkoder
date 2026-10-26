@@ -39,6 +39,10 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 .search:focus{border-color:#19e35a}
 .search::placeholder{color:#5f9a70}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.step{display:flex;align-items:center;border:1px solid #1c4a2b;border-radius:9px;overflow:hidden}
+.step button{font-family:'Geist',system-ui,sans-serif;width:28px;height:28px;border:0;background:#06150b;color:#b9e8c4;font-size:14px;cursor:pointer}
+.step button:hover{background:#0c2414}
+.step span{min-width:38px;padding:0 4px;text-align:center;font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;color:#e6fff0}
 </style>
 </helmet>
 <div class="mk" style="width: 440px; height: 1240px; box-sizing: border-box; background: #020604; display: flex; flex-direction: column; border-left: 1px solid #0f2a17; position: relative; overflow: hidden">
@@ -63,11 +67,20 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
       <input id="ss" class="search" placeholder="Search all settings">
     </div>
     <nav aria-label="Settings sections" style="display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(4,14,7,.86); border: 1px solid #0f2a17">
-      <sc-for list="{{stabs}}" as="s" hint-placeholder-count="7"><a class="{{s.cls}}" href="{{s.href}}" aria-current="{{s.cur}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg><span>{{s.label}}</span></a></sc-for>
+      <sc-for list="{{stabs}}" as="s" hint-placeholder-count="6"><a class="{{s.cls}}" href="{{s.href}}" aria-current="{{s.cur}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg><span>{{s.label}}</span></a></sc-for>
     </nav>
   </header>
 
   <main style="position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 20px; overflow: hidden">
+
+    <sc-if value="{{hasMigrationNotes}}">
+      <section class="card" aria-label="Migration notes" style="border-color: #7a5a10; background: rgba(30,22,5,.86)">
+        <h2 class="sec" style="color: #e8b04a">Migration notes</h2>
+        <sc-for list="{{migrationNotes}}" as="n">
+          <div class="row" style="font-size: 12px; color: #f5d799; padding: 6px 0">{{n}}</div>
+        </sc-for>
+      </section>
+    </sc-if>
 
     <section class="card" aria-labelledby="g-mode">
       <h2 id="g-mode" class="sec">Mode</h2>
@@ -81,21 +94,52 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
     <section class="card" aria-labelledby="g-proj">
       <h2 id="g-proj" class="sec">Project</h2>
       <div class="row"><div class="lbl"><span>Repo</span><span>The Orca project this panel follows</span></div><span class="val">{{repoName}}</span></div>
-      <div class="row"><div class="lbl"><span>Default base branch</span><span>New lane worktrees branch from here</span></div><span class="val">{{baseBranch}}</span><button class="btn" disabled title="Not supported in web dashboard">Change</button></div>
-      <div class="row"><div class="lbl"><span>Open on start</span><span>The tab the panel opens on</span></div><span class="val">{{openOnStart}}</span><button class="btn" onClick="{{changeOpenOnStart}}">Change</button></div>
+      <div class="row"><div class="lbl"><span>Default base branch</span><span>New lane worktrees branch from here</span></div><span class="val">{{baseBranch}}</span></div>
+      <div class="row"><div class="lbl"><span>Open on start</span><span>The tab the panel opens on</span></div><span class="val">{{openOnStartVal}}</span><button class="btn" onClick="{{changeOpenOnStart}}">Change</button></div>
+      <div class="row"><div class="lbl"><span>Undo window</span><span>Delay before destructive actions execute (0 = no delay)</span></div>
+        <div class="step"><button aria-label="Decrease undo window" onClick="{{lessUndo}}">−</button><span aria-live="polite">{{undoSecondsVal}}s</span><button aria-label="Increase undo window" onClick="{{moreUndo}}">+</button></div>
+      </div>
+      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Snooze default</span><span>Default minutes to snooze an ask</span></div>
+        <div class="step"><button aria-label="Decrease snooze default" onClick="{{lessSnooze}}">−</button><span aria-live="polite">{{snoozeMinutesVal}}m</span><button aria-label="Increase snooze default" onClick="{{moreSnooze}}">+</button></div>
+      </div>
     </section>
 
     <section class="card" aria-labelledby="g-data">
       <h2 id="g-data" class="sec">Data</h2>
+      <div class="row"><div class="lbl"><span>Backups to keep</span><span>Database snapshots saved during maintenance</span></div>
+        <div class="step"><button aria-label="Fewer backups" onClick="{{lessBackup}}">−</button><span aria-live="polite">{{backupKeepVal}}</span><button aria-label="More backups" onClick="{{moreBackup}}">+</button></div>
+      </div>
+      <div class="row"><div class="lbl"><span>Prune gone worktrees</span><span>Days to keep ended lanes and gone worktrees</span></div>
+        <div class="step"><button aria-label="Fewer gone days" onClick="{{lessGone}}">−</button><span aria-live="polite">{{goneDaysVal}}d</span><button aria-label="More gone days" onClick="{{moreGone}}">+</button></div>
+      </div>
+      <div class="row"><div class="lbl"><span>Prune decisions</span><span>Days to keep decision log rows</span></div>
+        <div class="step"><button aria-label="Fewer decision days" onClick="{{lessDecision}}">−</button><span aria-live="polite">{{decisionDaysVal}}d</span><button aria-label="More decision days" onClick="{{moreDecision}}">+</button></div>
+      </div>
+      <div class="row"><div class="lbl"><span>Event log cap</span><span>Maximum rows in event log</span></div>
+        <div class="step"><button aria-label="Lower event cap" onClick="{{lessEvent}}">−</button><span aria-live="polite">{{eventMaxVal}}</span><button aria-label="Higher event cap" onClick="{{moreEvent}}">+</button></div>
+      </div>
       <div class="row"><div class="lbl"><span>MK data folder</span><span>Plans, runs and briefs</span></div><span class="val">{{dataFolder}}</span></div>
       <div class="row"><div class="lbl"><span>Plan inbox</span><span>Where the Inbox tab looks</span></div><span class="val">{{inboxFolder}}</span></div>
-      <div class="row"><div class="lbl"><span>Settings file</span><span>Back up or move to another machine</span></div><button class="btn" disabled title="Not supported in web dashboard">Export</button><button class="btn" disabled title="Not supported in web dashboard">Import</button></div>
+      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Settings file</span><span>Back up or move to another machine</span></div><button class="btn" onClick="{{exportSettings}}">Export</button></div>
+    </section>
+
+    <section class="card" aria-labelledby="g-sync">
+      <h2 id="g-sync" class="sec">Sync</h2>
+      <div class="row"><div class="lbl"><span>Fast refresh</span><span>Seconds between active lane and status polls</span></div>
+        <div class="step"><button aria-label="Decrease fast refresh" onClick="{{lessFast}}">−</button><span aria-live="polite">{{fastSecondsVal}}s</span><button aria-label="Increase fast refresh" onClick="{{moreFast}}">+</button></div>
+      </div>
+      <div class="row"><div class="lbl"><span>Slow refresh</span><span>Seconds between quota and repo scans</span></div>
+        <div class="step"><button aria-label="Decrease slow refresh" onClick="{{lessSlow}}">−</button><span aria-live="polite">{{slowSecondsVal}}s</span><button aria-label="Increase slow refresh" onClick="{{moreSlow}}">+</button></div>
+      </div>
+      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Inbox scan</span><span>Seconds between plan file checks</span></div>
+        <div class="step"><button aria-label="Decrease files scan" onClick="{{lessFiles}}">−</button><span aria-live="polite">{{filesSecondsVal}}s</span><button aria-label="Increase files scan" onClick="{{moreFiles}}">+</button></div>
+      </div>
     </section>
 
     <section class="card" aria-labelledby="g-about">
       <h2 id="g-about" class="sec">About</h2>
       <div class="row"><div class="lbl"><span>MatrixKoder for Orca {{version}}</span><span>Plugin version</span></div><button class="btn" disabled title="Not supported in web dashboard">Check for updates</button></div>
-      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Reset all settings</span><span>Back to defaults; plans and runs are kept</span></div><button class="btn" style="color: #ff9b8a; opacity: 0.6" disabled title="Not supported in web dashboard">Reset</button></div>
+      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Reset general settings</span><span>Back to defaults for general section</span></div><button class="btn" style="color: #ff9b8a" onClick="{{resetGeneral}}">Reset</button></div>
     </section>
 
   </main>
@@ -106,44 +150,101 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 class Component extends DCLogic {
   constructor(p) {
     super(p);
-    this.state = { mode: 'orch' };
   }
   renderVals() {
+    const bind = (k) => this.bind(k);
     const s = this.getData('settings') || {};
     const proj = this.getData('projects') || {};
     const repo = (proj.repos && proj.repos[0]) || {};
-    const repoName = repo.name || 'orca-matrixkoder';
+    const activeRepoBind = bind('general.activeRepo');
+    const repoName = activeRepoBind.val || repo.name || 'orca-matrixkoder';
     const baseBranch = s.baseBranch || 'main';
-    const openOnStart = (s.values && s.values.openOnStart) || 'Projects';
     const version = s.version || '0.1.1';
-    const mode = this.state.mode || (s.values && s.values.mode) || 'orch';
-    const orch = mode === 'orch';
+    const dataFolder = s.dataDir || '~/.matrixkoder';
+    const inboxFolder = s.inboxDir || (repo.path ? repo.path + '/.matrixkoder/inbox' : '~/.matrixkoder/inbox');
+
+    const modeBind = bind('general.mode');
+    const mode = modeBind.val || 'orchestrator';
+    const orch = mode === 'orchestrator';
+
+    const openOnStartBind = bind('general.openOnStart');
+    const undoSecondsBind = bind('general.undoSeconds');
+    const snoozeMinutesBind = bind('general.snoozeMinutes');
+
+    const backupKeepBind = bind('data.backupKeep');
+    const goneDaysBind = bind('data.goneDays');
+    const decisionDaysBind = bind('data.decisionDays');
+    const eventMaxBind = bind('data.eventMax');
+
+    const fastSecondsBind = bind('sync.fastSeconds');
+    const slowSecondsBind = bind('sync.slowSeconds');
+    const filesSecondsBind = bind('sync.filesSeconds');
+
+    const migrationNotes = Array.isArray(s.migrationNotes) ? s.migrationNotes : [];
 
     return {
       rain: window.MK_RAIN ? window.MK_RAIN(71) : [],
       stabs: window.MK_STABS ? window.MK_STABS('general') : [],
       repoName,
       baseBranch,
-      openOnStart,
-      dataFolder: '~/.matrixkoder',
-      inboxFolder: repo.path ? repo.path + '/.matrixkoder/inbox' : '~/.matrixkoder/inbox',
       version,
+      dataFolder,
+      inboxFolder,
+      hasMigrationNotes: migrationNotes.length > 0,
+      migrationNotes,
+
       orchCls: orch ? 'on' : '',
       soloCls: orch ? '' : 'on',
       orchP: String(orch),
       soloP: String(!orch),
-      toOrch: () => {
-        this.setState({ mode: 'orch' });
-        this.action('settings.save', { patch: { general: { mode: 'orchestrator' } } });
-      },
-      toSolo: () => {
-        this.setState({ mode: 'solo' });
-        this.action('settings.save', { patch: { general: { mode: 'solo' } } });
-      },
-      modeHint: orch ? 'MK plans the work and hands tasks to lanes in their own worktrees. You approve at the gates.' : 'Everything runs in this session, one task at a time. No lanes or worktrees.',
-      changeOpenOnStart: () => {
-        this.action('settings.save', { patch: { general: { openOnStart: 'projects' } } });
-      },
+      toOrch: () => modeBind.save('orchestrator'),
+      toSolo: () => modeBind.save('solo'),
+      modeHint: orch
+        ? 'MK plans the work and hands tasks to lanes in their own worktrees. You approve at the gates.'
+        : 'Solo mode: work in this checkout; use in-session subagents for parallel parts, not Orca lanes or worktrees.',
+
+      openOnStartVal: openOnStartBind.val || 'last',
+      changeOpenOnStart: () => openOnStartBind.cycle(),
+
+      undoSecondsVal: undoSecondsBind.val ?? 10,
+      lessUndo: () => undoSecondsBind.step(-1),
+      moreUndo: () => undoSecondsBind.step(1),
+
+      snoozeMinutesVal: snoozeMinutesBind.val ?? 60,
+      lessSnooze: () => snoozeMinutesBind.step(-5),
+      moreSnooze: () => snoozeMinutesBind.step(5),
+
+      backupKeepVal: backupKeepBind.val ?? 7,
+      lessBackup: () => backupKeepBind.step(-1),
+      moreBackup: () => backupKeepBind.step(1),
+
+      goneDaysVal: goneDaysBind.val ?? 30,
+      lessGone: () => goneDaysBind.step(-5),
+      moreGone: () => goneDaysBind.step(5),
+
+      decisionDaysVal: decisionDaysBind.val ?? 90,
+      lessDecision: () => decisionDaysBind.step(-10),
+      moreDecision: () => decisionDaysBind.step(10),
+
+      eventMaxVal: eventMaxBind.val ?? 5000,
+      lessEvent: () => eventMaxBind.step(-500),
+      moreEvent: () => eventMaxBind.step(500),
+
+      exportSettings: () => this.action('settings.export'),
+
+      fastSecondsVal: fastSecondsBind.val ?? 10,
+      lessFast: () => fastSecondsBind.step(-1),
+      moreFast: () => fastSecondsBind.step(1),
+
+      slowSecondsVal: slowSecondsBind.val ?? 60,
+      lessSlow: () => slowSecondsBind.step(-5),
+      moreSlow: () => slowSecondsBind.step(5),
+
+      filesSecondsVal: filesSecondsBind.val ?? 30,
+      lessFiles: () => filesSecondsBind.step(-5),
+      moreFiles: () => filesSecondsBind.step(5),
+
+      resetGeneral: () => this.action('settings.reset', { section: 'general' }),
     };
   }
 }

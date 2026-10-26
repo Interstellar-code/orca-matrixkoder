@@ -27,9 +27,12 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 .card{border-radius:14px;background:rgba(4,17,10,.86);backdrop-filter:blur(3px);border:1px solid #0f2a17;padding:4px 14px}
 .sec{margin:0;padding:12px 0 6px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8bbf9a}
 .row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #0d2414}
+.sec + .row{border-top:0}
 .lbl{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
 .lbl span:first-child{font-size:13px;color:#e6fff0}
-.lbl span:last-child{font-size:11.5px;line-height:16px;color:#7fae8c}
+.lbl span:nth-child(2){font-size:11.5px;line-height:16px;color:#7fae8c}
+.tag-mk{font-size:10.5px;line-height:15px;color:#4fd1c5}
+.tag-advisory{font-size:10.5px;line-height:15px;color:#e8b04a}
 .search{font-family:'Geist',system-ui,sans-serif;width:100%;height:36px;box-sizing:border-box;padding:0 12px 0 34px;border-radius:9px;border:1px solid #1c4a2b;background:#020a05;color:#e6fff0;font-size:13px;outline:none}
 .search:focus{border-color:#19e35a}
 .search::placeholder{color:#5f9a70}
@@ -38,6 +41,10 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 .sw .kn{position:absolute;top:4px;left:4px;width:16px;height:16px;border-radius:50%;background:#5f9a70;transition:left .15s}
 .sw.on{background:#19e35a;border-color:#19e35a}
 .sw.on .kn{left:22px;background:#021006}
+.step{display:flex;align-items:center;border:1px solid #1c4a2b;border-radius:9px;overflow:hidden}
+.step button{font-family:'Geist',system-ui,sans-serif;width:28px;height:28px;border:0;background:#06150b;color:#b9e8c4;font-size:14px;cursor:pointer}
+.step button:hover{background:#0c2414}
+.step span{min-width:38px;padding:0 4px;text-align:center;font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;color:#e6fff0}
 .chip{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 4px 0 10px;border-radius:13px;background:#0d2a16;border:1px solid #145a2a;font-family:'Geist Mono',ui-monospace,monospace;font-size:11.5px;color:#e6fff0}
 .chip button{border:0;background:transparent;color:#8bbf9a;cursor:pointer;width:20px;height:20px;border-radius:10px;padding:0;display:flex;align-items:center;justify-content:center}
 .chip button:hover{background:#145a2a;color:#e6fff0}
@@ -45,6 +52,9 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 .inp:focus{border-color:#19e35a}
 .inp::placeholder{color:#5f9a70}
 .cmd{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #0d2414}
+.cmd:first-child{border-top:0}
+.cmd button.del{border:0;background:transparent;color:#8bbf9a;cursor:pointer;width:24px;height:24px;border-radius:6px;padding:0;display:flex;align-items:center;justify-content:center}
+.cmd button.del:hover{background:#2a110e;color:#ff9b8a}
 </style>
 </helmet>
 <div class="mk" style="width: 440px; height: 1240px; box-sizing: border-box; background: #020604; display: flex; flex-direction: column; border-left: 1px solid #0f2a17; position: relative; overflow: hidden">
@@ -69,7 +79,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
       <input id="ss" class="search" placeholder="Search all settings">
     </div>
     <nav aria-label="Settings sections" style="display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(4,14,7,.86); border: 1px solid #0f2a17">
-      <sc-for list="{{stabs}}" as="s" hint-placeholder-count="7"><a class="{{s.cls}}" href="{{s.href}}" aria-current="{{s.cur}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg><span>{{s.label}}</span></a></sc-for>
+      <sc-for list="{{stabs}}" as="s" hint-placeholder-count="6"><a class="{{s.cls}}" href="{{s.href}}" aria-current="{{s.cur}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg><span>{{s.label}}</span></a></sc-for>
     </nav>
   </header>
 
@@ -77,15 +87,32 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 
     <section class="card" aria-labelledby="s-guard">
       <h2 id="s-guard" class="sec">Guards</h2>
-      <sc-for list="{{guards}}" as="t" hint-placeholder-count="4">
-        <div class="row"><div class="lbl"><span>{{t.label}}</span><span>{{t.desc}}</span></div><button class="{{t.cls}}" aria-pressed="{{t.p}}" aria-label="{{t.label}}" onClick="{{t.flip}}"><span class="kn"></span></button></div>
-      </sc-for>
-      <div style="height: 4px"></div>
+      <div class="row">
+        <div class="lbl">
+          <span>Confirm high-risk tasks</span>
+          <span>Require confirmation before starting tasks at or above this risk level</span>
+          <span class="tag-mk">{{confirmRiskLabel}}</span>
+        </div>
+        <div class="step">
+          <button aria-label="Decrease risk threshold" onClick="{{lessRisk}}">−</button>
+          <span aria-live="polite">{{confirmRiskVal}}</span>
+          <button aria-label="Increase risk threshold" onClick="{{moreRisk}}">+</button>
+        </div>
+      </div>
+      <div class="row" style="padding-bottom: 14px">
+        <div class="lbl">
+          <span>Ask before git push</span>
+          <span>Every push waits for you in Waiting</span>
+          <span class="tag-advisory">{{askPushLabel}}</span>
+        </div>
+        <button class="{{askPushCls}}" aria-pressed="{{askPushP}}" aria-label="Ask before git push" onClick="{{toggleAskPush}}"><span class="kn"></span></button>
+      </div>
     </section>
 
     <section class="card" aria-labelledby="s-branch" style="padding-bottom: 14px">
       <h2 id="s-branch" class="sec">Protected branches</h2>
-      <p style="margin: 0 0 10px; font-size: 11.5px; line-height: 16px; color: #7fae8c">Lanes never commit or push here. Merges into these wait for you.</p>
+      <p style="margin: 0 0 4px; font-size: 11.5px; line-height: 16px; color: #7fae8c">Lanes never commit or push here. Merges into these wait for you.</p>
+      <p style="margin: 0 0 10px; font-size: 10.5px; line-height: 15px; color: #e8b04a">{{branchesLabel}}</p>
       <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px">
         <sc-for list="{{branches}}" as="b" hint-placeholder-count="2">
           <span class="chip">{{b.name}}<button aria-label="Remove {{b.name}}" onClick="{{b.remove}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></span>
@@ -93,18 +120,39 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
       </div>
       <div style="display: flex; gap: 8px">
         <label for="br" class="sr">Branch or pattern</label>
-        <input id="br" class="inp mono" placeholder="branch or pattern, e.g. hotfix/*" value="{{draft}}" onChange="{{setDraft}}">
+        <input id="br" class="inp mono" placeholder="branch or pattern, e.g. hotfix/*" value="{{draftBranch}}" onChange="{{setDraftBranch}}">
         <button class="btn" onClick="{{addBranch}}">Add</button>
       </div>
     </section>
 
-    <section class="card" aria-labelledby="s-cmd" style="padding-bottom: 8px">
+    <section class="card" aria-labelledby="s-cmd" style="padding-bottom: 14px">
       <h2 id="s-cmd" class="sec">Never run</h2>
-      <p style="margin: 0 0 6px; font-size: 11.5px; line-height: 16px; color: #7fae8c">Commands a lane is stopped from running, even when its agent asks.</p>
-      <sc-for list="{{cmds}}" as="c" hint-placeholder-count="4">
-        <div class="cmd"><span class="mono" style="font-size: 12px; color: #ffc4b8; flex: 1">{{c}}</span></div>
-      </sc-for>
-      <div class="cmd"><button class="btn" style="border-style: dashed; color: #8bbf9a" disabled title="Not supported in web dashboard">+ Add a command</button></div>
+      <p style="margin: 0 0 4px; font-size: 11.5px; line-height: 16px; color: #7fae8c">Commands a lane is stopped from running, even when its agent asks.</p>
+      <p style="margin: 0 0 10px; font-size: 10.5px; line-height: 15px; color: #e8b04a">{{neverRunLabel}}</p>
+      <div style="display: flex; flex-direction: column; margin-bottom: 10px">
+        <sc-for list="{{cmds}}" as="c" hint-placeholder-count="4">
+          <div class="cmd">
+            <span class="mono" style="font-size: 12px; color: #ffc4b8; flex: 1">{{c.name}}</span>
+            <button class="del" aria-label="Remove command {{c.name}}" onClick="{{c.remove}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 8px">
+        <label for="cmd-inp" class="sr">Command pattern</label>
+        <input id="cmd-inp" class="inp mono" placeholder="command pattern, e.g. rm -rf ~" value="{{draftCmd}}" onChange="{{setDraftCmd}}">
+        <button class="btn" onClick="{{addCmd}}">Add</button>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="s-reset">
+      <h2 id="s-reset" class="sec">Reset</h2>
+      <div class="row" style="padding-bottom: 14px">
+        <div class="lbl">
+          <span>Reset safety settings</span>
+          <span>Back to defaults for safety section</span>
+        </div>
+        <button class="btn" style="color: #ff9b8a" onClick="{{resetSafety}}">Reset</button>
+      </div>
     </section>
 
   </main>
@@ -116,65 +164,98 @@ class Component extends DCLogic {
   constructor(p) {
     super(p);
     this.state = {
-      on: { gitHard: true, rmrf: true, push: true, secrets: true },
-      branches: ['main', 'release/*'],
-      draft: '',
-      cmds: ['git reset --hard', 'git push --force', 'git clean -fdx', 'rm -rf ~', 'npm publish'],
+      draftBranch: '',
+      draftCmd: '',
     };
   }
+
   renderVals() {
-    const s = this.state;
+    const bind = (k) => this.bind(k);
     const proj = this.getData('projects') || {};
     const repo = (proj.repos && proj.repos[0]) || {};
-    const repoName = repo.name || 'orca-matrixkoder';
+    const repoName = (bind('general.activeRepo').val) || repo.name || 'orca-matrixkoder';
 
-    const guardDefs = [
-      ['gitHard', 'Block destructive git', 'reset --hard, push --force, branch -D'],
-      ['rmrf', 'Block deletes outside the worktree', 'A lane can only remove files in its own worktree'],
-      ['push', 'Ask before git push', 'Every push waits for you in Waiting'],
-      ['secrets', 'Scan diffs for secrets', 'Stops a commit that adds keys or tokens'],
-    ];
+    const sData = this.getData('settings') || {};
+    const schema = sData.schema || {};
+
+    const schemaLabel = (k) => {
+      const entry = schema[k];
+      if (entry && entry.enforced === 'mk') {
+        return 'checked by MK; the dashboard asks you, agents must confirm explicitly';
+      }
+      if (entry && entry.enforced === 'advisory') {
+        return 'advisory: written into briefs';
+      }
+      return k === 'safety.confirmRiskAtLeast'
+        ? 'checked by MK; the dashboard asks you, agents must confirm explicitly'
+        : 'advisory: written into briefs';
+    };
+
+    const confirmRiskBind = bind('safety.confirmRiskAtLeast');
+    const riskNum = confirmRiskBind.val ?? 4;
+    const confirmRiskVal = riskNum >= 6 ? '6 (never ask)' : String(riskNum);
+
+    const askPushBind = bind('safety.askBeforePush');
+    const askPush = askPushBind.val ?? true;
+
+    const branchesBind = bind('safety.protectedBranches');
+    const branchesList = Array.isArray(branchesBind.val) ? branchesBind.val : ['main', 'release/*'];
+
+    const neverRunBind = bind('safety.neverRun');
+    const cmdsList = Array.isArray(neverRunBind.val) ? neverRunBind.val : [];
 
     return {
       rain: window.MK_RAIN ? window.MK_RAIN(89) : [],
       stabs: window.MK_STABS ? window.MK_STABS('safety') : [],
       repoName,
-      guards: guardDefs.map(([k, label, desc]) => ({
-        label,
-        desc,
-        cls: 'sw' + (s.on[k] ? ' on' : ''),
-        p: String(!!s.on[k]),
-        flip: () => {
-          const next = !s.on[k];
-          const nextOn = Object.assign({}, s.on, { [k]: next });
-          this.setState({ on: nextOn });
-          const keyMap = {
-            gitHard: 'blockDestructiveGit',
-            rmrf: 'blockDeleteOutsideWorktree',
-            push: 'askBeforePush',
-            secrets: 'scanDiffsForSecrets',
-          };
-          const prop = keyMap[k] || k;
-          this.action('settings.save', { patch: { safety: { [prop]: next } } });
-        },
-      })),
-      branches: s.branches.map((name) => ({
+
+      confirmRiskLabel: schemaLabel('safety.confirmRiskAtLeast'),
+      confirmRiskVal,
+      lessRisk: () => confirmRiskBind.step(-1),
+      moreRisk: () => confirmRiskBind.step(1),
+
+      askPushLabel: schemaLabel('safety.askBeforePush'),
+      askPushCls: 'sw' + (askPush ? ' on' : ''),
+      askPushP: String(askPush),
+      toggleAskPush: () => askPushBind.toggle(),
+
+      branchesLabel: schemaLabel('safety.protectedBranches'),
+      branches: branchesList.map((name, idx) => ({
         name,
         remove: () => {
-          const next = s.branches.filter((b) => b !== name);
-          this.setState({ branches: next });
-          this.action('settings.save', { patch: { safety: { protectedBranches: next } } });
+          const next = branchesList.filter((_, i) => i !== idx);
+          branchesBind.save(next);
         },
       })),
-      draft: s.draft,
-      setDraft: (e) => this.setState({ draft: e.target.value }),
+      draftBranch: this.state.draftBranch,
+      setDraftBranch: (e) => this.setState({ draftBranch: e?.target?.value || '' }),
       addBranch: () => {
-        if (!s.draft.trim()) return;
-        const next = [...s.branches, s.draft.trim()];
-        this.setState({ branches: next, draft: '' });
-        this.action('settings.save', { patch: { safety: { protectedBranches: next } } });
+        const text = (this.state.draftBranch || '').trim();
+        if (!text) return;
+        const next = [...branchesList, text];
+        this.setState({ draftBranch: '' });
+        branchesBind.save(next);
       },
-      cmds: s.cmds,
+
+      neverRunLabel: schemaLabel('safety.neverRun'),
+      cmds: cmdsList.map((cmdName, idx) => ({
+        name: cmdName,
+        remove: () => {
+          const next = cmdsList.filter((_, i) => i !== idx);
+          neverRunBind.save(next);
+        },
+      })),
+      draftCmd: this.state.draftCmd,
+      setDraftCmd: (e) => this.setState({ draftCmd: e?.target?.value || '' }),
+      addCmd: () => {
+        const text = (this.state.draftCmd || '').trim();
+        if (!text) return;
+        const next = [...cmdsList, text];
+        this.setState({ draftCmd: '' });
+        neverRunBind.save(next);
+      },
+
+      resetSafety: () => this.action('settings.reset', { section: 'safety' }),
     };
   }
 }

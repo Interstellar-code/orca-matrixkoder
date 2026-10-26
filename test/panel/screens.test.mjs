@@ -21,7 +21,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..', '..');
 const screensDir = join(root, 'panel', 'screens');
 
-const ALL_16_SCREENS = [
+const ALL_15_SCREENS = [
   'Projects',
   'Main',
   'Lanes',
@@ -32,17 +32,17 @@ const ALL_16_SCREENS = [
   'Bugs',
   'Todo',
   'Settings',
-  'SettingsAgents',
   'SettingsRouting',
+  'SettingsWork',
   'SettingsSafety',
-  'SettingsAlerts',
+  'SettingsNotify',
   'SettingsLook',
-  'SettingsShortcuts',
 ];
+const ALL_16_SCREENS = ALL_15_SCREENS;
 
 test('no mock data constants remain in panel/screens/*.dc.html', () => {
   const files = readdirSync(screensDir).filter((f) => f.endsWith('.dc.html'));
-  assert.equal(files.length, 16, 'All 16 screens must exist in panel/screens');
+  assert.equal(files.length, 15, 'All 15 screens must exist in panel/screens');
 
   const mockPatterns = [
     /\bconst\s+BUGS\s*=/,
@@ -214,7 +214,7 @@ describe('Chrome headless integration tests (T7)', () => {
     } catch (_) {}
   });
 
-  test('all 16 screens render from fixture snapshot without console errors', async () => {
+  test('all 15 screens render from fixture snapshot without console errors', async () => {
     consoleErrors.length = 0;
     pageExceptions.length = 0;
 
@@ -244,7 +244,7 @@ describe('Chrome headless integration tests (T7)', () => {
     assert.equal(pageExceptions.length, 0, `No page exceptions expected: ${pageExceptions.join(', ')}`);
   });
 
-  test('all 16 screens render from empty snapshot without console errors', async () => {
+  test('all 15 screens render from empty snapshot without console errors', async () => {
     consoleErrors.length = 0;
     pageExceptions.length = 0;
 
@@ -311,18 +311,16 @@ describe('Chrome headless integration tests (T7)', () => {
       ['Bugs', 'section button.btn.sm', 'bug.fix'],
       ['Todo', 'input[type="checkbox"]', 'todo.done'],
       ['Settings', '.segc button', 'settings.save'],
-      ['SettingsAgents', 'button.sw', 'settings.save'],
       ['SettingsRouting', 'button[aria-label="Fewer lanes"]', 'settings.save'],
       ['SettingsSafety', 'button.sw', 'settings.save'],
-      ['SettingsAlerts', 'button.sw', 'settings.save'],
+      ['SettingsNotify', 'button.sw', 'settings.save'],
       ['SettingsLook', 'button.sw', 'settings.save'],
-      ['SettingsShortcuts', 'button.btn', 'settings.save'],
     ];
 
     for (const [screen, selector, expectedAction] of screenActionChecks) {
-      devServer.actions.length = 0;
       await evaluate(`window.MK.go("${screen}")`);
       await new Promise((r) => setTimeout(r, 150));
+      devServer.actions.length = 0;
 
       const clickResult = await evaluate(`(() => {
         const host = document.querySelector('[data-screen="${screen}"]');
@@ -338,8 +336,9 @@ describe('Chrome headless integration tests (T7)', () => {
       // Wait for the action to reach devServer
       let foundAction = null;
       for (let i = 0; i < 20; i++) {
-        if (devServer.actions.length > 0) {
-          foundAction = devServer.actions[0]?.name;
+        const nonUiAction = devServer.actions.find((a) => a.name !== 'ui.remember');
+        if (nonUiAction) {
+          foundAction = nonUiAction.name;
           break;
         }
         await new Promise((r) => setTimeout(r, 50));

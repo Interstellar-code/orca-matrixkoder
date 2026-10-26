@@ -672,7 +672,1226 @@
   },
   "settings": {
     "values": {
-      "schema": 2
+      "schema": 2,
+      "general": {
+        "activeRepo": null,
+        "mode": "orchestrator",
+        "openOnStart": "lanes",
+        "undoSeconds": 15,
+        "snoozeMinutes": 30
+      },
+      "data": {
+        "backupKeep": 14,
+        "goneDays": 60,
+        "decisionDays": 120,
+        "eventMax": 10000
+      },
+      "sync": {
+        "fastSeconds": 15,
+        "slowSeconds": 90,
+        "filesSeconds": 45
+      },
+      "agents": {
+        "claude": {
+          "routable": true,
+          "models": [
+            {
+              "id": "haiku",
+              "efforts": [
+                "low",
+                "medium",
+                "high",
+                "max"
+              ],
+              "note": "Cheapest Claude. Lookups, digests, 1-2 file mechanical edits."
+            },
+            {
+              "id": "sonnet",
+              "efforts": [
+                "low",
+                "medium",
+                "high",
+                "max"
+              ],
+              "note": "Balanced Claude. Bounded builds, browser QA, standard reviews."
+            },
+            {
+              "id": "opus",
+              "efforts": [
+                "low",
+                "medium",
+                "high",
+                "max"
+              ],
+              "note": "Strong reasoning for cross-cutting, data-loss and security work."
+            },
+            {
+              "id": "fable",
+              "efforts": [
+                "low",
+                "medium",
+                "high",
+                "max"
+              ],
+              "note": "Most capable Claude, own weekly pool. Final reviews only."
+            }
+          ],
+          "model": "",
+          "effort": ""
+        },
+        "codex": {
+          "routable": true,
+          "models": [
+            {
+              "id": "gpt-6-astra",
+              "efforts": [
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max",
+                "ultra"
+              ],
+              "note": "OpenAI frontier model. Hardest builds, cross-family final or security reviews."
+            },
+            {
+              "id": "gpt-6.1-sol",
+              "efforts": [
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max",
+                "ultra"
+              ],
+              "note": "Latest OpenAI coding workhorse. First-choice builder lane; also a cross-family reviewer."
+            },
+            {
+              "id": "gpt-6-luna",
+              "efforts": [
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max"
+              ],
+              "note": "Fast, cheap OpenAI model. Mechanical edits, digests; not for multi-file phases."
+            }
+          ],
+          "model": "",
+          "effort": ""
+        },
+        "agy": {
+          "routable": true,
+          "models": [
+            {
+              "id": "gemini-3.8-flash-low",
+              "efforts": [],
+              "note": "Latest Gemini Flash. Bulk UI and feature lanes."
+            },
+            {
+              "id": "gemini-3.8-flash-medium",
+              "efforts": [],
+              "note": "Latest Gemini Flash. Bulk UI and feature lanes."
+            },
+            {
+              "id": "gemini-3.8-flash-high",
+              "efforts": [],
+              "note": "Latest Gemini Flash, high effort. Standard builds."
+            },
+            {
+              "id": "gemini-3.1-pro-low",
+              "efforts": [],
+              "note": "Gemini Pro. Complex builds."
+            },
+            {
+              "id": "gemini-3.1-pro-high",
+              "efforts": [],
+              "note": "Gemini Pro, high effort. Complex builds and cross-family reviews."
+            },
+            {
+              "id": "gpt-oss-120b-medium",
+              "efforts": [],
+              "note": "Open-weight model. Cheap fallback for trivial work."
+            },
+            {
+              "id": "claude-opus-5-5-low",
+              "efforts": [],
+              "note": "Claude Opus hosted by AGY. Billing against the Anthropic subscription is unverified."
+            },
+            {
+              "id": "claude-opus-5-5-medium",
+              "efforts": [],
+              "note": "Claude Opus hosted by AGY. Billing against the Anthropic subscription is unverified."
+            },
+            {
+              "id": "claude-opus-5-5-high",
+              "efforts": [],
+              "note": "Claude Opus hosted by AGY. Billing against the Anthropic subscription is unverified."
+            },
+            {
+              "id": "claude-sonnet-5-5-low",
+              "efforts": [],
+              "note": "Claude Sonnet hosted by AGY. Billing against the Anthropic subscription is unverified."
+            },
+            {
+              "id": "claude-sonnet-5-5-medium",
+              "efforts": [],
+              "note": "Claude Sonnet hosted by AGY. Billing against the Anthropic subscription is unverified."
+            },
+            {
+              "id": "claude-sonnet-5-5-high",
+              "efforts": [],
+              "note": "Claude Sonnet hosted by AGY. Billing against the Anthropic subscription is unverified."
+            }
+          ],
+          "model": "",
+          "effort": ""
+        },
+        "opencode": {
+          "routable": true,
+          "models": [],
+          "model": "",
+          "effort": ""
+        },
+        "omp": {
+          "routable": true,
+          "models": [],
+          "model": "",
+          "effort": ""
+        }
+      },
+      "routing": {
+        "bySize": {
+          "trivial": "claude haiku low",
+          "standard": "claude sonnet medium",
+          "complex": "claude opus high"
+        },
+        "maxLanes": 5
+      },
+      "quota": {
+        "floor": {
+          "claude": {
+            "sessionPct": 40,
+            "weeklyPct": 30
+          },
+          "others": {
+            "sessionPct": 10,
+            "weeklyPct": 15
+          }
+        },
+        "onBelowFloor": "block"
+      },
+      "lanes": {
+        "stallMinutes": 15
+      },
+      "bugs": {
+        "defaultRisk": 3
+      },
+      "plans": {
+        "inboxDir": ".matrixkoder/inbox",
+        "autoImport": false
+      },
+      "work": {
+        "specTemplates": {
+          "investigate": "",
+          "implement": "",
+          "subdispatch": "",
+          "review": "",
+          "fix": ""
+        }
+      },
+      "safety": {
+        "confirmRiskAtLeast": 4,
+        "protectedBranches": [
+          "main",
+          "release/*"
+        ],
+        "neverRun": [
+          "git reset --hard",
+          "git push --force",
+          "git clean -fdx",
+          "rm -rf ~",
+          "npm publish"
+        ],
+        "askBeforePush": true
+      },
+      "notify": {
+        "events": {
+          "ask": true,
+          "laneDone": true,
+          "taskFailed": true,
+          "stall": false,
+          "quotaLow": false
+        },
+        "quietHours": {
+          "enabled": false,
+          "from": "22:00",
+          "to": "07:00"
+        },
+        "wakeOrchestrator": false
+      },
+      "look": {
+        "rain": {
+          "enabled": true,
+          "brightness": 60,
+          "speed": "normal"
+        },
+        "reduceMotion": "os",
+        "textSize": "M",
+        "density": "comfy"
+      }
+    },
+    "schema": {
+      "general.activeRepo": {
+        "type": "string",
+        "default": null,
+        "min": null,
+        "max": 200,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "general.mode": {
+        "type": "enum",
+        "default": "orchestrator",
+        "min": null,
+        "max": null,
+        "options": [
+          "orchestrator",
+          "solo"
+        ],
+        "owner": "mk",
+        "enforced": null
+      },
+      "general.openOnStart": {
+        "type": "enum",
+        "default": "last",
+        "min": null,
+        "max": null,
+        "options": [
+          "projects",
+          "lanes",
+          "waiting",
+          "plan",
+          "last"
+        ],
+        "owner": "mk",
+        "enforced": null
+      },
+      "general.undoSeconds": {
+        "type": "int",
+        "default": 10,
+        "min": 0,
+        "max": 60,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "general.snoozeMinutes": {
+        "type": "int",
+        "default": 60,
+        "min": 1,
+        "max": 1440,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "data.backupKeep": {
+        "type": "int",
+        "default": 7,
+        "min": 1,
+        "max": 30,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "data.goneDays": {
+        "type": "int",
+        "default": 30,
+        "min": 7,
+        "max": 365,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "data.decisionDays": {
+        "type": "int",
+        "default": 90,
+        "min": 7,
+        "max": 365,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "data.eventMax": {
+        "type": "int",
+        "default": 5000,
+        "min": 500,
+        "max": 50000,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "sync.fastSeconds": {
+        "type": "int",
+        "default": 10,
+        "min": 5,
+        "max": 120,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "sync.slowSeconds": {
+        "type": "int",
+        "default": 60,
+        "min": 30,
+        "max": 900,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "sync.filesSeconds": {
+        "type": "int",
+        "default": 30,
+        "min": 10,
+        "max": 600,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.claude.routable": {
+        "type": "bool",
+        "default": true,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.codex.routable": {
+        "type": "bool",
+        "default": true,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.agy.routable": {
+        "type": "bool",
+        "default": true,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.opencode.routable": {
+        "type": "bool",
+        "default": true,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.omp.routable": {
+        "type": "bool",
+        "default": true,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.claude.models": {
+        "type": "models",
+        "default": [
+          {
+            "id": "haiku",
+            "efforts": [
+              "low",
+              "medium",
+              "high",
+              "max"
+            ],
+            "note": "Cheapest Claude. Lookups, digests, 1-2 file mechanical edits."
+          },
+          {
+            "id": "sonnet",
+            "efforts": [
+              "low",
+              "medium",
+              "high",
+              "max"
+            ],
+            "note": "Balanced Claude. Bounded builds, browser QA, standard reviews."
+          },
+          {
+            "id": "opus",
+            "efforts": [
+              "low",
+              "medium",
+              "high",
+              "max"
+            ],
+            "note": "Strong reasoning for cross-cutting, data-loss and security work."
+          },
+          {
+            "id": "fable",
+            "efforts": [
+              "low",
+              "medium",
+              "high",
+              "max"
+            ],
+            "note": "Most capable Claude, own weekly pool. Final reviews only."
+          }
+        ],
+        "min": null,
+        "max": 12,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.codex.models": {
+        "type": "models",
+        "default": [
+          {
+            "id": "gpt-6-astra",
+            "efforts": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max",
+              "ultra"
+            ],
+            "note": "OpenAI frontier model. Hardest builds, cross-family final or security reviews."
+          },
+          {
+            "id": "gpt-6.1-sol",
+            "efforts": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max",
+              "ultra"
+            ],
+            "note": "Latest OpenAI coding workhorse. First-choice builder lane; also a cross-family reviewer."
+          },
+          {
+            "id": "gpt-6-luna",
+            "efforts": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ],
+            "note": "Fast, cheap OpenAI model. Mechanical edits, digests; not for multi-file phases."
+          }
+        ],
+        "min": null,
+        "max": 12,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.agy.models": {
+        "type": "models",
+        "default": [
+          {
+            "id": "gemini-3.8-flash-low",
+            "efforts": [],
+            "note": "Latest Gemini Flash. Bulk UI and feature lanes."
+          },
+          {
+            "id": "gemini-3.8-flash-medium",
+            "efforts": [],
+            "note": "Latest Gemini Flash. Bulk UI and feature lanes."
+          },
+          {
+            "id": "gemini-3.8-flash-high",
+            "efforts": [],
+            "note": "Latest Gemini Flash, high effort. Standard builds."
+          },
+          {
+            "id": "gemini-3.1-pro-low",
+            "efforts": [],
+            "note": "Gemini Pro. Complex builds."
+          },
+          {
+            "id": "gemini-3.1-pro-high",
+            "efforts": [],
+            "note": "Gemini Pro, high effort. Complex builds and cross-family reviews."
+          },
+          {
+            "id": "gpt-oss-120b-medium",
+            "efforts": [],
+            "note": "Open-weight model. Cheap fallback for trivial work."
+          },
+          {
+            "id": "claude-opus-5-5-low",
+            "efforts": [],
+            "note": "Claude Opus hosted by AGY. Billing against the Anthropic subscription is unverified."
+          },
+          {
+            "id": "claude-opus-5-5-medium",
+            "efforts": [],
+            "note": "Claude Opus hosted by AGY. Billing against the Anthropic subscription is unverified."
+          },
+          {
+            "id": "claude-opus-5-5-high",
+            "efforts": [],
+            "note": "Claude Opus hosted by AGY. Billing against the Anthropic subscription is unverified."
+          },
+          {
+            "id": "claude-sonnet-5-5-low",
+            "efforts": [],
+            "note": "Claude Sonnet hosted by AGY. Billing against the Anthropic subscription is unverified."
+          },
+          {
+            "id": "claude-sonnet-5-5-medium",
+            "efforts": [],
+            "note": "Claude Sonnet hosted by AGY. Billing against the Anthropic subscription is unverified."
+          },
+          {
+            "id": "claude-sonnet-5-5-high",
+            "efforts": [],
+            "note": "Claude Sonnet hosted by AGY. Billing against the Anthropic subscription is unverified."
+          }
+        ],
+        "min": null,
+        "max": 12,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.opencode.models": {
+        "type": "models",
+        "default": [],
+        "min": null,
+        "max": 12,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.omp.models": {
+        "type": "models",
+        "default": [],
+        "min": null,
+        "max": 12,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.claude.model": {
+        "type": "string",
+        "default": "",
+        "min": null,
+        "max": 80,
+        "options": [
+          "haiku",
+          "sonnet",
+          "opus",
+          "fable"
+        ],
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.codex.model": {
+        "type": "string",
+        "default": "",
+        "min": null,
+        "max": 80,
+        "options": [
+          "gpt-6-astra",
+          "gpt-6.1-sol",
+          "gpt-6-luna"
+        ],
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.agy.model": {
+        "type": "string",
+        "default": "",
+        "min": null,
+        "max": 80,
+        "options": [
+          "gemini-3.8-flash-low",
+          "gemini-3.8-flash-medium",
+          "gemini-3.8-flash-high",
+          "gemini-3.1-pro-low",
+          "gemini-3.1-pro-high",
+          "gpt-oss-120b-medium",
+          "claude-opus-5-5-low",
+          "claude-opus-5-5-medium",
+          "claude-opus-5-5-high",
+          "claude-sonnet-5-5-low",
+          "claude-sonnet-5-5-medium",
+          "claude-sonnet-5-5-high"
+        ],
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.opencode.model": {
+        "type": "string",
+        "default": "",
+        "min": null,
+        "max": 80,
+        "options": [],
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.omp.model": {
+        "type": "string",
+        "default": "",
+        "min": null,
+        "max": 80,
+        "options": [],
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.claude.effort": {
+        "type": "enum",
+        "default": "",
+        "min": null,
+        "max": null,
+        "options": [
+          "",
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max",
+          "ultra"
+        ],
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.codex.effort": {
+        "type": "enum",
+        "default": "",
+        "min": null,
+        "max": null,
+        "options": [
+          "",
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max",
+          "ultra"
+        ],
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.agy.effort": {
+        "type": "enum",
+        "default": "",
+        "min": null,
+        "max": null,
+        "options": [
+          "",
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max",
+          "ultra"
+        ],
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.opencode.effort": {
+        "type": "enum",
+        "default": "",
+        "min": null,
+        "max": null,
+        "options": [
+          "",
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max",
+          "ultra"
+        ],
+        "owner": "mk",
+        "enforced": null
+      },
+      "agents.omp.effort": {
+        "type": "enum",
+        "default": "",
+        "min": null,
+        "max": null,
+        "options": [
+          "",
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max",
+          "ultra"
+        ],
+        "owner": "mk",
+        "enforced": null
+      },
+      "routing.bySize.trivial": {
+        "type": "route",
+        "default": "claude haiku low",
+        "min": null,
+        "max": 120,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "routing.bySize.standard": {
+        "type": "route",
+        "default": "claude sonnet medium",
+        "min": null,
+        "max": 120,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "routing.bySize.complex": {
+        "type": "route",
+        "default": "claude opus high",
+        "min": null,
+        "max": 120,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "routing.maxLanes": {
+        "type": "int",
+        "default": 3,
+        "min": 1,
+        "max": 12,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "quota.floor.claude.sessionPct": {
+        "type": "int",
+        "default": 40,
+        "min": 0,
+        "max": 100,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "quota.floor.claude.weeklyPct": {
+        "type": "int",
+        "default": 30,
+        "min": 0,
+        "max": 100,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "quota.floor.others.sessionPct": {
+        "type": "int",
+        "default": 10,
+        "min": 0,
+        "max": 100,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "quota.floor.others.weeklyPct": {
+        "type": "int",
+        "default": 15,
+        "min": 0,
+        "max": 100,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "quota.onBelowFloor": {
+        "type": "enum",
+        "default": "block",
+        "min": null,
+        "max": null,
+        "options": [
+          "off",
+          "warn",
+          "block"
+        ],
+        "owner": "mk",
+        "enforced": null
+      },
+      "lanes.stallMinutes": {
+        "type": "int",
+        "default": 15,
+        "min": 5,
+        "max": 120,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "bugs.defaultRisk": {
+        "type": "int",
+        "default": 3,
+        "min": 1,
+        "max": 5,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "plans.inboxDir": {
+        "type": "path",
+        "default": ".matrixkoder/inbox",
+        "min": null,
+        "max": 400,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "plans.autoImport": {
+        "type": "bool",
+        "default": false,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "work.specTemplates.investigate": {
+        "type": "path",
+        "default": "",
+        "min": null,
+        "max": 400,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "work.specTemplates.implement": {
+        "type": "path",
+        "default": "",
+        "min": null,
+        "max": 400,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "work.specTemplates.subdispatch": {
+        "type": "path",
+        "default": "",
+        "min": null,
+        "max": 400,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "work.specTemplates.review": {
+        "type": "path",
+        "default": "",
+        "min": null,
+        "max": 400,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "work.specTemplates.fix": {
+        "type": "path",
+        "default": "",
+        "min": null,
+        "max": 400,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "safety.confirmRiskAtLeast": {
+        "type": "int",
+        "default": 4,
+        "min": 1,
+        "max": 6,
+        "options": null,
+        "owner": "mk",
+        "enforced": "mk"
+      },
+      "safety.protectedBranches": {
+        "type": "list",
+        "default": [
+          "main",
+          "release/*"
+        ],
+        "min": null,
+        "max": 20,
+        "options": null,
+        "owner": "mk",
+        "enforced": "advisory"
+      },
+      "safety.neverRun": {
+        "type": "list",
+        "default": [
+          "git reset --hard",
+          "git push --force",
+          "git clean -fdx",
+          "rm -rf ~",
+          "npm publish"
+        ],
+        "min": null,
+        "max": 40,
+        "options": null,
+        "owner": "mk",
+        "enforced": "advisory"
+      },
+      "safety.askBeforePush": {
+        "type": "bool",
+        "default": true,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": "advisory"
+      },
+      "notify.events.ask": {
+        "type": "bool",
+        "default": true,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "notify.events.laneDone": {
+        "type": "bool",
+        "default": true,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "notify.events.taskFailed": {
+        "type": "bool",
+        "default": true,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "notify.events.stall": {
+        "type": "bool",
+        "default": false,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "notify.events.quotaLow": {
+        "type": "bool",
+        "default": false,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "notify.quietHours.enabled": {
+        "type": "bool",
+        "default": false,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "notify.quietHours.from": {
+        "type": "time",
+        "default": "22:00",
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "notify.quietHours.to": {
+        "type": "time",
+        "default": "07:00",
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "notify.wakeOrchestrator": {
+        "type": "bool",
+        "default": false,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "look.rain.enabled": {
+        "type": "bool",
+        "default": true,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "look.rain.brightness": {
+        "type": "int",
+        "default": 60,
+        "min": 0,
+        "max": 100,
+        "options": null,
+        "owner": "mk",
+        "enforced": null
+      },
+      "look.rain.speed": {
+        "type": "enum",
+        "default": "normal",
+        "min": null,
+        "max": null,
+        "options": [
+          "slow",
+          "normal",
+          "fast"
+        ],
+        "owner": "mk",
+        "enforced": null
+      },
+      "look.reduceMotion": {
+        "type": "enum",
+        "default": "os",
+        "min": null,
+        "max": null,
+        "options": [
+          "os",
+          "on",
+          "off"
+        ],
+        "owner": "mk",
+        "enforced": null
+      },
+      "look.textSize": {
+        "type": "enum",
+        "default": "M",
+        "min": null,
+        "max": null,
+        "options": [
+          "S",
+          "M",
+          "L"
+        ],
+        "owner": "mk",
+        "enforced": null
+      },
+      "look.density": {
+        "type": "enum",
+        "default": "comfy",
+        "min": null,
+        "max": null,
+        "options": [
+          "compact",
+          "comfy"
+        ],
+        "owner": "mk",
+        "enforced": null
+      },
+      "orca.notifications": {
+        "type": "display",
+        "default": null,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "orca",
+        "enforced": null,
+        "orcaPane": "Settings > Notifications",
+        "label": "OS notifications and sounds"
+      },
+      "orca.theme": {
+        "type": "display",
+        "default": null,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "orca",
+        "enforced": null,
+        "orcaPane": "Settings > Appearance",
+        "label": "Light and dark theme"
+      },
+      "orca.agentInstall": {
+        "type": "display",
+        "default": null,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "orca",
+        "enforced": null,
+        "orcaPane": "Settings > Agents",
+        "label": "Agent install and commands"
+      },
+      "orca.accounts": {
+        "type": "display",
+        "default": null,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "orca",
+        "enforced": null,
+        "orcaPane": "Settings > Agents",
+        "label": "Accounts and permissions"
+      },
+      "orca.keybindings": {
+        "type": "display",
+        "default": null,
+        "min": null,
+        "max": null,
+        "options": null,
+        "owner": "orca",
+        "enforced": null,
+        "orcaPane": "Settings > Keyboard",
+        "label": "Keybindings"
+      }
+    },
+    "migrationNotes": [
+      "migrated routing.spareClaudeBelowPct -> quota.floor.claude.weeklyPct (30)"
+    ],
+    "lastScreen": "lanes",
+    "specTemplates": {
+      "investigate": {
+        "path": "",
+        "source": "builtin",
+        "ok": true,
+        "issue": null
+      },
+      "implement": {
+        "path": "",
+        "source": "builtin",
+        "ok": true,
+        "issue": null
+      },
+      "subdispatch": {
+        "path": "",
+        "source": "builtin",
+        "ok": true,
+        "issue": null
+      },
+      "review": {
+        "path": "",
+        "source": "builtin",
+        "ok": true,
+        "issue": null
+      },
+      "fix": {
+        "path": "",
+        "source": "builtin",
+        "ok": true,
+        "issue": null
+      }
     },
     "agents": [
       {
@@ -723,6 +1942,8 @@
       }
     ],
     "baseBranch": "main",
+    "dataDir": "~/.matrixkoder",
+    "inboxDir": "~/Development/orca-matrixkoder/.matrixkoder/inbox",
     "version": "0.1.1"
   }
 }

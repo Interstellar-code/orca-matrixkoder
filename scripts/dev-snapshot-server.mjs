@@ -19,7 +19,7 @@ const ACTION_NAMES = [
   'inbox.import', 'inbox.reimport', 'inbox.archive', 'inbox.restore', 'inbox.delete',
   'bug.add', 'bug.fix', 'bug.close', 'bug.reopen',
   'todo.add', 'todo.done', 'todo.makeTask',
-  'settings.save',
+  'settings.save', 'settings.reset', 'settings.export', 'ui.remember', 'notify.test',
 ];
 
 export function emptySnapshot() {
@@ -88,6 +88,10 @@ export function emptySnapshot() {
     },
     settings: {
       values: {},
+      schema: {},
+      migrationNotes: [],
+      lastScreen: null,
+      specTemplates: {},
       agents: [],
       baseBranch: 'main',
       version: '0.1.1',
@@ -100,8 +104,10 @@ export function createDevServer(options = {}) {
   const fixturePath = options.snapshotPath || FIXTURE_PATH;
   let mode = options.mode || 'normal'; // 'normal' | 'empty' | 'fail'
   const recordedActions = [];
+  let customSnapshot = null;
 
   function getSnapshot() {
+    if (customSnapshot) return JSON.parse(JSON.stringify(customSnapshot));
     if (mode === 'empty') return emptySnapshot();
     if (existsSync(fixturePath)) {
       return JSON.parse(readFileSync(fixturePath, 'utf8'));
@@ -245,6 +251,41 @@ export function createDevServer(options = {}) {
           if (options.verbose) {
             console.log(`[dev-server] POST /api/action -> ${entry.name}`, entry.args);
           }
+          if (parsed.name === 'notify.test') {
+            res.writeHead(409, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: false, error: { kind: 'conflict', code: 'not_ready', message: 'notifier not built yet' } }));
+            return;
+          }
+          if (parsed.name === 'task.start') {
+            if (!parsed.args?.confirm) {
+              res.writeHead(409, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                ok: false,
+                error: {
+                  kind: 'conflict',
+                  code: 'needs_confirm',
+                  message: `task ${parsed.args?.taskId ?? ''} requires confirmation before starting`,
+                },
+              }));
+              return;
+            }
+          }
+          if (parsed.name === 'settings.export') {
+            const data = getSnapshot();
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: true, settings: data.settings?.values || {} }));
+            return;
+          }
+          if (parsed.name === 'settings.reset') {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: true, section: parsed.args?.section }));
+            return;
+          }
+          if (parsed.name === 'ui.remember') {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: true, screen: parsed.args?.screen }));
+            return;
+          }
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ ok: true, result: entry }));
         } catch (e) {
@@ -272,6 +313,7 @@ export function createDevServer(options = {}) {
         url,
         actions: recordedActions,
         setMode: (m) => { mode = m; },
+        setSnapshot: (s) => { customSnapshot = s ? JSON.parse(JSON.stringify(s)) : null; },
         close: () => new Promise((cb) => server.close(cb)),
       });
     });

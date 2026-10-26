@@ -88,6 +88,114 @@
     while (a.childNodes.length > fresh.length) a.removeChild(a.lastChild);
   }
 
+  function makeNestedPatch(path, newVal) {
+    const parts = path.split('.');
+    const patch = {};
+    let cur = patch;
+    for (let i = 0; i < parts.length - 1; i++) {
+      cur[parts[i]] = {};
+      cur = cur[parts[i]];
+    }
+    cur[parts[parts.length - 1]] = newVal;
+    return patch;
+  }
+
+  function createBinding(key, comp) {
+    const snap = window.MK_DATA || {};
+    const settings = snap.settings || {};
+    const values = settings.values || {};
+    const schema = (settings.schema && settings.schema[key]) || null;
+    let val = get(values, key);
+    if (val === undefined && schema && schema.default !== undefined) {
+      val = schema.default;
+    }
+    const min = schema && schema.min !== undefined ? schema.min : null;
+    const max = schema && schema.max !== undefined ? schema.max : null;
+    const options = schema && Array.isArray(schema.options) ? schema.options : null;
+    const type = schema && schema.type ? schema.type : (typeof val === 'number' ? 'int' : typeof val === 'boolean' ? 'bool' : 'string');
+
+    const save = (newVal) => {
+      let v = newVal;
+      if (type === 'int' || type === 'number') {
+        v = typeof v === 'number' ? Math.round(v) : parseInt(v, 10);
+        if (isNaN(v)) v = schema && schema.default !== undefined ? schema.default : 0;
+        if (min !== null && v < min) v = min;
+        if (max !== null && v > max) v = max;
+      }
+      const patch = makeNestedPatch(key, v);
+      if (window.MK_DATA && window.MK_DATA.settings) {
+        if (!window.MK_DATA.settings.values) window.MK_DATA.settings.values = {};
+        let cur = window.MK_DATA.settings.values;
+        const parts = key.split('.');
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!cur[parts[i]] || typeof cur[parts[i]] !== 'object') cur[parts[i]] = {};
+          cur = cur[parts[i]];
+        }
+        cur[parts[parts.length - 1]] = v;
+      }
+      if (key.startsWith('look.')) {
+        applyLook();
+      }
+      if (comp && typeof comp.action === 'function') {
+        return comp.action('settings.save', { patch });
+      }
+      return window.MK.action('settings.save', { patch });
+    };
+
+    return {
+      key,
+      value: val,
+      val,
+      min,
+      max,
+      options,
+      type,
+      default: schema ? schema.default : null,
+      schema,
+      save,
+      set: save,
+      step: (delta) => {
+        const curNum = typeof val === 'number' ? val : (parseInt(val, 10) || 0);
+        return save(curNum + delta);
+      },
+      less: () => {
+        const curNum = typeof val === 'number' ? val : (parseInt(val, 10) || 0);
+        return save(curNum - 1);
+      },
+      more: () => {
+        const curNum = typeof val === 'number' ? val : (parseInt(val, 10) || 0);
+        return save(curNum + 1);
+      },
+      inc: () => {
+        const curNum = typeof val === 'number' ? val : (parseInt(val, 10) || 0);
+        return save(curNum + 1);
+      },
+      dec: () => {
+        const curNum = typeof val === 'number' ? val : (parseInt(val, 10) || 0);
+        return save(curNum - 1);
+      },
+      cycle: () => {
+        if (!options || !options.length) return;
+        const idx = options.indexOf(val);
+        const next = options[(idx + 1) % options.length];
+        return save(next);
+      },
+      is: (expected) => val === expected,
+      toggle: () => save(!val),
+      change: (e) => {
+        if (!e || !e.target) return;
+        if (e.target.type === 'checkbox') save(e.target.checked);
+        else if (type === 'int' || type === 'number') save(parseInt(e.target.value, 10));
+        else save(e.target.value);
+      },
+      input: (e) => {
+        if (!e || !e.target) return;
+        if (type === 'int' || type === 'number') save(parseInt(e.target.value, 10));
+        else save(e.target.value);
+      },
+    };
+  }
+
   class DCLogic {
     constructor(props) {
       this.props = props || {};
@@ -110,6 +218,9 @@
     }
     getMeta() {
       return (window.MK_DATA && window.MK_DATA.meta) || {};
+    }
+    bind(key) {
+      return createBinding(key, this);
     }
   }
 
@@ -135,15 +246,119 @@
   const instances = {};
   let current = null;
 
+  const ZOOM_MAP = { S: '0.9', M: '1', L: '1.15' };
+  let currentZoom = '1';
+
+  function isMotionReduced(reduceMotion) {
+    if (reduceMotion === 'on') return true;
+    if (reduceMotion === 'off') return false;
+    try {
+      if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  function applyLook() {
+    const snap = window.MK_DATA || {};
+    const settings = snap.settings || {};
+    const values = settings.values || {};
+    const look = values.look || {};
+    const rain = look.rain || {};
+    const rainEnabled = rain.enabled !== undefined ? rain.enabled : true;
+    const brightness = typeof rain.brightness === 'number' ? rain.brightness : 60;
+    const speed = rain.speed || 'normal';
+    const reduceMotion = look.reduceMotion || 'os';
+    const textSize = look.textSize || 'M';
+    const density = look.density || 'comfy';
+
+    const motionReduced = isMotionReduced(reduceMotion);
+    const rainActive = rainEnabled && !motionReduced;
+    currentZoom = ZOOM_MAP[textSize] || '1';
+
+    // CSS variables on root
+    const root = document.documentElement;
+    if (root && root.style) {
+      root.style.setProperty('--mk-zoom', currentZoom);
+      root.style.setProperty('--mk-text-size', textSize);
+      root.style.setProperty('--mk-density', density);
+      root.style.setProperty('--mk-rain-brightness', `${brightness}%`);
+      root.style.setProperty('--mk-rain-speed', speed);
+      root.style.setProperty('--mk-rain-enabled', rainActive ? '1' : '0');
+    }
+
+    // Classes on documentElement and body
+    const targets = [document.documentElement, document.body].filter(Boolean);
+    targets.forEach((el) => {
+      // Density
+      el.classList.remove('compact', 'comfy', 'density-compact', 'density-comfy');
+      el.classList.add(density);
+      el.classList.add('density-' + density);
+
+      // Text size
+      el.classList.remove('text-size-s', 'text-size-m', 'text-size-l');
+      el.classList.add('text-size-' + textSize.toLowerCase());
+
+      // Motion
+      el.classList.remove('reduce-motion', 'motion-reduce');
+      if (motionReduced) {
+        el.classList.add('reduce-motion', 'motion-reduce');
+      }
+
+      // Rain
+      el.classList.remove('rain-on', 'rain-off');
+      el.classList.add(rainActive ? 'rain-on' : 'rain-off');
+    });
+
+    // Apply zoom and density to each mounted screen host
+    for (const k in mounted) {
+      if (mounted[k]) {
+        mounted[k].style.zoom = currentZoom;
+        mounted[k].classList.remove('compact', 'comfy', 'density-compact', 'density-comfy');
+        mounted[k].classList.add(density);
+        mounted[k].classList.add('density-' + density);
+      }
+    }
+
+    // Re-render mounted screen instances
+    for (const k in instances) {
+      if (instances[k] && typeof instances[k].__render === 'function') {
+        instances[k].__render();
+      }
+    }
+  }
+
   // Rain effect utility
   const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
   function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
   function makeRain(seed) {
+    const snap = window.MK_DATA || {};
+    const settings = snap.settings || {};
+    const values = settings.values || {};
+    const look = values.look || {};
+    const rain = look.rain || {};
+    const enabled = rain.enabled !== undefined ? rain.enabled : true;
+    const brightness = typeof rain.brightness === 'number' ? rain.brightness : 60;
+    const speed = rain.speed || 'normal';
+    const reduceMotion = look.reduceMotion || 'os';
+
+    const motionReduced = isMotionReduced(reduceMotion);
+    if (!enabled || motionReduced) {
+      return [];
+    }
+
+    let speedMult = 1.0;
+    if (speed === 'slow') speedMult = 1.6;
+    else if (speed === 'fast') speedMult = 0.6;
+
+    const brightScale = Math.max(0, Math.min(100, brightness)) / 60;
+
     const R = rng(seed), out = [];
     for (let i = 0; i < 30; i++) {
       const n = 14 + Math.floor(R() * 26), g = [];
       for (let k = 0; k < n; k++) g.push(GLYPHS[Math.floor(R() * GLYPHS.length)]);
-      const dur = 7 + R() * 9, delay = -R() * dur, op = 0.16 + R() * 0.22;
+      const dur = (7 + R() * 9) * speedMult, delay = -R() * dur, op = Math.min(1, (0.16 + R() * 0.22) * brightScale);
       out.push({ glyphs: g.join('\n'), style: 'left:' + (i * 14.6 + R() * 4).toFixed(1) + 'px;opacity:' + op.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's' });
     }
     return out;
@@ -201,12 +416,11 @@
   // Settings sub-navigation tabs
   const SETTINGS_TABS_SPEC = [
     ['general', 'General', 'Settings.dc.html', 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'],
-    ['agents', 'Agents', 'SettingsAgents.dc.html', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8'],
-    ['routing', 'Routing', 'SettingsRouting.dc.html', 'M12 3v18M5 5h11l3 3-3 3H5zM19 13H8l-3 3 3 3h11'],
+    ['routing', 'Routing & Quota', 'SettingsRouting.dc.html', 'M12 3v18M5 5h11l3 3-3 3H5zM19 13H8l-3 3 3 3h11'],
+    ['work', 'Work', 'SettingsWork.dc.html', 'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M12 11h4M12 16h4M8 11h.01M8 16h.01M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z'],
     ['safety', 'Safety', 'SettingsSafety.dc.html', 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'],
-    ['alerts', 'Alerts', 'SettingsAlerts.dc.html', 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0'],
-    ['look', 'Theme', 'SettingsLook.dc.html', 'M12 3a9 9 0 1 0 9 9c0-1-1-1.5-2-1.5h-2a2 2 0 0 1-2-2V7c0-2-1.5-4-3-4zM7.5 10.5h.01M10.5 7h.01M15 8h.01'],
-    ['shortcuts', 'Shortcuts', 'SettingsShortcuts.dc.html', 'M13 2 3 14h9l-1 8 10-12h-9z'],
+    ['notify', 'Notifications', 'SettingsNotify.dc.html', 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0'],
+    ['look', 'Appearance', 'SettingsLook.dc.html', 'M12 3a9 9 0 1 0 9 9c0-1-1-1.5-2-1.5h-2a2 2 0 0 1-2-2V7c0-2-1.5-4-3-4zM7.5 10.5h.01M10.5 7h.01M15 8h.01'],
   ];
 
   function getSettingsTabs(active) {
@@ -270,7 +484,16 @@
       inbox: { dir: '', archived: 0, files: [] },
       bugs: { total: 0, needWork: 0, rows: [] },
       todo: { open: 0, done: 0, rows: [] },
-      settings: { values: {}, agents: [], baseBranch: 'main', version: '0.1.1' },
+      settings: {
+        values: {},
+        schema: {},
+        migrationNotes: [],
+        lastScreen: null,
+        specTemplates: {},
+        agents: [],
+        baseBranch: 'main',
+        version: '0.1.1',
+      },
     };
   }
 
@@ -292,6 +515,7 @@
         window.MK_DATA = Object.assign({}, window.MK_DATA, json);
         window.MK_STALE = false;
         hideStaleBanner();
+        applyLook();
       } else {
         window.MK_STALE = true;
         showStaleBanner(`Data may be stale · server returned ${res.status}`);
@@ -376,6 +600,7 @@
     const host = document.createElement('div');
     host.className = 'mk-screen';
     host.dataset.screen = name;
+    host.style.zoom = currentZoom;
     const root = host.attachShadow({ mode: 'open' });
     const style = document.createElement('style');
     style.textContent = BASE_CSS + def.css;
@@ -383,6 +608,7 @@
     root.append(style, view);
     const inst = new def.Component({});
     instances[name] = inst;
+    host.component = inst;
     inst.__render = () => {
       const frag = document.createDocumentFragment();
       const vals = inst.renderVals();
@@ -409,10 +635,35 @@
     return (mounted[name] = host);
   }
 
+  function screenToRememberName(name) {
+    if (!name) return 'projects';
+    if (name === 'Main' || name === 'Overview') return 'overview';
+    if (name.startsWith('Settings')) return 'settings';
+    return name.toLowerCase();
+  }
+
+  function resolveStartScreen() {
+    const snap = window.MK_DATA || {};
+    const settings = snap.settings || {};
+    const values = settings.values || {};
+    const general = values.general || {};
+    const openOnStart = general.openOnStart || 'last';
+    let target = openOnStart;
+    if (target === 'last') {
+      target = settings.lastScreen || 'projects';
+    }
+    if (!target) target = 'projects';
+    const lower = String(target).toLowerCase();
+    if (lower === 'overview' || lower === 'main') return 'Main';
+    if (lower === 'settings') return 'Settings';
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  }
+
   function go(name) {
     if (name === 'Overview') name = 'Main';
     if (!window.MK_SCREENS[name]) name = window.MK_START;
     if (current === name && mounted[name]) return;
+    const isChange = current !== null && current !== name;
     const host = mounted[name] || mount(name);
     for (const k in mounted) mounted[k].hidden = k !== name;
     if (host) host.hidden = false;
@@ -420,6 +671,9 @@
     try {
       history.replaceState(null, '', '#' + (name === 'Main' ? 'overview' : name.toLowerCase()));
     } catch (_) { /* sandboxed frame */ }
+    if (isChange) {
+      action('ui.remember', { screen: screenToRememberName(name) });
+    }
     fetchState(name);
   }
 
@@ -427,15 +681,18 @@
   window.MK_RAIN = makeRain;
   window.MK_TABS = getTabs;
   window.MK_STABS = getSettingsTabs;
+  window.MK_BIND = (key, comp) => createBinding(key, comp);
+  window.bind = (key) => createBinding(key);
   window.MK = {
     go,
     action,
+    applyLook,
     refresh: () => fetchState(current),
     getState: () => window.MK_DATA,
     getToken: () => token,
     getApiBase: () => apiBase,
   };
-  window.MK_BOOT = () => {
+  window.MK_BOOT = async () => {
     let initial = (location.hash || '').slice(1);
     if (initial.includes('=')) initial = '';
     if (initial) {
@@ -443,7 +700,14 @@
       if (lower === 'overview' || lower === 'main') initial = 'Main';
       else initial = lower.charAt(0).toUpperCase() + lower.slice(1);
     }
+    if (!initial) {
+      if (!window.MK_DATA || !window.MK_DATA.settings || !window.MK_DATA.settings.values || !Object.keys(window.MK_DATA.settings.values).length) {
+        await fetchState();
+      }
+      initial = resolveStartScreen();
+    }
     go(initial || window.MK_START);
+    applyLook();
     startPolling();
   };
 })();

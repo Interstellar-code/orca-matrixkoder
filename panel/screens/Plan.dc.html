@@ -138,6 +138,11 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
                       <button class="btn sm" onClick="{{t.retry}}">Retry task</button>
                     </div>
                   </sc-if>
+                  <sc-if value="{{t.canStart}}">
+                    <div style="padding: 4px 6px">
+                      <button class="btn sm" aria-label="Start task" onClick="{{t.start}}">Start task</button>
+                    </div>
+                  </sc-if>
                 </div>
                 </sc-if>
               </div>
@@ -170,13 +175,51 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
     </div>
   </footer>
 
+  <sc-if value="{{showConfirm}}">
+    <div class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirm-title" style="position: absolute; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 999; padding: 20px">
+      <div class="card" style="width: 100%; max-width: 380px; background: #06150b; border: 1px solid #143d22; box-shadow: 0 10px 30px rgba(0,0,0,0.8); padding: 16px">
+        <h3 id="confirm-title" style="margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #e6fff0">High-Risk Task Confirmation</h3>
+        <p style="margin: 0 0 16px; font-size: 12px; line-height: 18px; color: #8bbf9a">{{confirmMessage}}</p>
+        <div style="display: flex; justify-content: flex-end; gap: 8px">
+          <button class="btn" aria-label="Cancel confirmation" onClick="{{cancelConfirm}}">Cancel</button>
+          <button class="btn pri" aria-label="Confirm task start" style="background: #19e35a; color: #020604; font-weight: 600" onClick="{{proceedConfirm}}">Confirm &amp; Start</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
 class Component extends DCLogic {
   constructor(p) {
     super(p);
-    this.state = { open: {} };
+    this.state = { open: {}, confirmDialog: null };
+  }
+
+  async startTask(taskId) {
+    const res = await this.action('task.start', { taskId });
+    if (res && (!res.ok) && res.error && res.error.code === 'needs_confirm') {
+      this.setState({
+        confirmDialog: {
+          show: true,
+          taskId,
+          message: res.error.message || `Task ${taskId} requires confirmation before starting.`,
+        },
+      });
+    }
+  }
+
+  async proceedConfirm() {
+    const dialog = this.state.confirmDialog;
+    if (!dialog) return;
+    const taskId = dialog.taskId;
+    this.setState({ confirmDialog: null });
+    await this.action('task.start', { taskId, confirm: true });
+  }
+
+  cancelConfirm() {
+    this.setState({ confirmDialog: null });
   }
 
   statusInfo(st) {
@@ -246,6 +289,10 @@ class Component extends DCLogic {
 
         const doneSubs = subs.filter((x) => x.isDone).length;
         const canRetry = t.status === 'failed';
+        const hasOrcaTask = Boolean(t.orcaTaskId || t.orca_task_id);
+        const isDone = t.status === 'done' || t.status === 'completed';
+        const canStart = !hasOrcaTask && !isDone;
+        const tIdVal = (typeof t.id === 'number' || (typeof t.id === 'string' && /^\d+$/.test(t.id))) ? Number(t.id) : (t.id ?? t.code);
 
         return {
           id: tId,
@@ -261,6 +308,8 @@ class Component extends DCLogic {
           subs,
           canRetry,
           retry: () => this.action('task.retry', { taskId: Number(t.id) }),
+          canStart,
+          start: () => this.startTask(tIdVal),
         };
       });
 
@@ -317,6 +366,10 @@ class Component extends DCLogic {
       bar,
       phases,
       hasNoPhases: phases.length === 0,
+      showConfirm: Boolean(s.confirmDialog && s.confirmDialog.show),
+      confirmMessage: (s.confirmDialog && s.confirmDialog.message) || 'Task requires confirmation before starting.',
+      proceedConfirm: () => this.proceedConfirm(),
+      cancelConfirm: () => this.cancelConfirm(),
       expandAll,
       collapseAll,
       sweepLanes: () => { if (window.MK && window.MK.refresh) window.MK.refresh(); },
