@@ -88,6 +88,111 @@
     while (a.childNodes.length > fresh.length) a.removeChild(a.lastChild);
   }
 
+  function makeNestedPatch(path, newVal) {
+    const parts = path.split('.');
+    const patch = {};
+    let cur = patch;
+    for (let i = 0; i < parts.length - 1; i++) {
+      cur[parts[i]] = {};
+      cur = cur[parts[i]];
+    }
+    cur[parts[parts.length - 1]] = newVal;
+    return patch;
+  }
+
+  function createBinding(key, comp) {
+    const snap = window.MK_DATA || {};
+    const settings = snap.settings || {};
+    const values = settings.values || {};
+    const schema = (settings.schema && settings.schema[key]) || null;
+    let val = get(values, key);
+    if (val === undefined && schema && schema.default !== undefined) {
+      val = schema.default;
+    }
+    const min = schema && schema.min !== undefined ? schema.min : null;
+    const max = schema && schema.max !== undefined ? schema.max : null;
+    const options = schema && Array.isArray(schema.options) ? schema.options : null;
+    const type = schema && schema.type ? schema.type : (typeof val === 'number' ? 'int' : typeof val === 'boolean' ? 'bool' : 'string');
+
+    const save = (newVal) => {
+      let v = newVal;
+      if (type === 'int' || type === 'number') {
+        v = typeof v === 'number' ? Math.round(v) : parseInt(v, 10);
+        if (isNaN(v)) v = schema && schema.default !== undefined ? schema.default : 0;
+        if (min !== null && v < min) v = min;
+        if (max !== null && v > max) v = max;
+      }
+      const patch = makeNestedPatch(key, v);
+      if (window.MK_DATA && window.MK_DATA.settings) {
+        if (!window.MK_DATA.settings.values) window.MK_DATA.settings.values = {};
+        let cur = window.MK_DATA.settings.values;
+        const parts = key.split('.');
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!cur[parts[i]] || typeof cur[parts[i]] !== 'object') cur[parts[i]] = {};
+          cur = cur[parts[i]];
+        }
+        cur[parts[parts.length - 1]] = v;
+      }
+      if (comp && typeof comp.action === 'function') {
+        return comp.action('settings.save', { patch });
+      }
+      return window.MK.action('settings.save', { patch });
+    };
+
+    return {
+      key,
+      value: val,
+      val,
+      min,
+      max,
+      options,
+      type,
+      default: schema ? schema.default : null,
+      schema,
+      save,
+      set: save,
+      step: (delta) => {
+        const curNum = typeof val === 'number' ? val : (parseInt(val, 10) || 0);
+        return save(curNum + delta);
+      },
+      less: () => {
+        const curNum = typeof val === 'number' ? val : (parseInt(val, 10) || 0);
+        return save(curNum - 1);
+      },
+      more: () => {
+        const curNum = typeof val === 'number' ? val : (parseInt(val, 10) || 0);
+        return save(curNum + 1);
+      },
+      inc: () => {
+        const curNum = typeof val === 'number' ? val : (parseInt(val, 10) || 0);
+        return save(curNum + 1);
+      },
+      dec: () => {
+        const curNum = typeof val === 'number' ? val : (parseInt(val, 10) || 0);
+        return save(curNum - 1);
+      },
+      cycle: () => {
+        if (!options || !options.length) return;
+        const idx = options.indexOf(val);
+        const next = options[(idx + 1) % options.length];
+        return save(next);
+      },
+      is: (expected) => val === expected,
+      toggle: () => save(!val),
+      change: (e) => {
+        if (!e || !e.target) return;
+        if (e.target.type === 'checkbox') save(e.target.checked);
+        else if (type === 'int' || type === 'number') save(parseInt(e.target.value, 10));
+        else save(e.target.value);
+      },
+      input: (e) => {
+        if (!e || !e.target) return;
+        if (type === 'int' || type === 'number') save(parseInt(e.target.value, 10));
+        else save(e.target.value);
+      },
+    };
+  }
+
   class DCLogic {
     constructor(props) {
       this.props = props || {};
@@ -110,6 +215,9 @@
     }
     getMeta() {
       return (window.MK_DATA && window.MK_DATA.meta) || {};
+    }
+    bind(key) {
+      return createBinding(key, this);
     }
   }
 
@@ -201,12 +309,11 @@
   // Settings sub-navigation tabs
   const SETTINGS_TABS_SPEC = [
     ['general', 'General', 'Settings.dc.html', 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'],
-    ['agents', 'Agents', 'SettingsAgents.dc.html', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8'],
-    ['routing', 'Routing', 'SettingsRouting.dc.html', 'M12 3v18M5 5h11l3 3-3 3H5zM19 13H8l-3 3 3 3h11'],
+    ['routing', 'Routing & Quota', 'SettingsRouting.dc.html', 'M12 3v18M5 5h11l3 3-3 3H5zM19 13H8l-3 3 3 3h11'],
+    ['work', 'Work', 'SettingsWork.dc.html', 'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M12 11h4M12 16h4M8 11h.01M8 16h.01M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z'],
     ['safety', 'Safety', 'SettingsSafety.dc.html', 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'],
-    ['alerts', 'Alerts', 'SettingsAlerts.dc.html', 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0'],
-    ['look', 'Theme', 'SettingsLook.dc.html', 'M12 3a9 9 0 1 0 9 9c0-1-1-1.5-2-1.5h-2a2 2 0 0 1-2-2V7c0-2-1.5-4-3-4zM7.5 10.5h.01M10.5 7h.01M15 8h.01'],
-    ['shortcuts', 'Shortcuts', 'SettingsShortcuts.dc.html', 'M13 2 3 14h9l-1 8 10-12h-9z'],
+    ['notify', 'Notifications', 'SettingsNotify.dc.html', 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0'],
+    ['look', 'Appearance', 'SettingsLook.dc.html', 'M12 3a9 9 0 1 0 9 9c0-1-1-1.5-2-1.5h-2a2 2 0 0 1-2-2V7c0-2-1.5-4-3-4zM7.5 10.5h.01M10.5 7h.01M15 8h.01'],
   ];
 
   function getSettingsTabs(active) {
@@ -270,7 +377,16 @@
       inbox: { dir: '', archived: 0, files: [] },
       bugs: { total: 0, needWork: 0, rows: [] },
       todo: { open: 0, done: 0, rows: [] },
-      settings: { values: {}, agents: [], baseBranch: 'main', version: '0.1.1' },
+      settings: {
+        values: {},
+        schema: {},
+        migrationNotes: [],
+        lastScreen: null,
+        specTemplates: {},
+        agents: [],
+        baseBranch: 'main',
+        version: '0.1.1',
+      },
     };
   }
 
@@ -427,6 +543,8 @@
   window.MK_RAIN = makeRain;
   window.MK_TABS = getTabs;
   window.MK_STABS = getSettingsTabs;
+  window.MK_BIND = (key, comp) => createBinding(key, comp);
+  window.bind = (key) => createBinding(key);
   window.MK = {
     go,
     action,

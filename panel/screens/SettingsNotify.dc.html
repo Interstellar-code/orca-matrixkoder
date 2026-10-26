@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Settings · Alerts</title>
+<title>Settings · Notifications</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -159,7 +159,7 @@ class Component extends DCLogic {
 
     return {
       rain: window.MK_RAIN ? window.MK_RAIN(97) : [],
-      stabs: window.MK_STABS ? window.MK_STABS('alerts') : [],
+      stabs: window.MK_STABS ? window.MK_STABS('notify') : [],
       repoName,
       events: makeSw(['ask', 'laneDone', 'gateFail', 'runDone', 'stall']),
       how: makeSw(['desktop', 'sound']),

@@ -19,7 +19,7 @@ const ACTION_NAMES = [
   'inbox.import', 'inbox.reimport', 'inbox.archive', 'inbox.restore', 'inbox.delete',
   'bug.add', 'bug.fix', 'bug.close', 'bug.reopen',
   'todo.add', 'todo.done', 'todo.makeTask',
-  'settings.save',
+  'settings.save', 'settings.reset', 'settings.export', 'ui.remember', 'notify.test',
 ];
 
 export function emptySnapshot() {
@@ -88,6 +88,10 @@ export function emptySnapshot() {
     },
     settings: {
       values: {},
+      schema: {},
+      migrationNotes: [],
+      lastScreen: null,
+      specTemplates: {},
       agents: [],
       baseBranch: 'main',
       version: '0.1.1',
@@ -244,6 +248,27 @@ export function createDevServer(options = {}) {
           recordedActions.push(entry);
           if (options.verbose) {
             console.log(`[dev-server] POST /api/action -> ${entry.name}`, entry.args);
+          }
+          if (parsed.name === 'notify.test') {
+            res.writeHead(409, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: false, error: { kind: 'conflict', code: 'not_ready', message: 'notifier not built yet' } }));
+            return;
+          }
+          if (parsed.name === 'settings.export') {
+            const data = getSnapshot();
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: true, settings: data.settings?.values || {} }));
+            return;
+          }
+          if (parsed.name === 'settings.reset') {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: true, section: parsed.args?.section }));
+            return;
+          }
+          if (parsed.name === 'ui.remember') {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: true, screen: parsed.args?.screen }));
+            return;
           }
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ ok: true, result: entry }));

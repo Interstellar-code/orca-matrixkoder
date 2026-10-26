@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Settings · Work</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;background:#000}
+a{color:#4fd1c5}a:hover{color:#7fe3d9}
+.mk{font-family:'Geist',system-ui,sans-serif;color:#b9e8c4;-webkit-font-smoothing:antialiased}
+.mono{font-family:'Geist Mono',ui-monospace,Menlo,monospace}
+.ib{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:1px solid #143d22;background:#06150b;color:#8bbf9a;cursor:pointer;padding:0;text-decoration:none;box-sizing:border-box}
+.ib:hover{background:#0c2414;color:#b9e8c4}
+.btn{font-family:'Geist',system-ui,sans-serif;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:9px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #143d22;background:#06150b;color:#b9e8c4;text-decoration:none;box-sizing:border-box;white-space:nowrap}
+.btn:hover{background:#0c2414;color:#b9e8c4}
+.rain{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.rcol{position:absolute;top:0;width:14px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;line-height:15px;text-align:center;white-space:pre-line;color:#19e35a;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 85%,#000 100%);mask-image:linear-gradient(to bottom,transparent 0%,#000 85%,#000 100%);animation-name:fall;animation-timing-function:linear;animation-iteration-count:infinite}
+@keyframes fall{from{transform:translateY(-110%)}to{transform:translateY(1300px)}}
+.stab{font-family:'Geist',system-ui,sans-serif;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;border-radius:7px;color:#7fae8c;font-size:9.5px;font-weight:500;text-decoration:none;white-space:nowrap}
+.stab:hover{color:#b9e8c4;background:#06150b}
+.stab.on{background:#0d2a16;color:#e6fff0}
+.card{border-radius:14px;background:rgba(4,17,10,.86);backdrop-filter:blur(3px);border:1px solid #0f2a17;padding:4px 14px}
+.sec{margin:0;padding:12px 0 6px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8bbf9a}
+.row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #0d2414}
+.lbl{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.lbl span:first-child{font-size:13px;color:#e6fff0}
+.lbl span:last-child{font-size:11.5px;line-height:16px;color:#7fae8c}
+.search{font-family:'Geist',system-ui,sans-serif;width:100%;height:36px;box-sizing:border-box;padding:0 12px 0 34px;border-radius:9px;border:1px solid #1c4a2b;background:#020a05;color:#e6fff0;font-size:13px;outline:none}
+.search:focus{border-color:#19e35a}
+.search::placeholder{color:#5f9a70}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.step{display:flex;align-items:center;border:1px solid #1c4a2b;border-radius:9px;overflow:hidden}
+.step button{font-family:'Geist',system-ui,sans-serif;width:32px;height:30px;border:0;background:#06150b;color:#b9e8c4;font-size:15px;cursor:pointer}
+.step button:hover{background:#0c2414}
+.step span{width:34px;text-align:center;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;color:#e6fff0}
+.sw{width:44px;height:26px;border-radius:13px;border:1px solid #1c4a2b;background:#0b1c10;position:relative;cursor:pointer;padding:0;flex-shrink:0}
+.sw .kn{position:absolute;top:4px;left:4px;width:16px;height:16px;border-radius:50%;background:#5f9a70;transition:left .15s}
+.sw.on{background:#19e35a;border-color:#19e35a}
+.sw.on .kn{left:22px;background:#021006}
+.inp{font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #1c4a2b;background:#020a05;color:#e6fff0;outline:none;width:100%;box-sizing:border-box}
+.inp:focus{border-color:#19e35a}
+</style>
+</helmet>
+<div class="mk" style="width: 440px; height: 1240px; box-sizing: border-box; background: #020604; display: flex; flex-direction: column; border-left: 1px solid #0f2a17; position: relative; overflow: hidden">
+
+  <div class="rain" aria-hidden="true">
+    <sc-for list="{{rain}}" as="c" hint-placeholder-count="0">
+      <div class="rcol" style="{{c.style}}">{{c.glyphs}}</div>
+    </sc-for>
+  </div>
+
+  <header style="position: relative; z-index: 1; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 14px; border-bottom: 1px solid #0f2a17; background: rgba(3,10,6,.92)">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <a class="ib" href="Main.dc.html" aria-label="Back to Overview"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></a>
+      <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
+        <h1 style="margin: 0; font-size: 15px; font-weight: 600; color: #e6fff0">Settings</h1>
+        <span style="font-size: 12px; color: #8bbf9a">MatrixKoder · {{repoName}}</span>
+      </div>
+    </div>
+    <div style="position: relative">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7fae8c" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="position: absolute; left: 12px; top: 11px"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <label for="ss" class="sr">Search settings</label>
+      <input id="ss" class="search" placeholder="Search all settings">
+    </div>
+    <nav aria-label="Settings sections" style="display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(4,14,7,.86); border: 1px solid #0f2a17">
+      <sc-for list="{{stabs}}" as="s" hint-placeholder-count="6"><a class="{{s.cls}}" href="{{s.href}}" aria-current="{{s.cur}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg><span>{{s.label}}</span></a></sc-for>
+    </nav>
+  </header>
+
+  <main style="position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 20px; overflow: hidden">
+
+    <section class="card" aria-labelledby="w-flow">
+      <h2 id="w-flow" class="sec">Work Flow</h2>
+      <div class="row"><div class="lbl"><span>Stall threshold</span><span>Mark lane stalled after heartbeat age</span></div><span class="mono" style="font-size: 12px; color: #b9e8c4">{{stallMinutes}}m</span></div>
+      <div class="row"><div class="lbl"><span>Default bug risk</span><span>Initial risk for newly filed bugs (1-5)</span></div><span class="mono" style="font-size: 12px; color: #b9e8c4">{{defaultRisk}}</span></div>
+      <div class="row"><div class="lbl"><span>Plan auto-import</span><span>Automatically import new valid plan files</span></div><span class="mono" style="font-size: 12px; color: #b9e8c4">{{autoImport}}</span></div>
+    </section>
+
+    <section class="card" aria-labelledby="w-templates">
+      <h2 id="w-templates" class="sec">Task spec templates</h2>
+      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Templates</span><span>Investigate, implement, subdispatch, review, fix</span></div><span class="mono" style="font-size: 11.5px; color: #7fae8c">Built-in defaults</span></div>
+    </section>
+
+  </main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+  }
+  renderVals() {
+    const s = this.getData('settings') || {};
+    const proj = this.getData('projects') || {};
+    const repo = (proj.repos && proj.repos[0]) || {};
+    const repoName = repo.name || 'orca-matrixkoder';
+    const values = s.values || {};
+    const lanes = values.lanes || {};
+    const bugs = values.bugs || {};
+    const plans = values.plans || {};
+
+    return {
+      rain: window.MK_RAIN ? window.MK_RAIN(75) : [],
+      stabs: window.MK_STABS ? window.MK_STABS('work') : [],
+      repoName,
+      stallMinutes: lanes.stallMinutes ?? 15,
+      defaultRisk: bugs.defaultRisk ?? 3,
+      autoImport: plans.autoImport ? 'on' : 'off',
+    };
+  }
+}
+</script>
+</body>
+</html>

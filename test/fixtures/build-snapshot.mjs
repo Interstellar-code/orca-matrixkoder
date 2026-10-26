@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import {
   worktreePs, worktreeList, terminalList, repoList, hostList, accountList, inbox, workerList,
 } from '../../out/orca/index.js';
+import { defaultSettings, describeSettings, SPEC_SCENARIOS } from '../../out/store/settings.js';
 
 const dir = new URL('./orca/', import.meta.url);
 // A runner that answers every call from the recorded fixture for that command.
@@ -134,7 +135,32 @@ export async function buildSnapshot() {
     },
     bugs: BUGS,
     todo: TODO,
-    settings: { values: { schema: 2 }, agents, baseBranch: 'main', version: '0.1.1' },
+    settings: (() => {
+      const def = defaultSettings();
+      def.general.openOnStart = 'lanes';
+      def.general.undoSeconds = 15;
+      def.general.snoozeMinutes = 30;
+      def.data.backupKeep = 14;
+      def.data.goneDays = 60;
+      def.data.decisionDays = 120;
+      def.data.eventMax = 10000;
+      def.sync.fastSeconds = 15;
+      def.sync.slowSeconds = 90;
+      def.sync.filesSeconds = 45;
+      def.routing.maxLanes = 5;
+      return {
+        values: def,
+        schema: describeSettings(def),
+        migrationNotes: ['migrated routing.spareClaudeBelowPct -> quota.floor.claude.weeklyPct (30)'],
+        lastScreen: 'lanes',
+        specTemplates: Object.fromEntries(SPEC_SCENARIOS.map((k) => [k, { path: '', source: 'builtin', ok: true, issue: null }])),
+        agents,
+        baseBranch: 'main',
+        dataDir: '~/.matrixkoder',
+        inboxDir: `${home(repo.path)}/.matrixkoder/inbox`,
+        version: '0.1.1',
+      };
+    })(),
   };
 }
 

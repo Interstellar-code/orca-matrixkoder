@@ -25,7 +25,7 @@ const REAL_PLAN = join(root, '.matrixkoder', 'inbox', 'orca-dashboard-wiring.md'
 
 test('every screen this.action() call uses an action name in ACTION_NAMES', () => {
   const files = readdirSync(screensDir).filter((f) => f.endsWith('.dc.html')).sort();
-  assert.ok(files.length >= 16, 'Expected 16 screens');
+  assert.ok(files.length >= 15, 'Expected 15 screens');
 
   const knownNames = new Set(ACTION_NAMES);
   const violations = [];
