@@ -16,7 +16,7 @@ Written 2026-10-25 at the end of the planning session. Paste the prompt at the b
 2. USE (lane A, after SCHEMA): routing by size and quota floors (C5), notifier (C6), confirm before high-risk tasks and advisory brief rules (C7), solo mode backend (C8), remaining consumers, route check in import and task.start, then USE.5 task spec templates (C10).
 3. SCREENS (lane B, after SCHEMA merges): rewire the existing canvas screens; SCREENS.1 tab list + bind helper + General, then SCREENS.4 Appearance app-wide, then SCREENS.2 and SCREENS.3 in parallel.
 4. SHIP (main): dead-key test T8 on the merged tree, rebuild `out/` and `web/`, version 0.3.0 (package.json, orca-plugin.json, orca-marketplace.json `plugins[0].source.ref`), CHANGELOG.
-5. Builders: claude sonnet medium, except SCREENS (lane B) on agy gemini-3.8-flash-medium (routes are written in the plan; use them, no Jev routing for them). Reviewers: claude opus high for SCHEMA and USE, claude sonnet medium for SCREENS and SHIP; the Critic gate is claude opus medium.
+5. Builders: claude sonnet medium, except SCREENS (lane B) on agy gemini-3.8-flash-medium (routes are written in the plan; use them, no Jev routing for them). Reviewers: claude opus high for SCHEMA and USE, agy gemini-3.8-flash-medium for SCREENS and SHIP; the Critic gate is claude opus medium.
 
 ## Next steps, in order
 
@@ -38,6 +38,6 @@ Read .matrixkoder/inbox/mk-settings-v2-handoff.md first, then the plan .matrixko
 
 1. Gate: run a second Opus Critic review of the plan (read-only subagent, brief from ~/.codex/prompts/critic.md), focused on the unreviewed parts: C8 solo mode, C9 agent models and route check, C10 task spec templates (incl. mk-data.db migration 2), and the SCREENS rewire method. Fold its fixes in, re-run the plan parser (must print pass), and show me the verdict. Stop and wait for my go.
 2. On my go: commit the plan, handoff and research files on main (docs(plan): settings v2 ...).
-3. Execute through Orca (load the orchestration skill): lane A worktree runs SCHEMA then USE (USE.1 to USE.5 in order); lane B worktree runs SCREENS once SCHEMA is merged (SCREENS.1, then SCREENS.4, then SCREENS.2 and SCREENS.3); SHIP on main after both merge. Use the routes and reviewers written in the plan exactly (builders claude sonnet medium; reviewers claude opus high for SCHEMA and USE, claude sonnet medium for SCREENS and SHIP; Critic claude opus medium); no Jev routing for them and no extra agents. Each task's gate must pass before its phase is reviewed; a separate reviewer approves each phase before merge. Lanes never stage out/ or web/.
+3. Execute through Orca (load the orchestration skill): lane A worktree runs SCHEMA then USE (USE.1 to USE.5 in order); lane B worktree runs SCREENS once SCHEMA is merged (SCREENS.1, then SCREENS.4, then SCREENS.2 and SCREENS.3); SHIP on main after both merge. Use the routes and reviewers written in the plan exactly (builders claude sonnet medium; reviewers claude opus high for SCHEMA and USE, agy gemini-3.8-flash-medium for SCREENS and SHIP; Critic claude opus medium); no Jev routing for them and no extra agents. Each task's gate must pass before its phase is reviewed; a separate reviewer approves each phase before merge. Lanes never stage out/ or web/.
 4. Report status after each phase merge; stop and ask before SHIP's version bump and before any push.
 ```

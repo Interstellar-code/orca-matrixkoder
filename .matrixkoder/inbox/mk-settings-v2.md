@@ -331,7 +331,7 @@ commit = "feat(panel): settings v2 tabs rewired to saved values, appearance appl
 deps = ["SCHEMA"]
 size = "standard"
 route = "agy gemini-3.8-flash-medium"
-reviewer = "claude sonnet medium"
+reviewer = "agy gemini-3.8-flash-medium"
 subagents = true
 /+++
 
@@ -415,7 +415,7 @@ commit = "chore(release): v0.3.0 settings v2"
 deps = ["USE", "SCREENS"]
 size = "standard"
 route = "claude sonnet medium"
-reviewer = "claude sonnet medium"
+reviewer = "agy gemini-3.8-flash-medium"
 subagents = false
 /+++
 
@@ -499,4 +499,6 @@ bundle = "npm run build"
 - 2026-10-25 — decision — SCHEMA and USE reviewers `claude opus high` (data-loss risk in the migration); SCREENS and SHIP stay `claude sonnet medium` — user
 - 2026-10-25 — decision — lane B (SCREENS) builder route `agy gemini-3.8-flash-medium` (Antigravity, Gemini 3.8 Flash, effort in the model id); its reviewer stays `claude sonnet medium` — user
 - 2026-10-25 — decision — lastScreen lives at `settings.lastScreen`, not a top-level snapshot key, so `test/server/server.test.mjs` KEYS stays; SCHEMA may edit that file's R2.3 case only (now writes an invalid schema:2 file) — orchestrator, on the lane A builder's question
+- 2026-10-26 — decision — SCREENS and SHIP reviewers `agy gemini-3.8-flash-medium`; SCHEMA and USE stay `claude opus high` — user
+- 2026-10-26 — review — SCHEMA (Opus high): APPROVE with 5 findings, all fixed in a SCHEMA fix round before merge: (1) migration drops agent efforts the C9 check refuses (omp, opencode, agents whose models all have empty efforts, effort with model ""), with a note; (2) carried v1 tiers and saved `routing.bySize.*` run `checkRoute` with routable forced true, a failing migrated tier falls back to its default with a note (C1 wins over the SCHEMA.1 "known agent ids" line); (3) `Object.hasOwn` for RENAMED lookups so no v1 file throws; (4) `__proto__`, `constructor`, `prototype` path segments skipped; (5) describe caps agent ids, notes cut to 200 chars, the 64 KB guard also drops `schema` agent rows — orchestrator
 /+++
