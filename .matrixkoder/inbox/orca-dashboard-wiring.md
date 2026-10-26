@@ -1,6 +1,6 @@
 +++ 1 Top block — plan identity [toml]
 plan = "orca-dashboard-wiring"
-status = "draft"
+status = "shipped"
 created = 2026-10-24
 runs = []
 integration = "main"
@@ -584,4 +584,12 @@ bundle = "npm run build"
 - 2026-10-24 — amended — mk-data.db schema v1 from mk-data-schema.md: panes, inbox files, plans with phases, light-link tasks like bugs; dashboard reads only the db, a sync loop fills it; new STORE.4 import, T10, T11, K13-K17, A7, A8, Q9-Q11 — user
 - 2026-10-24 — answer — Q9 keep bug.last_state_at; Q10 inbox fit rules as proposed; Q11 bug ids global across repos — user
 - 2026-10-25 — done — SPIKE live proofs: A2, A3, A4 (with 60 s keep-alive) and events PASS in the real app; A6 stays with ORCA T6; lessons: worker runs from Orca's plugin copy so use absolute paths, code changes need remove and re-add, worker starts on command or event only — user
+- 2026-10-25 — done — SPIKE.2 npm test runner and mk bin entry (d53f708ddec); A5, A7, A8 have no recorded pass/fail line — orchestrator
+- 2026-10-25 — done — STORE: mk-data.db, mk-settings.json and the mk CLI (4a9c8376cf9; merged de9004f2766, 2278ff2f7ca) — orchestrator
+- 2026-10-25 — done — ORCA: CLI adapter and action allowlist (8b03cac5a8e, 37401409e18); the allowlist is now 10 actions (tab switch added in 0.2.0) — orchestrator
+- 2026-10-25 — done — SERVE: local dashboard server, snapshot and actions (297cca6bf7a, review round 2 bbc9d1ef136); released in v0.1.2 — orchestrator
+- 2026-10-25 — done — WIRE.1 to WIRE.3: screens render live data (d627cc7d704, 6605860131d); WIRE.4 live check not recorded — orchestrator
+- 2026-10-25 — done — LAUNCH.1, LAUNCH.2: Open Dashboard command, bug skill, release 0.2.0 (0d3ccc1ba61); LAUNCH.3 T8 checklist test/manual/e2e.md not run — orchestrator
+- 2026-10-26 — superseded — WIRE.2.3's 7 Settings screens were replaced by the 6 settings tabs of mk-settings-v2 (release 0.3.0) — orchestrator
+- 2026-10-26 — amended — status shipped: every task has code on main; done waits for the live checks WIRE.4 and LAUNCH.3 (T8), which give G1 and G2 their evidence — orchestrator
 /+++
