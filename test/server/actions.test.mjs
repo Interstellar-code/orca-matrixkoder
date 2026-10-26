@@ -508,11 +508,7 @@ test('task.start: task-create (mk-ref spec, run, retry-request) then worker-star
   const runId = q1(w.svc, 'SELECT orca_run_id AS r FROM plan WHERE id = ?', plan.id).r;
   w.runner.calls.length = 0;
 
-  // a task with no route and no agent asks for one (this plan leaves Jev to route its first phase)
-  const noRoute = await w.act('task.start', { taskId: a.id });
-  assert.equal(noRoute.error.kind, 'bad_args');
-  assert.match(noRoute.error.message, /no route/);
-  assert.equal(w.runner.calls.length, 0);
+  // a task with no route anywhere is routed by its size (C5; test/server/routes.test.mjs covers the table); give the phase a route for the rest
   w.svc.ctx.db.prepare("UPDATE plan_phase SET route = 'claude sonnet medium' WHERE id = ?").run(a.phase_id);
   a.phase_route = 'claude sonnet medium';
 
@@ -568,10 +564,10 @@ test('task.start: task-create (mk-ref spec, run, retry-request) then worker-star
 
   // explicit agent / model / effort win over the route
   w.runner.calls.length = 0;
-  const ex = await w.act('task.start', { taskId: b.id, agent: 'codex', model: 'gpt-x', effort: 'high' });
+  const ex = await w.act('task.start', { taskId: b.id, agent: 'codex', model: 'gpt-6-astra', effort: 'high' });
   assert.equal(ex.ok, true);
   const exf = flagsOf(callsOf(w, 'orchestration', 'worker-start')[0]);
-  assert.deepEqual([exf.agent, exf.model, exf.effort], ['codex', 'gpt-x', 'high']);
+  assert.deepEqual([exf.agent, exf.model, exf.effort], ['codex', 'gpt-6-astra', 'high']);
 
   // worker-start refused: the Orca task exists and is kept, the error says so
   const c = ready[2] ?? null;
@@ -585,7 +581,7 @@ test('task.start: task-create (mk-ref spec, run, retry-request) then worker-star
   noCheck(w);
 });
 
-test('task.start without a route needs an agent (bad_args) and the maxLanes limit is a conflict', async (t) => {
+test('task.start without any route uses the size default, and the maxLanes limit is a conflict', async (t) => {
   const w = await world(t);
   const plan = await w.importPlan();
   await w.act('plan.start', { planId: plan.id });
@@ -594,8 +590,10 @@ test('task.start without a route needs an agent (bad_args) and the maxLanes limi
   w.svc.ctx.db.prepare("UPDATE plan_phase SET route = '' WHERE id = ?").run(task.phase_id);
   w.runner.calls.length = 0;
   const r = await w.act('task.start', { taskId: task.id });
-  assert.equal(r.error.kind, 'bad_args');
-  assert.equal(w.runner.calls.length, 0);
+  assert.equal(r.ok, true, JSON.stringify(r));
+  const f = flagsOf(callsOf(w, 'orchestration', 'worker-start')[0]);
+  assert.deepEqual([f.agent, f.model, f.effort], ['claude', 'sonnet', 'medium'], 'bySize.standard');
+  w.runner.calls.length = 0;
 
   // 3 live lanes (the default limit)
   const at = w.clock.now();

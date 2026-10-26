@@ -21,6 +21,8 @@ import { droppedV1Key } from '../store/settings-migrate.js';
 import { loadSettings, resetSettings, saveSettings, setting, SettingsError, type Settings } from '../store/settings.js';
 import { CANCELLED_RESULT, cut, fail, J, parseJson, type ActionError, type ActionOutcome, type ServerCtx } from './common.js';
 import { Decisions } from './decisions.js';
+import { orcaAgentId } from './providers.js';
+import { checkQuota, resolveRoute } from './routes.js';
 import { callOrca, orcaFailure, receiptId } from './orca-call.js';
 import { SCREENS } from './snapshot.js';
 import type { Sync } from './sync.js';
@@ -240,15 +242,21 @@ export class Actions {
       const why = task.status === 'failed' || task.status === 'cancelled' ? 'retry it first' : `it is ${task.status}`;
       refuse('conflict', `task ${task.code} cannot start: ${why}`);
     }
-    const route = String(task.route || phase.route || '').trim().split(/\s+/).filter(Boolean);
-    const agent = optStr(a, 'agent', 40) ?? route[0];
-    if (!agent) refuse('bad_args', `task ${task.code} has no route; choose an agent`);
-    const model = optStr(a, 'model', 80) ?? route[1];
-    const effort = optStr(a, 'effort', 20) ?? route[2];
+    const settings = loadSettings(this.c.dir);
+    const resolved = resolveRoute(settings, {
+      args: { agent: optStr(a, 'agent', 40), model: optStr(a, 'model', 80), effort: optStr(a, 'effort', 20) },
+      task: String(task.route ?? ''), phase: String(phase.route ?? ''), size: task.size === null ? null : String(task.size),
+    });
+    if (!resolved.ok) throw new Refuse(resolved.error);
+    const { agent, model, effort } = resolved.route;
 
-    const max = setting<number>(loadSettings(this.c.dir), 'routing.maxLanes');
+    const max = setting<number>(settings, 'routing.maxLanes');
     const live = Number(one(this.c.db, "SELECT COUNT(*) AS n FROM lane WHERE ended_at IS NULL AND state IN ('working','waiting','blocked')")!.n);
     if (live >= max) refuse('conflict', `${live} lanes are already running (the limit is ${max}); raise "Lanes at once" in Settings or wait`, { code: 'max_lanes' });
+
+    const quota = checkQuota(this.c.db, settings, agent);
+    if (quota.refuse) throw new Refuse(quota.refuse);
+    const warnings = quota.warnings;
 
     let orcaTaskId = task.orca_task_id ? String(task.orca_task_id) : '';
     if (!orcaTaskId) {
@@ -257,13 +265,13 @@ export class Actions {
       orcaTaskId = made;
     }
     const attempt = Number(one(this.c.db, 'SELECT attempts FROM plan_task WHERE id = ?', task.id as number)!.attempts);
-    const args: ActionArgs = { task: orcaTaskId, worktree: 'new-child', agent, run: String(plan.orca_run_id), 'retry-request': `mk-start-${task.id}-${attempt}` };
+    const args: ActionArgs = { task: orcaTaskId, worktree: 'new-child', agent: orcaAgentId(agent), run: String(plan.orca_run_id), 'retry-request': `mk-start-${task.id}-${attempt}` };
     if (model) args.model = model;
     if (effort) args.effort = effort;
     const r = await callOrca(this.c, 'worker-start', args);
     this.sync.request();
     if (!r.ok) return orcaFailure(`task ${task.code} was created in Orca (${orcaTaskId}) but its worker did not start`, r);
-    return { ok: true, task: { id: task.id, code: task.code, orcaTaskId } };
+    return { ok: true, task: { id: task.id, code: task.code, orcaTaskId }, ...(warnings.length ? { warnings } : {}) };
   }
 
   private async taskRetry(taskId: number): Promise<ActionOutcome> {

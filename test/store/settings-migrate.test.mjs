@@ -198,7 +198,7 @@ const loadV1 = (obj) => {
   return loadSettingsDetailed(dir);
 };
 
-test('fix 1: an effort C9 would refuse is dropped with a note (omp, opencode, agy, empty model)', () => {
+test('fix 1: an effort C9 refuses falls back to the default with a note (omp, opencode, agy, empty model)', () => {
   const { settings: s, migrationNotes: notes } = loadV1(v1With({
     agents: {
       opencode: { model: 'glm-5', effort: 'high' },

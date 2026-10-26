@@ -8,6 +8,7 @@
  */
 import { all, one, type Db, type Row } from '../store/db.js';
 import { defaultSettings, describeSettings, loadSettingsDetailed, setting, SPEC_SCENARIOS, type Settings } from '../store/settings.js';
+import { providerOf } from './providers.js';
 import { cut, homeAbbrev, maybeNum, num, parseJson, type ServerCtx } from './common.js';
 
 export const SCREENS = ['projects', 'overview', 'lanes', 'plan', 'waiting', 'events', 'inbox', 'bugs', 'todo', 'settings'] as const;
@@ -554,7 +555,6 @@ class Builder {
   // ---------------------------------------------------------------- settings
 
   private settingsBlock(): Obj {
-    const providerOf: Record<string, string> = { claude: 'claude', codex: 'codex', agy: 'antigravity', opencode: 'opencodeGo', gemini: 'gemini' };
     const quota = all(this.db, 'SELECT * FROM quota');
     const clis = all(this.db, 'SELECT * FROM agent_cli ORDER BY agent_id');
     return {
@@ -566,7 +566,7 @@ class Builder {
       specTemplates: Object.fromEntries(SPEC_SCENARIOS.map((k) => [k, { path: '', source: 'builtin', ok: true, issue: null }])),
       agents: clis.map((a) => ({
         id: String(a.agent_id), found: num(a.found) === 1, cli: a.cli_path ?? null, version: a.version ?? null,
-        quota: quota.filter((q) => q.provider === providerOf[String(a.agent_id)]).map((q) => ({
+        quota: quota.filter((q) => q.provider === providerOf(String(a.agent_id))).map((q) => ({
           label: q.win === 'session' ? (q.window_minutes === 300 ? '5h window' : 'Session') : q.win === 'weekly' ? 'Weekly' : 'Monthly',
           leftPct: q.used_percent === null ? null : Math.max(0, Math.round(100 - Number(q.used_percent))), resetsAt: maybeNum(q.resets_at),
           note: q.error ? cut(q.error, 80) : null,
