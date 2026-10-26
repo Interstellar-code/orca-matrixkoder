@@ -27,6 +27,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 .card{border-radius:14px;background:rgba(4,17,10,.86);backdrop-filter:blur(3px);border:1px solid #0f2a17;padding:4px 14px}
 .sec{margin:0;padding:12px 0 6px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8bbf9a}
 .row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #0d2414}
+.sec + .row{border-top:0}
 .lbl{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
 .lbl span:first-child{font-size:13px;color:#e6fff0}
 .lbl span:last-child{font-size:11.5px;line-height:16px;color:#7fae8c}
@@ -39,6 +40,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 .sw.on{background:#19e35a;border-color:#19e35a}
 .sw.on .kn{left:22px;background:#021006}
 .time{font-family:'Geist Mono',ui-monospace,monospace;height:30px;box-sizing:border-box;padding:0 8px;border-radius:8px;border:1px solid #1c4a2b;background:#020a05;color:#e6fff0;font-size:12px;width:74px;color-scheme:dark}
+.time:focus{border-color:#19e35a;outline:none}
 </style>
 </helmet>
 <div class="mk" style="width: 440px; height: 1240px; box-sizing: border-box; background: #020604; display: flex; flex-direction: column; border-left: 1px solid #0f2a17; position: relative; overflow: hidden">
@@ -63,7 +65,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
       <input id="ss" class="search" placeholder="Search all settings">
     </div>
     <nav aria-label="Settings sections" style="display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(4,14,7,.86); border: 1px solid #0f2a17">
-      <sc-for list="{{stabs}}" as="s" hint-placeholder-count="7"><a class="{{s.cls}}" href="{{s.href}}" aria-current="{{s.cur}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg><span>{{s.label}}</span></a></sc-for>
+      <sc-for list="{{stabs}}" as="s" hint-placeholder-count="6"><a class="{{s.cls}}" href="{{s.href}}" aria-current="{{s.cur}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg><span>{{s.label}}</span></a></sc-for>
     </nav>
   </header>
 
@@ -72,35 +74,72 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
     <section class="card" aria-labelledby="a-when">
       <h2 id="a-when" class="sec">Notify me when</h2>
       <sc-for list="{{events}}" as="t" hint-placeholder-count="5">
-        <div class="row"><div class="lbl"><span>{{t.label}}</span><span>{{t.desc}}</span></div><button class="{{t.cls}}" aria-pressed="{{t.p}}" aria-label="{{t.label}}" onClick="{{t.flip}}"><span class="kn"></span></button></div>
+        <div class="row">
+          <div class="lbl"><span>{{t.label}}</span><span>{{t.desc}}</span></div>
+          <button class="{{t.cls}}" aria-pressed="{{t.p}}" aria-label="{{t.label}}" onClick="{{t.flip}}"><span class="kn"></span></button>
+        </div>
       </sc-for>
       <div style="height: 4px"></div>
     </section>
 
-    <section class="card" aria-labelledby="a-how">
-      <h2 id="a-how" class="sec">How</h2>
-      <sc-for list="{{how}}" as="t" hint-placeholder-count="2">
-        <div class="row"><div class="lbl"><span>{{t.label}}</span><span>{{t.desc}}</span></div><button class="{{t.cls}}" aria-pressed="{{t.p}}" aria-label="{{t.label}}" onClick="{{t.flip}}"><span class="kn"></span></button></div>
-      </sc-for>
-      <div class="row"><div class="lbl"><span>Quiet hours</span><span>Only "waiting on you" gets through</span></div><button class="{{quietCls}}" aria-pressed="{{quietP}}" aria-label="Quiet hours" onClick="{{flipQuiet}}"><span class="kn"></span></button></div>
-      <sc-if value="{{quiet}}" hint-placeholder-val="{{true}}">
-      <div class="row" style="padding-bottom: 14px">
-        <label for="qf" style="font-size: 12px; color: #8bbf9a">From</label><input id="qf" class="time" value="22:00">
-        <label for="qt" style="font-size: 12px; color: #8bbf9a">to</label><input id="qt" class="time" value="07:00">
-        <span style="flex: 1"></span>
+    <section class="card" aria-labelledby="a-quiet">
+      <h2 id="a-quiet" class="sec">Quiet hours</h2>
+      <div class="row">
+        <div class="lbl"><span>Quiet hours</span><span>Only &ldquo;waiting on you&rdquo; gets through</span></div>
+        <button class="{{quietCls}}" aria-pressed="{{quietP}}" aria-label="Quiet hours" onClick="{{flipQuiet}}"><span class="kn"></span></button>
       </div>
+      <sc-if value="{{quiet}}">
+        <div class="row" style="padding-bottom: 14px; gap: 8px">
+          <label for="qf" style="font-size: 12px; color: #8bbf9a">From</label>
+          <input id="qf" class="time" value="{{quietFrom}}" onChange="{{setQuietFrom}}">
+          <label for="qt" style="font-size: 12px; color: #8bbf9a">to</label>
+          <input id="qt" class="time" value="{{quietTo}}" onChange="{{setQuietTo}}">
+          <span style="flex: 1"></span>
+        </div>
       </sc-if>
     </section>
 
     <section class="card" aria-labelledby="a-wake">
       <h2 id="a-wake" class="sec">While you are away</h2>
-      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Wake the orchestrator on events</span><span>MK acts on lane and gate events without you. Decisions still wait for you.</span></div><button class="{{wakeCls}}" aria-pressed="{{wakeP}}" aria-label="Wake the orchestrator on events" onClick="{{flipWake}}"><span class="kn"></span></button></div>
+      <div class="row" style="padding-bottom: 14px">
+        <div class="lbl">
+          <span>Wake the orchestrator on events</span>
+          <span>Send a wakeup to the coordinator handle when an ask arrives</span>
+        </div>
+        <button class="{{wakeCls}}" aria-pressed="{{wakeP}}" aria-label="Wake the orchestrator on events" onClick="{{flipWake}}"><span class="kn"></span></button>
+      </div>
     </section>
 
-    <div style="display: flex; gap: 8px; align-items: center; padding: 0 2px">
-      <button class="btn" disabled title="Not supported in web dashboard">Send a test notification</button>
-      <span style="font-size: 11.5px; color: #7fae8c">Uses Orca desktop notifications</span>
-    </div>
+    <section class="card" aria-labelledby="a-orca">
+      <h2 id="a-orca" class="sec">Orca settings</h2>
+      <sc-for list="{{orcaRows}}" as="o">
+        <div class="row">
+          <div class="lbl">
+            <span>{{o.label}}</span>
+            <span style="color: #7fae8c">{{o.note}}</span>
+          </div>
+        </div>
+      </sc-for>
+      <div style="height: 4px"></div>
+    </section>
+
+    <section class="card" aria-labelledby="a-test" style="padding: 12px 14px">
+      <div style="display: flex; gap: 12px; align-items: center">
+        <button class="btn" aria-label="Send a test notification" onClick="{{testNotify}}">Send a test notification</button>
+        <span style="font-size: 11.5px; color: #7fae8c">Calls notify.test to verify notification delivery</span>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="a-reset">
+      <h2 id="a-reset" class="sec">Reset</h2>
+      <div class="row" style="padding-bottom: 14px">
+        <div class="lbl">
+          <span>Reset notification settings</span>
+          <span>Back to defaults for notify section</span>
+        </div>
+        <button class="btn" style="color: #ff9b8a" onClick="{{resetNotify}}">Reset</button>
+      </div>
+    </section>
 
   </main>
 
@@ -110,74 +149,87 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 class Component extends DCLogic {
   constructor(p) {
     super(p);
-    this.state = {
-      on: {
-        ask: true,
-        laneDone: true,
-        gateFail: true,
-        runDone: true,
-        stall: false,
-        desktop: true,
-        sound: false,
-      },
-      quiet: true,
-      wake: false,
-    };
   }
+
   renderVals() {
-    const s = this.state;
+    const bind = (k) => this.bind(k);
     const proj = this.getData('projects') || {};
     const repo = (proj.repos && proj.repos[0]) || {};
-    const repoName = repo.name || 'orca-matrixkoder';
+    const repoName = (bind('general.activeRepo').val) || repo.name || 'orca-matrixkoder';
 
-    const defs = {
-      ask: ['A lane is waiting on you', 'Decision gates and push approvals'],
-      laneDone: ['A lane finishes its task', 'Ready for review or merge'],
-      gateFail: ['A gate fails', 'Build, test or review'],
-      runDone: ['A whole plan finishes', 'All phases merged'],
-      stall: ['A lane goes quiet', 'No output for 10 minutes'],
-      desktop: ['Desktop notification', 'Shown by Orca, labelled MatrixKoder'],
-      sound: ['Play a sound', 'Only for "waiting on you"'],
-    };
+    const sData = this.getData('settings') || {};
+    const schema = sData.schema || {};
 
-    const makeSw = (keys) => keys.map((k) => ({
-      label: defs[k][0],
-      desc: defs[k][1],
-      cls: 'sw' + (s.on[k] ? ' on' : ''),
-      p: String(!!s.on[k]),
-      flip: () => {
-        const next = !s.on[k];
-        const nextOn = Object.assign({}, s.on, { [k]: next });
-        this.setState({ on: nextOn });
-        if (k === 'desktop') {
-          this.action('settings.save', { patch: { alerts: { desktop: next } } });
-        } else if (k !== 'sound') {
-          this.action('settings.save', { patch: { alerts: { events: { [k]: next } } } });
-        }
-      },
-    }));
+    const eventDefs = [
+      ['ask', 'notify.events.ask', 'A lane is waiting on you', 'Decision gates and push approvals'],
+      ['laneDone', 'notify.events.laneDone', 'A lane finishes its task', 'Ready for review or merge'],
+      ['taskFailed', 'notify.events.taskFailed', 'A task fails', 'Build, test or review'],
+      ['stall', 'notify.events.stall', 'A lane goes quiet', 'No output for stall minutes'],
+      ['quotaLow', 'notify.events.quotaLow', 'Quota is low', 'A provider falls below its quota floor'],
+    ];
+
+    const events = eventDefs.map(([name, key, label, desc]) => {
+      const b = bind(key);
+      const is = !!b.val;
+      return {
+        name,
+        label,
+        desc,
+        cls: 'sw' + (is ? ' on' : ''),
+        p: String(is),
+        flip: () => b.toggle(),
+      };
+    });
+
+    const quietEnabledBind = bind('notify.quietHours.enabled');
+    const quietFromBind = bind('notify.quietHours.from');
+    const quietToBind = bind('notify.quietHours.to');
+    const quiet = !!quietEnabledBind.val;
+
+    const wakeBind = bind('notify.wakeOrchestrator');
+    const wake = !!wakeBind.val;
+
+    // Collect orca-owned rows from schema
+    const orcaRows = [];
+    for (const [key, desc] of Object.entries(schema)) {
+      if (desc && desc.owner === 'orca' && (desc.orcaPane?.includes('Notifications') || key === 'orca.notifications')) {
+        orcaRows.push({
+          label: desc.label || 'OS notifications and sounds',
+          note: `Set in Orca: ${desc.orcaPane || 'Settings > Notifications'}`,
+        });
+      }
+    }
+    if (orcaRows.length === 0) {
+      orcaRows.push({
+        label: 'OS notifications and sounds',
+        note: 'Set in Orca: Settings > Notifications',
+      });
+    }
 
     return {
       rain: window.MK_RAIN ? window.MK_RAIN(97) : [],
       stabs: window.MK_STABS ? window.MK_STABS('notify') : [],
       repoName,
-      events: makeSw(['ask', 'laneDone', 'gateFail', 'runDone', 'stall']),
-      how: makeSw(['desktop', 'sound']),
-      quiet: s.quiet,
-      quietCls: 'sw' + (s.quiet ? ' on' : ''),
-      quietP: String(s.quiet),
-      flipQuiet: () => {
-        const next = !s.quiet;
-        this.setState({ quiet: next });
-        this.action('settings.save', { patch: { alerts: { quietHours: { enabled: next } } } });
-      },
-      wakeCls: 'sw' + (s.wake ? ' on' : ''),
-      wakeP: String(s.wake),
-      flipWake: () => {
-        const next = !s.wake;
-        this.setState({ wake: next });
-        this.action('settings.save', { patch: { alerts: { wakeOrchestrator: next } } });
-      },
+
+      events,
+
+      quiet,
+      quietCls: 'sw' + (quiet ? ' on' : ''),
+      quietP: String(quiet),
+      flipQuiet: () => quietEnabledBind.toggle(),
+      quietFrom: quietFromBind.val || '22:00',
+      setQuietFrom: (e) => quietFromBind.save(e?.target?.value || '22:00'),
+      quietTo: quietToBind.val || '07:00',
+      setQuietTo: (e) => quietToBind.save(e?.target?.value || '07:00'),
+
+      wakeCls: 'sw' + (wake ? ' on' : ''),
+      wakeP: String(wake),
+      flipWake: () => wakeBind.toggle(),
+
+      orcaRows,
+
+      testNotify: () => this.action('notify.test'),
+      resetNotify: () => this.action('settings.reset', { section: 'notify' }),
     };
   }
 }

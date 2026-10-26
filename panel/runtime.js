@@ -608,6 +608,7 @@
     root.append(style, view);
     const inst = new def.Component({});
     instances[name] = inst;
+    host.component = inst;
     inst.__render = () => {
       const frag = document.createDocumentFragment();
       const vals = inst.renderVals();

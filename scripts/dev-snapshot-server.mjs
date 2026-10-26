@@ -256,6 +256,20 @@ export function createDevServer(options = {}) {
             res.end(JSON.stringify({ ok: false, error: { kind: 'conflict', code: 'not_ready', message: 'notifier not built yet' } }));
             return;
           }
+          if (parsed.name === 'task.start') {
+            if (!parsed.args?.confirm) {
+              res.writeHead(409, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                ok: false,
+                error: {
+                  kind: 'conflict',
+                  code: 'needs_confirm',
+                  message: `task ${parsed.args?.taskId ?? ''} requires confirmation before starting`,
+                },
+              }));
+              return;
+            }
+          }
           if (parsed.name === 'settings.export') {
             const data = getSnapshot();
             res.writeHead(200, { 'Content-Type': 'application/json' });
