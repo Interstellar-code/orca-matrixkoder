@@ -3,6 +3,7 @@
  * through Actions proving it uses the resolver. Orca is a stub that records argv.
  */
 import { test } from 'node:test';
+import { DatabaseSync } from 'node:sqlite';
 import assert from 'node:assert/strict';
 import { copyFileSync, mkdirSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -267,4 +268,24 @@ test('maxLanes is unchanged: the limit still refuses with max_lanes, before the 
   }
   const r = await w.start();
   assert.equal(r.error.code, 'max_lanes');
+});
+
+test('C9: a model or effort starting with "-" or holding whitespace is refused, even for an agent with no model list', () => {
+  const s = defaultSettings();
+  for (const route of [{ agent: 'opencode', model: '--dangerously' }, { agent: 'omp', model: 'a b' }, { agent: 'claude', model: 'opus', effort: '-x' }]) {
+    const r = checkRoute(route, s);
+    assert.equal(r.ok, false, JSON.stringify(route));
+    assert.match(r.issue, new RegExp(`"${(route.effort ?? route.model).replace(/[-]/g, '\\-')}"`));
+  }
+  assert.deepEqual(checkRoute({ agent: 'opencode', model: 'glm-5' }, s), { ok: true });
+});
+
+test('quota floor compares the unrounded remainder: 60.4 used is 39.6 left, below a 40 floor', () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec('CREATE TABLE quota(provider TEXT, win TEXT, used_percent REAL)');
+  db.prepare("INSERT INTO quota VALUES('claude','session',60.4)").run();
+  db.prepare("INSERT INTO quota VALUES('claude','weekly',0)").run();
+  const v = checkQuota(db, mergeSettings(defaultSettings(), { quota: { onBelowFloor: 'block', floor: { claude: { sessionPct: 40 } } } }), 'claude');
+  assert.equal(v.refuse?.code, 'quota_floor');
+  assert.match(v.refuse.message, /at 40% left, below the 40% floor/, 'the shown number is rounded');
 });

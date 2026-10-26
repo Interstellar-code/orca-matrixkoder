@@ -4,9 +4,9 @@
  * The host call itself is `ctx.notify`, filled by worker.ts with `notifications.show` (tests stub it).
  */
 import { runAction } from '../orca/index.js';
-import { loadSettings, setting } from '../store/settings.js';
+import { setting } from '../store/settings.js';
 import { coordinatorHandle, safeToType } from './orca-call.js';
-import { cut, fail, type ActionOutcome, type ServerCtx } from './common.js';
+import { cut, fail, readSettings, type ActionOutcome, type ServerCtx } from './common.js';
 
 export const NOTIFY_EVENTS = ['ask', 'laneDone', 'taskFailed', 'stall', 'quotaLow'] as const;
 export type NotifyEvent = (typeof NOTIFY_EVENTS)[number];
@@ -39,9 +39,9 @@ export class Notifier {
    */
   async notify(event: NotifyEvent, key: string, title: string, body: string, runId?: string): Promise<boolean> {
     const at = this.c.clock.now();
+    const settings = readSettings(this.c); // before the key is recorded, so a failure here can never use a key up
     const ins = this.c.db.prepare('INSERT OR IGNORE INTO alert_sent(key, at) VALUES(?, ?)').run(key, at);
     if (Number(ins.changes) === 0) return false;
-    const settings = loadSettings(this.c.dir);
     if (event === 'ask' && runId && setting<boolean>(settings, 'notify.wakeOrchestrator')) await this.wake(runId, title);
     if (!setting<boolean>(settings, `notify.events.${event}`)) return false;
     if (event !== 'ask' && setting<boolean>(settings, 'notify.quietHours.enabled')

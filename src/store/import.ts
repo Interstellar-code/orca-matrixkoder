@@ -46,6 +46,13 @@ export function inboxPlace(t: InboxTarget): { folder: string; prefix: string } {
   return { folder: join(t.repoPath, dir), prefix };
 }
 
+/** True for `<prefix>/<name>` and `<prefix>/archive/<name>` only; a deeper path belongs to a sub-folder that may be its own inbox. */
+const inFolder = (prefix: string, path: string): boolean => {
+  if (!path.startsWith(`${prefix}/`)) return false;
+  const rest = path.slice(prefix.length + 1);
+  return !rest.includes('/') || (rest.startsWith('archive/') && !rest.slice(8).includes('/'));
+};
+
 /** The disk path of an inbox_file.path of this folder (`<prefix>/x.md`, `<prefix>/archive/x.md`). */
 const diskPath = (t: InboxTarget, path: string): string => join(inboxPlace(t).folder, path.slice(inboxPlace(t).prefix.length + 1));
 
@@ -162,7 +169,7 @@ export function scanInbox(db: Db, t: InboxTarget, at: number = now()): Row[] {
     // Rows under another prefix belong to an earlier `plans.inboxDir`; they stay as they are.
     for (const r of all(db, "SELECT id, path FROM inbox_file WHERE repo_id = ? AND status NOT IN ('deleted','missing')", t.repoId)) {
       const path = String(r.path);
-      if (path.startsWith(`${prefix}/`) && !seen.has(path) && !existsSync(diskPath(t, path))) {
+      if (inFolder(prefix, path) && !seen.has(path) && !existsSync(diskPath(t, path))) {
         db.prepare("UPDATE inbox_file SET status='missing', status_at=? WHERE id=?").run(at, r.id as number);
       }
     }

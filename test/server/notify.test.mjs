@@ -2,6 +2,8 @@
 // and notify.test. Real service on a temp data dir, recorded Orca JSON, a fake clock; the host call is a stub.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { saveSettings } from '../../out/store/settings.js';
 import { fakeClock, fixtureRoutes, fx, startTestService, stubRunner } from './helpers.mjs';
 
@@ -178,4 +180,17 @@ test('T5.8 sync: a pulled window below its floor notifies once per window reset'
   acc.result.rateLimits.claude.weekly.resetsAt += 1000;
   await svc.sync.pullSlow();
   assert.equal(low().length, 3);
+});
+
+test('T5.9 an invalid mk-settings.json: notify still sends and spends its key once, and a sync pass completes with quota rows and git pulled', async (t) => {
+  const { svc, db, sent, runner } = await boot(t);
+  writeFileSync(join(svc.dir, 'mk-settings.json'), JSON.stringify({ schema: 2, agents: { claude: { model: '', effort: 'high' } } }));
+  assert.equal(await svc.notifier.notify('ask', 'ask:bad1', 'T', 'B'), true, 'defaults are used');
+  assert.equal(sent.length, 1);
+  assert.equal(q(db, "SELECT 1 FROM alert_sent WHERE key = 'ask:bad1'").length, 1);
+  runner.calls.length = 0;
+  await svc.sync.pullFast();
+  await svc.sync.pullSlow();
+  assert.ok(q(db, 'SELECT 1 FROM quota').length > 0, 'quota rows written');
+  assert.ok(q(db, 'SELECT 1 FROM repo WHERE base_ref IS NOT NULL').length > 0, 'git pulled (base ref read)');
 });

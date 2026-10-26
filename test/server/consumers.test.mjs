@@ -12,7 +12,7 @@ import { main } from '../../out/store/cli.js';
 import { openDb } from '../../out/store/db.js';
 import { importFile, scanInbox } from '../../out/store/import.js';
 import { dataLimits, prune, runMaintenance } from '../../out/store/maintenance.js';
-import { defaultSettings, saveSettings } from '../../out/store/settings.js';
+import { defaultSettings, mergeSettings, saveSettings } from '../../out/store/settings.js';
 import { fakeClock, get, startTestService, stubRunner, tmpDir } from './helpers.mjs';
 
 const REAL_PLAN = new URL('../../.matrixkoder/inbox/orca-dashboard-wiring.md', import.meta.url).pathname;
@@ -292,4 +292,17 @@ test('T7 import: the check reads the settings given; a clean plan is pass and st
   assert.equal(again.fit, 'pass', 'defaults when no settings are given');
   assert.equal(importFile(db, { repoId: 'r', repoPath: dir }, NAME).action, 'created');
   db.close();
+});
+
+test('T7 inbox: an inbox folder nested under the default prefix is not marked missing when the default folder is scanned again', async (t) => {
+  const w = await world(t);
+  w.put('inbox/plans/x.md', '# not a plan\n');
+  w.put('.matrixkoder/inbox/y.md', '# not a plan\n');
+  const db = w.svc.ctx.db;
+  const sub = mergeSettings(defaultSettings(), { plans: { inboxDir: 'inbox/plans' } });
+  scanInbox(db, { repoId: 'repo-1', repoPath: w.repoPath, settings: sub });
+  scanInbox(db, { repoId: 'repo-1', repoPath: w.repoPath, settings: defaultSettings() });
+  const rows = db.prepare('SELECT path, status FROM inbox_file ORDER BY path').all().map((r) => [r.path, r.status]);
+  assert.equal(rows.find((r) => r[0] === 'inbox/plans/x.md')?.[1], 'new', JSON.stringify(rows));
+  assert.equal(rows.find((r) => r[0] === 'inbox/y.md')?.[1], 'new');
 });

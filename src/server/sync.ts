@@ -27,7 +27,7 @@ import type {
 } from '../orca/index.js';
 import { all, one, tx, type Db } from '../store/db.js';
 import { importFile, inboxPlace, scanInbox } from '../store/import.js';
-import { loadSettings, setting } from '../store/settings.js';
+import { setting } from '../store/settings.js';
 import { Notifier } from './notify.js';
 import { CANCELLED_RESULT, cut, isoToMs, J, readSettings, type CliProbe, type CliProber, type GitRunner, type ServerCtx } from './common.js';
 import { deriveLaneState, recomputeBugs, recomputePlanTasks } from './status.js';
@@ -795,7 +795,7 @@ export class Sync {
 
   /** A dispatch lane whose worker is still going but has sent no heartbeat for `lanes.stallMinutes`. */
   private collectStalls(at: number): void {
-    const limit = setting<number>(loadSettings(this.c.dir), 'lanes.stallMinutes') * 60_000;
+    const limit = setting<number>(readSettings(this.c), 'lanes.stallMinutes') * 60_000;
     const rows = all(
       this.db,
       `SELECT lane_key, label, last_heartbeat_at FROM lane
@@ -850,14 +850,14 @@ export class Sync {
 
   /** quotaLow: a pulled window with less left than its floor (the same floors task.start checks). One alert per reset of the window. */
   private collectLowQuota(): void {
-    const settings = loadSettings(this.c.dir);
+    const settings = readSettings(this.c);
     for (const q of all(this.db, 'SELECT provider, win, used_percent, resets_at FROM quota WHERE used_percent IS NOT NULL')) {
       const key = q.win === 'session' ? 'sessionPct' : q.win === 'weekly' ? 'weeklyPct' : null;
       if (!key) continue;
       const group = q.provider === 'claude' ? 'claude' : 'others';
       const floor = setting<number>(settings, `quota.floor.${group}.${key}`);
-      const left = Math.max(0, Math.round(100 - Number(q.used_percent)));
-      if (left < floor) this.alert('quotaLow', `quotaLow:${String(q.provider)}:${String(q.win)}:${q.resets_at ?? 'none'}`, 'MatrixKoder: quota running low', `${String(q.provider)} ${String(q.win)} quota is at ${left}% left (floor ${floor}%).`);
+      const left = Math.max(0, 100 - Number(q.used_percent));
+      if (left < floor) this.alert('quotaLow', `quotaLow:${String(q.provider)}:${String(q.win)}:${q.resets_at ?? 'none'}`, 'MatrixKoder: quota running low', `${String(q.provider)} ${String(q.win)} quota is at ${Math.round(left)}% left (floor ${floor}%).`);
     }
   }
 

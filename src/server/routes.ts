@@ -93,9 +93,9 @@ export function checkQuota(db: Db, settings: Settings, agent: string): QuotaVerd
       warnings.push(`quota not checked: no ${win} reading for ${agent} yet`);
       continue;
     }
-    const left = Math.max(0, Math.round(100 - Number(row.used_percent)));
+    const left = Math.max(0, 100 - Number(row.used_percent)); // compared unrounded; only the message rounds
     const floor = setting<number>(settings, `quota.floor.${group}.${key}`);
-    if (left < floor) low.push(`${agent} ${win} quota is at ${left}% left, below the ${floor}% floor (quota.floor.${group}.${key})`);
+    if (left < floor) low.push(`${agent} ${win} quota is at ${Math.round(left)}% left, below the ${floor}% floor (quota.floor.${group}.${key})`);
   }
   if (low.length === 0) return { refuse: null, warnings };
   if (mode === 'block') {
