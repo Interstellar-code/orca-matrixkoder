@@ -13,6 +13,8 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { all, now, one, tx } from './db.js';
+import { checkRoute } from './routes-check.js';
+import { defaultSettings, setting } from './settings.js';
 import { parsePlan } from './plan-parse.js';
 export class ImportError extends Error {
     conflicts;
@@ -22,32 +24,72 @@ export class ImportError extends Error {
         this.name = 'ImportError';
     }
 }
+const DEFAULT_INBOX_DIR = '.matrixkoder/inbox';
+const settingsOf = (t) => t.settings ?? defaultSettings();
+/**
+ * Where a target's inbox is. `folder` is the directory on disk; `prefix` starts every inbox_file.path of this folder
+ * ("inbox" for the default folder, as before, otherwise the folder itself), so rows made under an older `plans.inboxDir`
+ * keep their own prefix and a scan of the new folder leaves them alone.
+ */
+export function inboxPlace(t) {
+    const dir = setting(settingsOf(t), 'plans.inboxDir').replace(/^(\.\/)+/, '').replace(/\/+$/, '') || DEFAULT_INBOX_DIR;
+    const prefix = dir === DEFAULT_INBOX_DIR ? 'inbox' : dir === 'inbox' ? './inbox' : dir;
+    return { folder: join(t.repoPath, dir), prefix };
+}
+/** True for `<prefix>/<name>` and `<prefix>/archive/<name>` only; a deeper path belongs to a sub-folder that may be its own inbox. */
+const inFolder = (prefix, path) => {
+    if (!path.startsWith(`${prefix}/`))
+        return false;
+    const rest = path.slice(prefix.length + 1);
+    return !rest.includes('/') || (rest.startsWith('archive/') && !rest.slice(8).includes('/'));
+};
+/** The disk path of an inbox_file.path of this folder (`<prefix>/x.md`, `<prefix>/archive/x.md`). */
+const diskPath = (t, path) => join(inboxPlace(t).folder, path.slice(inboxPlace(t).prefix.length + 1));
 const MAX_BYTES = 1024 * 1024;
-const root = (t) => join(t.repoPath, '.matrixkoder');
 const sha256 = (b) => createHash('sha256').update(b).digest('hex');
 const J = (v) => JSON.stringify(v);
-function readPlanFile(full) {
+/** C9: a task or phase route the settings do not accept makes a `pass` plan `partial`, with the reason in `missing[]`. */
+function checkPlanRoutes(r, settings) {
+    if (!r.plan)
+        return r;
+    const issues = [];
+    const check = (who, field, text) => {
+        const c = checkRoute(text, settings);
+        if (!c.ok)
+            issues.push(`${who}: ${field} "${text}": ${c.issue}`);
+    };
+    for (const ph of r.plan.phases) {
+        check(`phase ${ph.code}`, 'route', ph.route);
+        check(`phase ${ph.code}`, 'reviewer', ph.reviewer);
+        for (const t of ph.tasks)
+            check(`task ${t.code}`, 'route', t.route);
+    }
+    if (issues.length === 0)
+        return r;
+    return { ...r, fit: r.fit === 'pass' ? 'partial' : r.fit, missing: [...r.missing, ...issues] };
+}
+function readPlanFile(full, settings) {
     const st = statSync(full);
     if (st.size > MAX_BYTES) {
         return { sha: '', size: st.size, mtime: Math.floor(st.mtimeMs), text: '', parsed: { fit: 'not_a_plan', missing: ['file is over 1 MB'], slug: null, title: null, plan: null } };
     }
     const buf = readFileSync(full);
     const text = buf.toString('utf8');
-    return { sha: sha256(buf), size: st.size, mtime: Math.floor(st.mtimeMs), text, parsed: parsePlan(text) };
+    return { sha: sha256(buf), size: st.size, mtime: Math.floor(st.mtimeMs), text, parsed: checkPlanRoutes(parsePlan(text), settings) };
 }
 function currentSha(db, planId, version) {
     const r = one(db, 'SELECT source_sha FROM plan_version WHERE plan_id = ? AND version = ?', planId, version);
     return r ? String(r.source_sha) : null;
 }
-function syncFile(db, t, rel, name, at) {
-    const path = `${rel}/${name}`;
-    const r = readPlanFile(join(root(t), path));
+function syncFile(db, t, archive, name, at) {
+    const path = `${inboxPlace(t).prefix}/${archive ? 'archive/' : ''}${name}`;
+    const r = readPlanFile(diskPath(t, path), settingsOf(t));
     const plan = r.parsed.slug ? one(db, 'SELECT id, version FROM plan WHERE repo_id = ? AND slug = ?', t.repoId, r.parsed.slug) : undefined;
     const row = one(db, 'SELECT * FROM inbox_file WHERE repo_id = ? AND path = ?', t.repoId, path);
     let status;
     let planId = null;
     let planVersion = null;
-    if (rel === 'inbox/archive') {
+    if (archive) {
         status = row && row.status === 'imported' ? 'imported' : 'archived';
         if (row && row.status === 'imported') {
             planId = row.plan_id;
@@ -71,23 +113,26 @@ function syncFile(db, t, rel, name, at) {
     const keep = row.status === status;
     db.prepare(`UPDATE inbox_file SET slug=?, title=?, sha=?, size=?, mtime=?, fit=?, missing=?, status=?, plan_id=?, plan_version=?, status_at=? WHERE id=?`).run(r.parsed.slug, r.parsed.title, r.sha, r.size, r.mtime, r.parsed.fit, J(r.parsed.missing), status, planId ?? (keep ? row.plan_id : null), planVersion ?? (keep ? row.plan_version : null), keep ? Number(row.status_at) : at, row.id);
 }
-/** Refresh inbox_file for every .md under inbox/ and inbox/archive/; rows whose file vanished become `missing`. */
+/** Refresh inbox_file for every .md under the inbox folder and its archive/; rows of this folder whose file vanished become `missing`. */
 export function scanInbox(db, t, at = now()) {
     const seen = new Set();
-    const dirs = [['inbox', join(root(t), 'inbox')], ['inbox/archive', join(root(t), 'inbox', 'archive')]];
+    const { folder, prefix } = inboxPlace(t);
+    const dirs = [[false, folder], [true, join(folder, 'archive')]];
     tx(db, () => {
-        for (const [rel, dir] of dirs) {
+        for (const [archive, dir] of dirs) {
             if (!existsSync(dir))
                 continue;
             for (const name of readdirSync(dir).filter((f) => f.endsWith('.md')).sort()) {
                 if (!statSync(join(dir, name)).isFile())
                     continue;
-                seen.add(`${rel}/${name}`);
-                syncFile(db, t, rel, name, at);
+                seen.add(`${prefix}/${archive ? 'archive/' : ''}${name}`);
+                syncFile(db, t, archive, name, at);
             }
         }
+        // Rows under another prefix belong to an earlier `plans.inboxDir`; they stay as they are.
         for (const r of all(db, "SELECT id, path FROM inbox_file WHERE repo_id = ? AND status NOT IN ('deleted','missing')", t.repoId)) {
-            if (!seen.has(String(r.path)) && !existsSync(join(root(t), String(r.path)))) {
+            const path = String(r.path);
+            if (inFolder(prefix, path) && !seen.has(path) && !existsSync(diskPath(t, path))) {
                 db.prepare("UPDATE inbox_file SET status='missing', status_at=? WHERE id=?").run(at, r.id);
             }
         }
@@ -98,7 +143,7 @@ export function scanInbox(db, t, at = now()) {
 const taskVals = (t) => ({
     title: t.title, description: t.description, acceptance: J(t.acceptance), covers: J(t.covers), deps: J(t.deps),
     risk: t.risk, size: t.size, gate: t.gate, manual: t.manual, route: t.route, refs: J(t.refs), owned: J(t.owned),
-    subagent: t.subagent ? 1 : 0, parallel: t.parallel ? 1 : 0,
+    subagent: t.subagent ? 1 : 0, parallel: t.parallel ? 1 : 0, scenario: t.scenario,
 });
 const phaseVals = (p) => ({
     title: p.title, goal: p.goal, ord: p.ord, wave: p.wave, lane_group: p.laneGroup, deps: J(p.deps), owned: J(p.owned),
@@ -287,13 +332,13 @@ function archiveName(dir, name, slug, at) {
 }
 /** Import (or re-import) `inbox/<name>`. Throws ImportError for a non-plan, a finished plan or a refused merge. */
 export function importFile(db, t, name, at = now()) {
-    const inboxDir = join(root(t), 'inbox');
+    const { folder: inboxDir, prefix } = inboxPlace(t);
     const src = join(inboxDir, name);
     if (!existsSync(src))
         throw new ImportError(`${name} is not in ${inboxDir}`);
     scanInbox(db, t, at);
-    const rel = `inbox/${name}`;
-    const file = readPlanFile(src);
+    const rel = `${prefix}/${name}`;
+    const file = readPlanFile(src, settingsOf(t));
     const res = file.parsed;
     if (res.fit === 'not_a_plan' || !res.plan)
         throw new ImportError(`${name} is not a plan: ${res.missing[0] ?? 'unreadable'}`);
@@ -336,7 +381,7 @@ export function importFile(db, t, name, at = now()) {
             db.prepare('DELETE FROM plan_version WHERE plan_id = ? AND version <= ?').run(planId, version - 10);
             // Move last: if it fails the transaction rolls back and the plan is as it was.
             const archived = archiveName(inboxDir, name, plan.slug, at);
-            const archivedRel = `inbox/archive/${archived}`;
+            const archivedRel = `${prefix}/archive/${archived}`;
             db.prepare("DELETE FROM inbox_file WHERE repo_id = ? AND path = ? AND id <> ? AND status IN ('missing','deleted')").run(t.repoId, archivedRel, inbox.id);
             db.prepare("UPDATE inbox_file SET path=?, name=?, status='imported', plan_id=?, plan_version=?, imported_at=?, status_at=? WHERE id=?").run(archivedRel, archived, planId, version, at, at, inbox.id);
             renameSync(src, join(inboxDir, 'archive', archived));

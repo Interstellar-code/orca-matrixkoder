@@ -2,6 +2,7 @@
  * Shared shapes for the dashboard server: the context every module receives, the clock, typed errors and a few helpers.
  */
 import { homedir } from 'node:os';
+import { defaultSettings, loadSettings } from '../store/settings.js';
 export const realClock = {
     now: () => Date.now(),
     setTimeout: (fn, ms) => {
@@ -46,3 +47,13 @@ export function homeAbbrev(p) {
 }
 export const num = (v) => (typeof v === 'bigint' ? Number(v) : Number(v ?? 0));
 export const maybeNum = (v) => (v === null || v === undefined ? null : Number(v));
+/** The user's settings, or the defaults when mk-settings.json cannot be read (a bad value must not stop a sync or an import). */
+export function readSettings(c) {
+    try {
+        return loadSettings(c.dir);
+    }
+    catch (e) {
+        c.log(`[settings] mk-settings.json was not used: ${e.message}`);
+        return defaultSettings();
+    }
+}

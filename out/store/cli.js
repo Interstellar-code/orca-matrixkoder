@@ -9,6 +9,8 @@
  */
 import { spawnSync } from 'node:child_process';
 import { basename } from 'node:path';
+import { loadSettings, setting } from './settings.js';
+import { pickScenario, renderSpec, rulesLines } from './spec-templates.js';
 import { all, dataDir, nextBugId, now, one, openDb, tx } from './db.js';
 class CliError extends Error {
     code;
@@ -148,12 +150,21 @@ function receiptId(stdout, kind, what) {
     return id;
 }
 // ---------------------------------------------------------------- bug
+/** `bugs.defaultRisk`, or 3 when the settings file cannot be read. */
+function defaultRisk(ctx) {
+    try {
+        return setting(loadSettings(ctx.dir ?? dataDir(ctx.env)), 'bugs.defaultRisk');
+    }
+    catch {
+        return 3;
+    }
+}
 function bugAdd(db, p, ctx) {
     const title = need(p, 'title');
     const details = str(p, 'details') ?? '';
     const file = str(p, 'file') ?? null;
     const line = int(p, 'line', 1, 10_000_000) ?? null;
-    const risk = int(p, 'risk', 1, 5) ?? 3;
+    const risk = int(p, 'risk', 1, 5) ?? defaultRisk(ctx);
     const repo = resolveRepo(db, p, ctx);
     const by = str(p, 'reported-by') ?? ctx.env.MK_REPORTED_BY ?? 'agent';
     const t = now();
@@ -187,20 +198,26 @@ function bugList(db, p, ctx) {
     const rows = all(db, `SELECT * FROM bug ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY created_at, id`, ...args);
     return rows.map(bugOut);
 }
-function fixSpec(b, repoPath, attempt) {
-    const where = b.file ? `${b.file}${b.line ? `:${b.line}` : ''}` : '(no file given)';
-    return [
-        `mk-ref: bug:${b.id}#${attempt}`,
-        '',
-        `Fix bug ${b.id}: ${b.title}`,
-        `Risk: ${b.risk}/5`,
-        `Where: ${where}`,
-        repoPath ? `Repo: ${repoPath}` : '',
-        '',
-        String(b.details || '(no details recorded)'),
-    ]
-        .filter((l, i, a) => !(l === '' && a[i - 1] === ''))
-        .join('\n');
+/** C10: the bug brief, rendered from the `fix` template (or the scenario a repo file picks). Fallbacks land in `warn`. */
+function fixSpec(b, repoPath, attempt, ctx, warn) {
+    const settings = loadSettings(ctx.dir ?? dataDir(ctx.env));
+    const file = b.file ? String(b.file) : '';
+    const line = b.line ? String(b.line) : '';
+    const r = renderSpec({
+        ref: `mk-ref: bug:${b.id}#${attempt}`,
+        scenario: pickScenario({ bug: true, attempt }),
+        vals: {
+            code: `bug ${b.id}`, bugId: String(b.id), title: String(b.title), risk: String(b.risk), attempt: String(attempt),
+            // {{file}} carries the line too ("src/a.ts:9"); {{line}} is the bare number for a custom template.
+            file: file ? `${file}${line ? `:${line}` : ''}` : '(no file given)', line,
+            details: String(b.details || '(no details recorded)'), repo: repoPath,
+        },
+        rules: rulesLines(settings),
+        settings,
+        env: { dir: ctx.dir ?? dataDir(ctx.env), repoPath },
+    });
+    warn.push(...r.warnings);
+    return r.text;
 }
 function bugFix(db, p, ctx) {
     const b = getBug(db, p.pos[2]);
@@ -218,15 +235,18 @@ function bugFix(db, p, ctx) {
     }
     // 2. The Orca task, then the row. The attempt number is in both the request id and the mk-ref line.
     const attempt = Number(b.attempts) + 1;
+    const warnings = [];
     const title = `${b.id} ${b.title}`.slice(0, 120);
     const taskId = receiptId(ctx.orca([
         'orchestration', 'task-create',
-        '--spec', fixSpec(b, String(repo.path || ''), attempt),
+        '--spec', fixSpec(b, String(repo.path || ''), attempt, ctx, warnings),
         '--task-title', title,
         '--run', runId,
         '--retry-request', `mk-bug-${b.id}-${attempt}`,
         '--json',
     ]), 'task', 'orca task-create');
+    for (const w of warnings)
+        ctx.err(`warning: ${w}`);
     const t = now();
     return tx(db, () => {
         const cur = one(db, 'SELECT * FROM bug WHERE id = ?', String(b.id));
@@ -238,7 +258,8 @@ function bugFix(db, p, ctx) {
         // last_state is the sync loop's column; it is reset here because it described the previous task.
         db.prepare(`UPDATE bug SET orca_run_id=?, orca_task_id=?, attempts=?, past_task_ids=?, status='fixing',
               last_state=NULL, last_state_at=NULL, fixed_at=NULL, updated_at=? WHERE id=?`).run(runId, taskId, attempts, JSON.stringify(past), t, String(b.id));
-        return bugOut(one(db, 'SELECT * FROM bug WHERE id = ?', String(b.id)));
+        const out = bugOut(one(db, 'SELECT * FROM bug WHERE id = ?', String(b.id)));
+        return warnings.length ? { ...out, warnings } : out;
     });
 }
 function bugSetStatus(db, id, to) {

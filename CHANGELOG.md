@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.3.0 - 2026-10-26
+
+Settings v2: every setting now changes what MatrixKoder does, and the screens show the saved values.
+
+- Six Settings tabs: General, Routing & Quota, Work, Safety, Notifications, Appearance. The Agents, Alerts, Theme and Shortcuts tabs are gone. Settings Orca owns (OS notifications and sounds, light/dark theme, agent install and accounts, keybindings) appear as "Set in Orca: Settings > <pane>" notes and are never stored by MatrixKoder.
+- Settings schema 2. An existing v1 `~/.matrixkoder/mk-settings.json` is migrated in memory on load (every changed value that still has a v2 home is kept; the General tab lists what was dropped or clamped). The file is not touched until the first save, which first copies the v1 file to `mk-settings.v1.bak.json`.
+- Every key is read through one accessor by code that changes behaviour; a test fails on any dead key. Screens start from the saved values, so they survive a reload and an Orca restart. Ranges and options come from the schema.
+- Routing by size and quota floors: `routing.bySize.*` picks the agent, model and effort for small, medium and large tasks; `quota.floor.*` with `quota.onBelowFloor` stops a task from starting on an agent whose quota is below its floor.
+- Agent models list per agent (Orca launch rules: no effort without a model, none for omp or opencode) and a route check on every save and task start. Refusals: `bad_route`, `quota_floor`, `needs_confirm`, `plan_partial`.
+- Notifier: events (agent asks, lane done, task failed, lane stalled, quota low) with per-event toggles, quiet hours, an optional wake of the orchestrator and a Test notification button.
+- Safety: `task.start` for a task at or above the chosen risk level refuses with `needs_confirm` until confirmed; the dashboard asks you, an agent calling `mk.action` must pass `confirm: true`. Advisory rows (protected branches, never-run commands, ask before push) are only written into every task brief as rules; MatrixKoder cannot enforce them. Each row says which it is.
+- Solo mode (`general.mode = solo`): work runs in the main checkout with in-session subagents, not Orca worktrees. Lanes and Projects hide worktree details, and the Work screen warns that parallel lanes share one checkout.
+- Task spec templates per scenario (investigate, implement, subdispatch, review, fix): built-in templates, or your own file per scenario, fill in the brief MatrixKoder sends. Migration 2 of `mk-data.db` adds `plan_task.scenario`, so each task keeps its scenario.
+- Appearance is applied app-wide: Matrix rain on/off, brightness and speed, reduced motion, text size and density.
+- A plan with an invalid route shows as Partial and cannot start (`plan_partial`). Plan has a Start button for tasks with no Orca task yet; failed tasks show Retry instead.
+- Manual live checks in `test/manual/settings-v2.md`.
+- Version 0.3.0 in `package.json`, `package-lock.json`, `orca-plugin.json` and `orca-marketplace.json` (`ref` `v0.3.0`).
+
 ## 0.2.1 - 2026-10-25
 
 Fix: the plugin no longer stops right after it starts.

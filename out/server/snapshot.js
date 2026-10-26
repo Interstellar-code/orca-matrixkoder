@@ -7,7 +7,9 @@
  * and the snapshot rebuilt, down to one row per list.
  */
 import { all, one } from '../store/db.js';
-import { defaultSettings, loadSettings } from '../store/settings.js';
+import { defaultSettings, describeSettings, loadSettingsDetailed, setting } from '../store/settings.js';
+import { templateStatuses } from '../store/spec-templates.js';
+import { providerOf } from './providers.js';
 import { cut, homeAbbrev, maybeNum, num, parseJson } from './common.js';
 export const SCREENS = ['projects', 'overview', 'lanes', 'plan', 'waiting', 'events', 'inbox', 'bugs', 'todo', 'settings'];
 export const SNAPSHOT_LIMIT = 64 * 1024;
@@ -26,7 +28,11 @@ export function buildState(c, q = {}, info = { version: null }) {
     }
     // Last guard: the page is never sent over the limit. The settings values are the one block the caps cannot shrink.
     if (Buffer.byteLength(JSON.stringify(out)) > SNAPSHOT_LIMIT && out.settings && typeof out.settings === 'object') {
-        out = { ...out, settings: { ...out.settings, values: {} } };
+        const block = out.settings;
+        const schema = Object.fromEntries(Object.entries((block.schema ?? {})).filter(([k]) => !k.startsWith('agents.')));
+        out = { ...out, settings: { ...block, schema } };
+        if (Buffer.byteLength(JSON.stringify(out)) > SNAPSHOT_LIMIT)
+            out = { ...out, settings: { ...block, schema, values: {} } };
     }
     return out;
 }
@@ -63,6 +69,7 @@ class Builder {
     repo;
     plan;
     settings = {};
+    migrationNotes = [];
     constructor(c, q, screen, caps, info) {
         this.c = c;
         this.q = q;
@@ -72,10 +79,13 @@ class Builder {
         this.db = c.db;
         this.at = c.clock.now();
         try {
-            this.settings = loadSettings(c.dir);
+            const loaded = loadSettingsDetailed(c.dir);
+            this.settings = loaded.settings;
+            this.migrationNotes = loaded.migrationNotes;
         }
-        catch {
+        catch (e) {
             this.settings = {};
+            this.migrationNotes = [cut(`mk-settings.json was not used: ${e.message}`, 300)];
         }
         this.select();
     }
@@ -83,7 +93,7 @@ class Builder {
     select() {
         const { db } = this;
         const live = (id) => one(db, 'SELECT * FROM repo WHERE id = ? AND gone_at IS NULL', id);
-        const active = (this.settings.general ?? {}).activeRepo;
+        const active = setting(this.settings, 'general.activeRepo');
         this.repo =
             (this.q.repoId ? live(this.q.repoId) : undefined) ??
                 (typeof active === 'string' ? live(active) : undefined) ??
@@ -426,12 +436,16 @@ class Builder {
         const n = (s) => num(one(this.db, 'SELECT COUNT(*) AS n FROM inbox_file WHERE repo_id = ? AND status = ?', this.repoId, s)?.n);
         return { new: n('new') + n('changed'), imported: n('imported'), archived: n('archived') };
     }
+    /** `plans.inboxDir`, relative to the repo root. */
+    inboxRel() {
+        return setting(this.settings, 'plans.inboxDir');
+    }
     inboxFull() {
         const rows = all(this.db, `SELECT f.*, p.slug AS plan_slug FROM inbox_file f LEFT JOIN plan p ON p.id = f.plan_id
         WHERE f.repo_id = ? AND f.status IN ('new','changed','imported') ORDER BY f.mtime DESC LIMIT ?`, this.repoId, this.caps.inbox);
         return {
             ...this.inboxCounts(),
-            dir: this.repo ? `${homeAbbrev(String(this.repo.path))}/.matrixkoder/inbox` : null,
+            dir: this.repo ? `${homeAbbrev(String(this.repo.path))}/${this.inboxRel()}` : null,
             files: rows.map((f) => ({
                 id: Number(f.id), name: String(f.name), title: f.title === null ? null : cut(f.title, 120), editedAt: Number(f.mtime), check: String(f.fit),
                 missing: parseJson(f.missing, []).slice(0, 8).map((m) => cut(m, 80)), state: String(f.status), planId: f.plan_id ?? null, planSlug: f.plan_slug ?? null,
@@ -486,14 +500,17 @@ class Builder {
     }
     // ---------------------------------------------------------------- settings
     settingsBlock() {
-        const providerOf = { claude: 'claude', codex: 'codex', agy: 'antigravity', opencode: 'opencodeGo', gemini: 'gemini' };
         const quota = all(this.db, 'SELECT * FROM quota');
         const clis = all(this.db, 'SELECT * FROM agent_cli ORDER BY agent_id');
         return {
             values: knownSettings(this.settings, defaultSettings()),
+            schema: describeSettings(this.settings),
+            migrationNotes: this.migrationNotes.slice(0, 40).map((n) => cut(n, 200)),
+            lastScreen: one(this.db, "SELECT value FROM kv WHERE key = 'panel.lastScreen'")?.value ?? null,
+            specTemplates: templateStatuses(this.settings, { dir: this.c.dir, repoPath: String(this.repo?.path ?? '') }),
             agents: clis.map((a) => ({
                 id: String(a.agent_id), found: num(a.found) === 1, cli: a.cli_path ?? null, version: a.version ?? null,
-                quota: quota.filter((q) => q.provider === providerOf[String(a.agent_id)]).map((q) => ({
+                quota: quota.filter((q) => q.provider === providerOf(String(a.agent_id))).map((q) => ({
                     label: q.win === 'session' ? (q.window_minutes === 300 ? '5h window' : 'Session') : q.win === 'weekly' ? 'Weekly' : 'Monthly',
                     leftPct: q.used_percent === null ? null : Math.max(0, Math.round(100 - Number(q.used_percent))), resetsAt: maybeNum(q.resets_at),
                     note: q.error ? cut(q.error, 80) : null,
@@ -501,7 +518,7 @@ class Builder {
             })),
             baseBranch: this.repo?.base_ref ?? 'main',
             dataDir: homeAbbrev(this.c.dir),
-            inboxDir: this.repo ? `${homeAbbrev(String(this.repo.path))}/.matrixkoder/inbox` : null,
+            inboxDir: this.repo ? `${homeAbbrev(String(this.repo.path))}/${this.inboxRel()}` : null,
             version: this.info.version,
         };
     }

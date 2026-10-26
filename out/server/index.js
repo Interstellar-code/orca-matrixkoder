@@ -10,8 +10,9 @@ import { realOrca } from '../store/cli.js';
 import { dataDir, openDb } from '../store/db.js';
 import { runMaintenance } from '../store/maintenance.js';
 import { Actions, ACTION_NAMES } from './actions.js';
-import { realClock } from './common.js';
+import { readSettings, realClock } from './common.js';
 import { Decisions } from './decisions.js';
+import { Notifier } from './notify.js';
 import { startHttp } from './http.js';
 import { buildState, eventDetail, eventsPage } from './snapshot.js';
 import { Sync } from './sync.js';
@@ -40,13 +41,15 @@ export async function startService(opts = {}) {
         runner: opts.runner ?? execOrca,
         cliOrca: opts.cliOrca ?? realOrca,
         clock: opts.clock ?? realClock,
-        undoMs: opts.undoMs ?? 10_000,
+        undoMs: opts.undoMs,
         requestSync: () => sync.request(),
+        notify: opts.notify,
         log,
     };
-    sync = new Sync(ctx, { git: opts.git, probeCli: opts.probeCli });
+    const notifier = new Notifier(ctx);
+    sync = new Sync(ctx, { git: opts.git, probeCli: opts.probeCli, notifier });
     const decisions = new Decisions(ctx);
-    const actions = new Actions(ctx, sync, decisions);
+    const actions = new Actions(ctx, sync, decisions, notifier);
     const version = pluginVersion();
     const state = (q = {}) => buildState(ctx, q, { version });
     const events = (q = {}) => eventsPage(ctx, q);
@@ -55,7 +58,7 @@ export async function startService(opts = {}) {
     const http = await startHttp({ state, events, event, action }, { webDir: opts.webDir ?? defaultWebDir(), log });
     let keep = null;
     if (opts.loops !== false) {
-        sync.start({ fastMs: opts.fastMs, slowMs: opts.slowMs });
+        sync.start({ fastMs: opts.fastMs, slowMs: opts.slowMs, filesMs: opts.filesMs });
         if (opts.keepAlive) {
             const ping = opts.keepAlive;
             keep = setInterval(() => {
@@ -75,13 +78,13 @@ export async function startService(opts = {}) {
     if (replayed.ran || replayed.expired || replayed.scheduled)
         log(`[decisions] replay: ${replayed.ran} sent, ${replayed.expired} expired, ${replayed.scheduled} waiting`);
     try {
-        runMaintenance(db, dir, ctx.clock.now());
+        runMaintenance(db, dir, ctx.clock.now(), readSettings(ctx));
     }
     catch (e) {
         log(`[maintenance] ${e.message}`);
     }
     return {
-        url: http.url, port: http.port, token: http.token, ctx, sync, actions,
+        url: http.url, port: http.port, token: http.token, ctx, sync, actions, notifier,
         state, events, event, action,
         async close() {
             if (keep)

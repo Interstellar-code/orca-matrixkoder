@@ -5,7 +5,8 @@
  */
 import { buildActionArgv } from '../orca/index.js';
 import { all, one, tx } from '../store/db.js';
-import { cut, fail, J, parseJson } from './common.js';
+import { setting } from '../store/settings.js';
+import { cut, fail, J, parseJson, readSettings } from './common.js';
 import { callOrca, decisionActionFromArgv } from './orca-call.js';
 export const REPLAY_WINDOW_MS = 10 * 60_000;
 export class Decisions {
@@ -42,13 +43,14 @@ export class Decisions {
             : buildActionArgv('reply', { id: askId, body: value, run: String(ask.run_id), 'retry-request': requestId });
         if (!built.ok)
             return fail('bad_args', built.error.message);
-        const commitAt = at + this.c.undoMs;
+        const undoMs = this.c.undoMs ?? setting(readSettings(this.c), 'general.undoSeconds') * 1000;
+        const commitAt = at + undoMs;
         const repo = one(db, 'SELECT repo_id FROM run WHERE id = ?', String(ask.run_id));
         const id = tx(db, () => Number(db
             .prepare(`INSERT INTO decision_log(repo_id, run_id, ask_id, kind, title, action, answer, actor, status, command, request_id, commit_at, created_at)
              VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id`)
             .get(repo?.repo_id ?? null, String(ask.run_id), askId, kind, cut(ask.title, 160), action, action === 'approve' ? null : cut(text, 500), 'user', 'pending', J(built.argv), requestId, commitAt, at).id));
-        this.schedule(id, this.c.undoMs);
+        this.schedule(id, undoMs);
         return { ok: true, decisionId: id, action, commitAt, undoUntil: commitAt };
     }
     schedule(id, ms) {

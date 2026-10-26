@@ -16,11 +16,12 @@
  */
 import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { accountList, gateList, hostList, inbox, repoList, runList, taskList, terminalList, workerList, workerShow, worktreeList, worktreePs, } from '../orca/index.js';
 import { all, one, tx } from '../store/db.js';
-import { scanInbox } from '../store/import.js';
-import { CANCELLED_RESULT, cut, isoToMs, J } from './common.js';
+import { importFile, inboxPlace, scanInbox } from '../store/import.js';
+import { setting } from '../store/settings.js';
+import { Notifier } from './notify.js';
+import { CANCELLED_RESULT, cut, isoToMs, J, readSettings } from './common.js';
 import { deriveLaneState, recomputeBugs, recomputePlanTasks } from './status.js';
 export const GONE_AFTER_COMPLETE_PULLS = 2;
 export const AGENT_CLI_IDS = ['claude', 'codex', 'agy', 'opencode', 'omp', 'gemini'];
@@ -47,17 +48,25 @@ export class Sync {
     git;
     probe;
     debounceMs;
+    notifier;
+    /** Notifications noticed inside a transaction; sent by `flushAlerts` once it has committed. */
+    alerts = [];
     misses = new Map();
     lastTool = new Map();
     queue = Promise.resolve();
     debounce = null;
     wantSlow = false;
     intervals = [];
+    startOpts = {};
+    /** The timer lengths now running ("fast/slow/files" in ms), and whether `start` has been called. */
+    armed = '';
+    running = false;
     constructor(ctx, opts = {}) {
         this.c = ctx;
         this.git = opts.git ?? execGit;
         this.probe = opts.probeCli ?? execProbe;
         this.debounceMs = opts.debounceMs ?? 500;
+        this.notifier = opts.notifier ?? new Notifier(ctx);
     }
     get db() {
         return this.c.db;
@@ -71,24 +80,53 @@ export class Sync {
         this.queue = run.catch(() => undefined);
         return run;
     }
-    /** Start the timers. The first pull runs at once. */
-    start(opts = {}) {
-        this.stop();
+    /** The three timer lengths: an explicit option (tests) wins over `sync.*`. */
+    timing() {
+        const o = this.startOpts;
+        const st = readSettings(this.c);
+        return {
+            fastMs: o.fastMs ?? setting(st, 'sync.fastSeconds') * 1000,
+            slowMs: o.slowMs ?? setting(st, 'sync.slowSeconds') * 1000,
+            filesMs: o.filesMs ?? setting(st, 'sync.filesSeconds') * 1000,
+        };
+    }
+    arm() {
+        for (const t of this.intervals)
+            clearInterval(t);
+        this.intervals = [];
         const guard = (p) => void p.catch((e) => this.c.log(`[sync] ${e.message}`));
         const every = (ms, fn) => {
             const t = setInterval(() => guard(fn()), ms);
             t.unref?.();
             this.intervals.push(t);
         };
-        every(opts.fastMs ?? 10_000, () => this.pullFast());
-        every(opts.slowMs ?? 60_000, () => this.pullSlow());
-        every(opts.filesMs ?? 30_000, () => this.scanFiles());
-        guard(this.pullAll());
+        const tm = this.timing();
+        this.armed = `${tm.fastMs}/${tm.slowMs}/${tm.filesMs}`;
+        every(tm.fastMs, () => this.pullFast());
+        every(tm.slowMs, () => this.pullSlow());
+        every(tm.filesMs, () => this.scanFiles());
+    }
+    /** Start the timers. The first pull runs at once. */
+    start(opts = {}) {
+        this.stop();
+        this.startOpts = opts;
+        this.arm();
+        this.running = true;
+        void this.pullAll().catch((e) => this.c.log(`[sync] ${e.message}`));
+    }
+    /** After a settings change: re-arm the timers only when a `sync.*` length actually changed. No pull. */
+    retime() {
+        if (!this.running)
+            return;
+        const tm = this.timing();
+        if (`${tm.fastMs}/${tm.slowMs}/${tm.filesMs}` !== this.armed)
+            this.arm();
     }
     stop() {
         for (const t of this.intervals)
             clearInterval(t);
         this.intervals = [];
+        this.running = false;
         if (this.debounce)
             this.c.clock.clearTimeout(this.debounce);
         this.debounce = null;
@@ -245,7 +283,9 @@ export class Sync {
         tx(this.db, () => this.reconcileLanes(at));
         recomputePlanTasks(this.db, at);
         recomputeBugs(this.db, at);
+        this.collectStalls(at);
         await this.pullGit();
+        await this.flushAlerts();
     }
     applyPs(p, at, paneKeys) {
         const { db } = this;
@@ -359,17 +399,23 @@ export class Sync {
             // the dashboard's own cancel (actions.ts taskCancel) sets result "cancelled"; free text that merely mentions it is not a cancel
             return t ? { state: t.status, cancelled: t.status === 'failed' && (t.result ?? '').trim().toLowerCase() === CANCELLED_RESULT } : { state: 'missing', cancelled: false };
         };
-        for (const row of all(db, 'SELECT id, orca_task_id, last_state, status FROM plan_task WHERE orca_run_id = ? AND orca_task_id IS NOT NULL AND dropped_at IS NULL', runId)) {
+        for (const row of all(db, 'SELECT id, code, title, orca_task_id, last_state, status FROM plan_task WHERE orca_run_id = ? AND orca_task_id IS NOT NULL AND dropped_at IS NULL', runId)) {
             const { state, cancelled } = stateOf(String(row.orca_task_id));
-            if (state !== row.last_state)
+            if (state !== row.last_state) {
                 db.prepare('UPDATE plan_task SET last_state = ?, last_state_at = ?, updated_at = ? WHERE id = ?').run(state, at, at, row.id);
+                if (state === 'failed' && !cancelled)
+                    this.alert('taskFailed', `taskFailed:plan_task:${row.id}:${row.orca_task_id}`, 'MatrixKoder: task failed', `${String(row.code)} ${cut(String(row.title), 120)} failed.`);
+            }
             if (cancelled && row.status !== 'cancelled')
                 db.prepare("UPDATE plan_task SET status = 'cancelled', updated_at = ? WHERE id = ?").run(at, row.id);
         }
-        for (const row of all(db, 'SELECT id, orca_task_id, last_state FROM bug WHERE orca_run_id = ? AND orca_task_id IS NOT NULL', runId)) {
-            const { state } = stateOf(String(row.orca_task_id));
-            if (state !== row.last_state)
+        for (const row of all(db, 'SELECT id, title, orca_task_id, last_state FROM bug WHERE orca_run_id = ? AND orca_task_id IS NOT NULL', runId)) {
+            const { state, cancelled } = stateOf(String(row.orca_task_id));
+            if (state !== row.last_state) {
                 db.prepare('UPDATE bug SET last_state = ?, last_state_at = ? WHERE id = ?').run(state, at, String(row.id));
+                if (state === 'failed' && !cancelled)
+                    this.alert('taskFailed', `taskFailed:bug:${row.id}:${row.orca_task_id}`, 'MatrixKoder: bug fix failed', `${String(row.id)} ${cut(String(row.title), 120)}: the fix task failed.`);
+            }
         }
         return tl.tasks.length;
     }
@@ -464,6 +510,8 @@ export class Sync {
          ON CONFLICT(id) DO UPDATE SET title=excluded.title, body=excluded.body, options=excluded.options, orca_status=excluded.orca_status,
            resolution=excluded.resolution, resolved_at=excluded.resolved_at, orca_task_id=excluded.orca_task_id, last_seen_at=excluded.last_seen_at, gone_at=NULL`).run(g.id, runId, g.taskId || null, title || '(no title)', body, J(g.options), status, g.resolution === null ? null : cut(g.resolution, 300), isoToMs(g.createdAt) ?? at, isoToMs(g.resolvedAt), at, at);
             if (!had && status === 'pending')
+                this.alert('ask', `ask:${g.id}`, 'MatrixKoder: waiting for you', title || '(no title)', runId);
+            if (!had && status === 'pending')
                 this.addEvent('ask', isoToMs(g.createdAt) ?? at, `gate: ${title}`, null, `ask:${g.id}`, repoRow ? String(repoRow.repo_id) : null, { kind: 'gate', task: g.taskId });
         }
         for (const a of all(db, "SELECT id FROM ask WHERE kind = 'gate' AND run_id = ? AND gone_at IS NULL", runId)) {
@@ -510,6 +558,8 @@ export class Sync {
                 const reply = msgs.find((r) => r.sequence > m.sequence && r.threadId === thread && r.to === m.from && r.type !== 'heartbeat' && r.type !== 'question');
                 const prev = one(db, 'SELECT orca_status FROM ask WHERE id = ?', m.id);
                 const status = reply || prev?.orca_status === 'answered' ? 'answered' : 'pending';
+                if (!prev && status === 'pending')
+                    this.alert('ask', `ask:${m.id}`, 'MatrixKoder: waiting for you', title || '(question)', m.runId);
                 db.prepare(`INSERT INTO ask(id, kind, run_id, orca_task_id, dispatch_id, thread_id, title, body, options, orca_status, asked_at, resolved_at, first_seen_at, last_seen_at)
            VALUES(?,'question',?,?,?,?,?,?,?,?,?,?,?,?)
            ON CONFLICT(id) DO UPDATE SET title=excluded.title, body=excluded.body, options=excluded.options, orca_status=excluded.orca_status,
@@ -626,6 +676,38 @@ export class Sync {
         this.applyResult('hosts', t0, hosts, (v) => this.applyHosts(v, at));
         await this.refreshBaseRefs();
         await this.probeAgentClis();
+        await this.flushAlerts();
+    }
+    // ---------------------------------------------------------------- notifications (C6)
+    alert(...a) {
+        this.alerts.push(a);
+    }
+    /** Send what the apply steps noticed. Runs outside the transactions: a send is async and may type into a terminal. */
+    async flushAlerts() {
+        const todo = this.alerts;
+        this.alerts = [];
+        for (const a of todo) {
+            try {
+                await this.notifier.notify(...a);
+            }
+            catch (e) {
+                this.c.log(`[notify] ${e.message}`);
+            }
+        }
+    }
+    /** A dispatch lane whose worker is still going but has sent no heartbeat for `lanes.stallMinutes`. */
+    collectStalls(at) {
+        const limit = setting(readSettings(this.c), 'lanes.stallMinutes') * 60_000;
+        const rows = all(this.db, `SELECT lane_key, label, last_heartbeat_at FROM lane
+        WHERE kind = 'dispatch' AND ended_at IS NULL AND last_heartbeat_at IS NOT NULL
+          AND (worker_state IS NULL OR worker_state IN ('starting','ready','start_unknown'))`);
+        for (const l of rows) {
+            const beat = Number(l.last_heartbeat_at);
+            if (at - beat <= limit)
+                continue;
+            const mins = Math.floor((at - beat) / 60_000);
+            this.alert('stall', `stall:${String(l.lane_key)}:${beat}`, 'MatrixKoder: lane may be stuck', `Lane ${String(l.label)} has sent no heartbeat for ${mins} minutes.`);
+        }
     }
     applyRepos(r, at) {
         const { db } = this;
@@ -657,8 +739,23 @@ export class Sync {
                 n++;
             }
         }
+        this.collectLowQuota();
         void at;
         return n;
+    }
+    /** quotaLow: a pulled window with less left than its floor (the same floors task.start checks). One alert per reset of the window. */
+    collectLowQuota() {
+        const settings = readSettings(this.c);
+        for (const q of all(this.db, 'SELECT provider, win, used_percent, resets_at FROM quota WHERE used_percent IS NOT NULL')) {
+            const key = q.win === 'session' ? 'sessionPct' : q.win === 'weekly' ? 'weeklyPct' : null;
+            if (!key)
+                continue;
+            const group = q.provider === 'claude' ? 'claude' : 'others';
+            const floor = setting(settings, `quota.floor.${group}.${key}`);
+            const left = Math.max(0, 100 - Number(q.used_percent));
+            if (left < floor)
+                this.alert('quotaLow', `quotaLow:${String(q.provider)}:${String(q.win)}:${q.resets_at ?? 'none'}`, 'MatrixKoder: quota running low', `${String(q.provider)} ${String(q.win)} quota is at ${Math.round(left)}% left (floor ${floor}%).`);
+        }
     }
     applyHosts(h, at) {
         const host = h.hosts.find((x) => x.kind === 'local' || x.id === 'local') ?? h.hosts[0];
@@ -701,15 +798,30 @@ export class Sync {
         await this.exclusive(() => this.probeAgentClis());
     }
     // ---------------------------------------------------------------- plan files
-    /** inbox_file rows from disk, for each repo whose inbox folder exists. */
+    /** inbox_file rows from disk, for each repo whose inbox folder exists; then, when `plans.autoImport` is on, the new `pass` files. */
     async scanFiles() {
         const t0 = this.now();
         let n = 0;
         try {
+            const settings = readSettings(this.c);
+            const auto = setting(settings, 'plans.autoImport');
             for (const r of all(this.db, "SELECT id, path FROM repo WHERE gone_at IS NULL AND path <> ''")) {
-                if (!existsSync(join(String(r.path), '.matrixkoder', 'inbox')))
+                const target = { repoId: String(r.id), repoPath: String(r.path), settings };
+                const { folder, prefix } = inboxPlace(target);
+                if (!existsSync(folder))
                     continue;
-                n += scanInbox(this.db, { repoId: String(r.id), repoPath: String(r.path) }, this.now()).length;
+                n += scanInbox(this.db, target, this.now()).length;
+                if (!auto)
+                    continue;
+                const fresh = all(this.db, "SELECT name FROM inbox_file WHERE repo_id = ? AND status = 'new' AND fit = 'pass' AND path = ? || '/' || name", target.repoId, prefix);
+                for (const f of fresh) {
+                    try {
+                        importFile(this.db, target, String(f.name), this.now());
+                    }
+                    catch (e) {
+                        this.c.log(`[sync] auto-import of ${String(f.name)} failed: ${e.message}`);
+                    }
+                }
             }
             this.record('files', t0, null, n);
         }

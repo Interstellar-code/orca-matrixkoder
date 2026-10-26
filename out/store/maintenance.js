@@ -6,12 +6,20 @@
 import { existsSync, readdirSync, renameSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { dataDir, tx } from './db.js';
+import { setting } from './settings.js';
 const DAY = 86_400_000;
-const KEEP_BACKUPS = 7;
 const BACKUP_PREFIX = 'mk-data.db.bak-';
+export function dataLimits(settings = {}) {
+    return {
+        backupKeep: setting(settings, 'data.backupKeep'),
+        goneDays: setting(settings, 'data.goneDays'),
+        decisionDays: setting(settings, 'data.decisionDays'),
+        eventMax: setting(settings, 'data.eventMax'),
+    };
+}
 const day = (ms) => new Date(ms).toISOString().slice(0, 10).replace(/-/g, '');
-/** Copy the database with VACUUM INTO once per UTC day; keep the newest 7. Returns the new file or null if one exists. */
-export function backupIfDue(db, dir = dataDir(), at = Date.now()) {
+/** Copy the database with VACUUM INTO once per UTC day; keep the newest `data.backupKeep`. Returns the new file or null if one exists. */
+export function backupIfDue(db, dir = dataDir(), at = Date.now(), keep = dataLimits().backupKeep) {
     const target = join(dir, `${BACKUP_PREFIX}${day(at)}`);
     let made = null;
     if (!existsSync(target)) {
@@ -25,28 +33,28 @@ export function backupIfDue(db, dir = dataDir(), at = Date.now()) {
         .filter((f) => f.startsWith(BACKUP_PREFIX) && !f.endsWith('.tmp'))
         .sort()
         .reverse()
-        .slice(KEEP_BACKUPS);
+        .slice(keep);
     for (const f of old)
         rmSync(join(dir, f), { force: true });
     return made;
 }
 const changes = (r) => Number(r.changes);
 /** Apply every §7 rule. Returns rows deleted per rule. */
-export function prune(db, at = Date.now()) {
+export function prune(db, at = Date.now(), limits = dataLimits()) {
     const out = {};
     const rule = (name, sql, ...params) => {
         out[name] = tx(db, () => changes(db.prepare(sql).run(...params)));
     };
-    rule('event_log', 'DELETE FROM event_log WHERE id NOT IN (SELECT id FROM event_log ORDER BY at DESC, id DESC LIMIT 5000)');
-    rule('decision_log.age', "DELETE FROM decision_log WHERE status <> 'pending' AND created_at < ?", at - 90 * DAY);
+    rule('event_log', 'DELETE FROM event_log WHERE id NOT IN (SELECT id FROM event_log ORDER BY at DESC, id DESC LIMIT ?)', limits.eventMax);
+    rule('decision_log.age', "DELETE FROM decision_log WHERE status <> 'pending' AND created_at < ?", at - limits.decisionDays * DAY);
     rule('decision_log.max', `DELETE FROM decision_log WHERE status <> 'pending' AND id NOT IN
        (SELECT id FROM decision_log WHERE status <> 'pending' ORDER BY created_at DESC, id DESC LIMIT 2000)`);
     rule('lane_activity', `DELETE FROM lane_activity WHERE id IN
        (SELECT id FROM (SELECT id, ROW_NUMBER() OVER (PARTITION BY lane_id ORDER BY at DESC, id DESC) AS n FROM lane_activity)
          WHERE n > 50)`);
-    rule('lane', 'DELETE FROM lane WHERE ended_at IS NOT NULL AND ended_at < ?', at - 30 * DAY);
+    rule('lane', 'DELETE FROM lane WHERE ended_at IS NOT NULL AND ended_at < ?', at - limits.goneDays * DAY);
     rule('pane', 'DELETE FROM pane WHERE gone_at IS NOT NULL AND gone_at < ?', at - 7 * DAY);
-    const gone = at - 30 * DAY;
+    const gone = at - limits.goneDays * DAY;
     rule('worktree', `DELETE FROM worktree WHERE gone_at IS NOT NULL AND gone_at < ?
        AND NOT EXISTS (SELECT 1 FROM lane WHERE lane.worktree_id = worktree.id)`, gone);
     rule('run', `DELETE FROM run WHERE gone_at IS NOT NULL AND gone_at < ?
@@ -79,13 +87,14 @@ export function prune(db, at = Date.now()) {
     return out;
 }
 /** Backup then prune, at most once per UTC day (kv 'maintenance.day'). Safe to call on every start. */
-export function runMaintenance(db, dir = dataDir(), at = Date.now()) {
+export function runMaintenance(db, dir = dataDir(), at = Date.now(), settings = {}) {
     const today = day(at);
     const last = db.prepare("SELECT value FROM kv WHERE key='maintenance.day'").get();
     if (last?.value === today)
         return null;
-    const backup = backupIfDue(db, dir, at);
-    const pruned = prune(db, at);
+    const limits = dataLimits(settings);
+    const backup = backupIfDue(db, dir, at, limits.backupKeep);
+    const pruned = prune(db, at, limits);
     tx(db, () => db
         .prepare("INSERT INTO kv(key, value, updated_at) VALUES('maintenance.day', ?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at")
         .run(today, at));

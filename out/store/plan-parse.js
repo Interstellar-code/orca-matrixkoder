@@ -4,6 +4,7 @@
  * the others Markdown. This module turns the text into a ParsedPlan and a fit (pass | partial | not_a_plan).
  * It reads nothing from disk and writes nothing.
  */
+import { SPEC_SCENARIOS } from './settings.js';
 // ---------------------------------------------------------------- TOML (the subset plans use)
 /** Strings, integers, floats, booleans, bare dates, (multi-line) arrays, `[table]` headers, `#` comments. */
 export function parseToml(src) {
@@ -229,6 +230,14 @@ export function parsePlan(text) {
         return bad(problems[0]);
     const byNum = new Map();
     const missing = [];
+    const scenarioOf = (v, label) => {
+        if (v === undefined)
+            return null;
+        if (typeof v === 'string' && SPEC_SCENARIOS.includes(v))
+            return v;
+        missing.push(`${label}: scenario must be one of ${SPEC_SCENARIOS.join(', ')}`);
+        return null;
+    };
     for (const b of blocks) {
         if (byNum.has(b.num))
             missing.push(`duplicate block ${b.num}`);
@@ -298,6 +307,7 @@ export function parsePlan(text) {
         const size = typeof s.size === 'string' && SIZES.includes(s.size) ? s.size : null;
         if (s.size !== undefined && size === null)
             missing.push(`${L}: size must be trivial, standard or complex`);
+        const phScenario = scenarioOf(s.scenario, L);
         const body = textBlock?.body ?? '';
         const tasks = [];
         const taskNums = [...byNum.keys()]
@@ -329,6 +339,7 @@ export function parsePlan(text) {
             const tsize = typeof t.size === 'string' && SIZES.includes(t.size) ? t.size : null;
             if (t.size !== undefined && tsize === null)
                 missing.push(`task ${t.id}: size must be trivial, standard or complex`);
+            const taskScenario = scenarioOf(t.scenario, `task ${t.id}`) ?? phScenario;
             const subtasks = [];
             const subNums = [...byNum.keys()]
                 .map((k) => new RegExp(`^5\\.${n}\\.${m}\\.(\\d+)$`).exec(k))
@@ -361,7 +372,7 @@ export function parsePlan(text) {
                 gate: typeof t.gate === 'string' ? t.gate : null,
                 manual: typeof t.manual === 'string' ? t.manual : null,
                 route: typeof t.route === 'string' ? t.route : '',
-                subagent: t.subagent === true, parallel: t.parallel === true,
+                subagent: t.subagent === true, parallel: t.parallel === true, scenario: taskScenario,
                 subtasks,
             });
         }
@@ -372,7 +383,7 @@ export function parsePlan(text) {
             commit: typeof s.commit === 'string' ? s.commit : null,
             size, route: typeof s.route === 'string' ? s.route : '',
             reviewer: typeof s.reviewer === 'string' ? s.reviewer : '',
-            subagents: s.subagents === undefined ? true : s.subagents === true,
+            subagents: s.subagents === undefined ? true : s.subagents === true, scenario: phScenario,
             serves: idsIn(bulletOf(body, 'Serves') ?? ''), hazards: idsIn(bulletOf(body, 'Hazards') ?? ''),
             carries: idsIn(bulletOf(body, 'Carries') ?? ''), buildOrder: bulletOf(body, 'Build order'),
             tasks,
