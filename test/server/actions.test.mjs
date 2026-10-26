@@ -508,11 +508,7 @@ test('task.start: task-create (mk-ref spec, run, retry-request) then worker-star
   const runId = q1(w.svc, 'SELECT orca_run_id AS r FROM plan WHERE id = ?', plan.id).r;
   w.runner.calls.length = 0;
 
-  // a task with no route and no agent asks for one (this plan leaves Jev to route its first phase)
-  const noRoute = await w.act('task.start', { taskId: a.id });
-  assert.equal(noRoute.error.kind, 'bad_args');
-  assert.match(noRoute.error.message, /no route/);
-  assert.equal(w.runner.calls.length, 0);
+  // a task with no route anywhere is routed by its size (C5; test/server/routes.test.mjs covers the table); give the phase a route for the rest
   w.svc.ctx.db.prepare("UPDATE plan_phase SET route = 'claude sonnet medium' WHERE id = ?").run(a.phase_id);
   a.phase_route = 'claude sonnet medium';
 
@@ -568,10 +564,10 @@ test('task.start: task-create (mk-ref spec, run, retry-request) then worker-star
 
   // explicit agent / model / effort win over the route
   w.runner.calls.length = 0;
-  const ex = await w.act('task.start', { taskId: b.id, agent: 'codex', model: 'gpt-x', effort: 'high' });
+  const ex = await w.act('task.start', { taskId: b.id, agent: 'codex', model: 'gpt-6-astra', effort: 'high' });
   assert.equal(ex.ok, true);
   const exf = flagsOf(callsOf(w, 'orchestration', 'worker-start')[0]);
-  assert.deepEqual([exf.agent, exf.model, exf.effort], ['codex', 'gpt-x', 'high']);
+  assert.deepEqual([exf.agent, exf.model, exf.effort], ['codex', 'gpt-6-astra', 'high']);
 
   // worker-start refused: the Orca task exists and is kept, the error says so
   const c = ready[2] ?? null;
@@ -585,7 +581,7 @@ test('task.start: task-create (mk-ref spec, run, retry-request) then worker-star
   noCheck(w);
 });
 
-test('task.start without a route needs an agent (bad_args) and the maxLanes limit is a conflict', async (t) => {
+test('task.start without any route uses the size default, and the maxLanes limit is a conflict', async (t) => {
   const w = await world(t);
   const plan = await w.importPlan();
   await w.act('plan.start', { planId: plan.id });
@@ -594,8 +590,10 @@ test('task.start without a route needs an agent (bad_args) and the maxLanes limi
   w.svc.ctx.db.prepare("UPDATE plan_phase SET route = '' WHERE id = ?").run(task.phase_id);
   w.runner.calls.length = 0;
   const r = await w.act('task.start', { taskId: task.id });
-  assert.equal(r.error.kind, 'bad_args');
-  assert.equal(w.runner.calls.length, 0);
+  assert.equal(r.ok, true, JSON.stringify(r));
+  const f = flagsOf(callsOf(w, 'orchestration', 'worker-start')[0]);
+  assert.deepEqual([f.agent, f.model, f.effort], ['claude', 'sonnet', 'medium'], 'bySize.standard');
+  w.runner.calls.length = 0;
 
   // 3 live lanes (the default limit)
   const at = w.clock.now();
@@ -1190,13 +1188,16 @@ test('T3: the snapshot settings block carries values, schema, migrationNotes and
   assert.ok(migrated.migrationNotes.some((n) => n.includes('lanes.stallMinutes')));
 });
 
-test('T3: notify.test is a stub that refuses with conflict / not_ready and sends nothing', async (t) => {
+test('T3: notify.test goes through the notifier: one notification with a host, a no_host refusal without one, no Orca call either way', async (t) => {
   const w = await world(t);
   const r = await w.act('notify.test', {});
   assert.equal(r.ok, false);
   assert.equal(r.error.kind, 'conflict');
-  assert.equal(r.error.code, 'not_ready');
-  assert.match(r.error.message, /notifier not built yet/);
+  assert.equal(r.error.code, 'no_host');
+  const sent = [];
+  w.svc.ctx.notify = (n) => { sent.push(n); };
+  assert.deepEqual(await w.act('notify.test', {}), { ok: true, sent: true });
+  assert.equal(sent.length, 1);
   assert.equal(w.runner.calls.length, 0);
 });
 
@@ -1370,4 +1371,45 @@ test('SCHEMA fix 5: 20 agent ids of 1000 characters and huge migration notes kee
   const st = JSON.parse(text).settings;
   assert.ok(st.migrationNotes.every((n) => n.length <= 200), 'each note is cut to 200 characters');
   assert.equal(Object.keys(st.schema).filter((k) => k.startsWith('agents.') && k.length > 100).length, 0, 'long agent ids get no schema rows');
+});
+
+test('USE.5: task.start renders the task scenario template; a bad user template falls back, with warnings in the reply and status in the snapshot', async (t) => {
+  const w = await world(t);
+  const plan = await w.importPlan();
+  await w.act('plan.start', { planId: plan.id });
+  const a = q1(w.svc, "SELECT * FROM plan_task WHERE plan_id = ? AND status = 'ready' AND dropped_at IS NULL ORDER BY id", plan.id);
+  w.svc.ctx.db.prepare("UPDATE plan_phase SET route = 'claude sonnet medium' WHERE id = ?").run(a.phase_id);
+  w.svc.ctx.db.prepare("UPDATE plan_task SET scenario = 'review' WHERE id = ?").run(a.id);
+  writeFileSync(join(w.repoPath, 'bad.md'), '{{title}} {{nope}}');
+  writeFileSync(join(w.dir, 'mk-settings.json'), JSON.stringify({ schema: 2, work: { specTemplates: { review: 'bad.md' } } }));
+  w.runner.calls.length = 0;
+  const ok = await w.act('task.start', { taskId: a.id });
+  assert.equal(ok.ok, true, JSON.stringify(ok));
+  const tpl = ok.warnings.filter((x) => x.startsWith('spec template'));
+  assert.equal(tpl.length, 1, ok.warnings.join(' | '));
+  assert.match(tpl[0], /spec template for review \(bad\.md\) not used: unknown placeholder \{\{nope\}\}/);
+  const spec = flagsOf(callsOf(w, 'orchestration', 'task-create')[0]).spec;
+  assert.equal(spec.split('\n')[0], `mk-ref: plan:${plan.slug}:${a.code}#1`);
+  assert.match(spec, /Scenario: review\./, 'the explicit scenario picked the review template (the built-in, after the fallback)');
+  assert.ok(spec.includes(`${a.code} ${a.title}`));
+
+  const st = (await get(w.svc, '/api/state').then((x) => x.json())).settings.specTemplates;
+  assert.equal(st.review.ok, false);
+  assert.equal(st.review.path, 'bad.md');
+  assert.equal(st.review.source, 'builtin');
+  assert.match(st.review.issue, /unknown placeholder/);
+  assert.deepEqual(st.fix, { path: '', source: 'builtin', ok: true, issue: null });
+});
+
+test('USE.5: bug.fix passes the template warnings through', async (t) => {
+  const w = await world(t);
+  writeFileSync(join(w.dir, 'mk-settings.json'), JSON.stringify({ schema: 2, work: { specTemplates: { fix: 'gone.md' } } }));
+  await w.act('bug.add', { repoId: 'repo-1', title: 'Rain overlaps', details: 'd', file: 'web/rain.js', line: 7, risk: 2 });
+  const r = await w.act('bug.fix', { bugId: 'B-1' });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.equal(r.warnings.length, 1);
+  assert.match(r.warnings[0], /spec template for fix \(gone\.md\) not used: the file does not exist/);
+  assert.deepEqual(r.bug.warnings, r.warnings);
+  const taskCreate = w.cli.find((c) => c[1] === 'task-create');
+  assert.match(taskCreate[taskCreate.indexOf('--spec') + 1], /Fix bug B-1: Rain overlaps/);
 });

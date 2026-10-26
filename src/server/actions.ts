@@ -16,11 +16,15 @@ import { fileURLToPath } from 'node:url';
 import type { ActionArgs } from '../orca/index.js';
 import { main as cliMain, realOrca } from '../store/cli.js';
 import { one, tx, type Row } from '../store/db.js';
-import { ImportError, importFile, scanInbox } from '../store/import.js';
+import { ImportError, importFile, inboxPlace, scanInbox, type InboxTarget } from '../store/import.js';
 import { droppedV1Key } from '../store/settings-migrate.js';
+import { listValue, pickScenario, renderSpec, rulesLines } from '../store/spec-templates.js';
 import { loadSettings, resetSettings, saveSettings, setting, SettingsError, type Settings } from '../store/settings.js';
-import { CANCELLED_RESULT, cut, fail, J, parseJson, type ActionError, type ActionOutcome, type ServerCtx } from './common.js';
+import { CANCELLED_RESULT, cut, fail, J, parseJson, readSettings, type ActionError, type ActionOutcome, type ServerCtx } from './common.js';
 import { Decisions } from './decisions.js';
+import { Notifier } from './notify.js';
+import { orcaAgentId } from './providers.js';
+import { checkQuota, resolveRoute } from './routes.js';
 import { callOrca, orcaFailure, receiptId } from './orca-call.js';
 import { SCREENS } from './snapshot.js';
 import type { Sync } from './sync.js';
@@ -78,9 +82,11 @@ export class Actions {
   readonly decisions: Decisions;
   private readonly c: ServerCtx;
   private readonly sync: Sync;
+  private readonly notifier: Notifier;
 
-  constructor(ctx: ServerCtx, sync: Sync, decisions: Decisions) {
+  constructor(ctx: ServerCtx, sync: Sync, decisions: Decisions, notifier: Notifier = new Notifier(ctx)) {
     this.c = ctx;
+    this.notifier = notifier;
     this.sync = sync;
     this.decisions = decisions;
   }
@@ -129,7 +135,7 @@ export class Actions {
       case 'settings.reset': return this.settingsReset(a);
       case 'settings.export': return { ok: true, settings: loadSettings(this.c.dir) };
       case 'ui.remember': return this.uiRemember(a);
-      case 'notify.test': return fail('conflict', 'notifier not built yet', { code: 'not_ready' });
+      case 'notify.test': return this.notifier.test();
     }
   }
 
@@ -137,7 +143,7 @@ export class Actions {
 
   private snooze(a: Args): ActionOutcome {
     const id = reqStr(a, 'askId');
-    const minutes = a.minutes === undefined ? 60 : reqInt(a, 'minutes');
+    const minutes = a.minutes === undefined ? setting<number>(readSettings(this.c), 'general.snoozeMinutes') : reqInt(a, 'minutes');
     if (minutes < 1 || minutes > 1440) refuse('bad_args', '"minutes" must be 1 to 1440');
     if (!one(this.c.db, 'SELECT 1 AS x FROM ask WHERE id = ?', id)) refuse('not_found', `no ask ${id}`);
     const until = this.c.clock.now() + minutes * 60_000;
@@ -154,6 +160,11 @@ export class Actions {
   private async planStart(planId: number): Promise<ActionOutcome> {
     const plan = this.plan(planId);
     if (plan.status !== 'imported') refuse('conflict', `plan ${plan.slug} is ${plan.status}; only an imported plan can be started`);
+    const cur = one(this.c.db, 'SELECT fit, missing FROM plan_version WHERE plan_id = ? AND version = ?', planId, plan.version as number);
+    if (cur?.fit === 'partial') {
+      const first = parseJson<string[]>(cur.missing, [])[0] ?? 'the plan does not fit';
+      refuse('conflict', `plan ${plan.slug} is only partly usable: ${first}. Fix the plan or Settings > Routing & Quota, then re-import it.`, { code: 'plan_partial', details: { missing: parseJson<string[]>(cur.missing, []).slice(0, 8) } });
+    }
     const attempt = parseJson<string[]>(plan.past_run_ids, []).length + 1;
     const r = await callOrca(this.c, 'run-create', { objective: cut(plan.title, 200), 'retry-request': `mk-plan-${planId}-run-${attempt}` });
     if (!r.ok) return orcaFailure('Orca could not create the run', r);
@@ -196,22 +207,33 @@ export class Actions {
     return { task, plan, phase };
   }
 
-  private taskSpec(t: Row, plan: Row, phase: Row, attempt: number): string {
+  /** C10: the brief, rendered from the task's scenario template. Template fallbacks land in `warn`. */
+  private taskSpec(t: Row, plan: Row, phase: Row, attempt: number, warn: string[]): string {
     const list = (k: string): string[] => parseJson<string[]>(t[k], []);
-    const lines = [`mk-ref: plan:${plan.slug}:${t.code}#${attempt}`, '', `${t.code} ${t.title}`, `Phase: ${phase.title}`, `Risk: ${t.risk}/5`];
-    if (t.description) lines.push('', String(t.description));
-    if (list('acceptance').length) lines.push('', 'Acceptance:', ...list('acceptance').map((x) => `- ${x}`));
-    if (list('owned').length) lines.push('', `Files you own: ${list('owned').join(', ')}`);
-    if (t.gate) lines.push('', `Gate: ${t.gate}`);
-    if (t.manual) lines.push(`Manual check: ${t.manual}`);
-    return lines.join('\n');
+    const settings = loadSettings(this.c.dir);
+    const repoPath = this.repoPath(String(plan.repo_id));
+    const r = renderSpec({
+      ref: `mk-ref: plan:${plan.slug}:${t.code}#${attempt}`,
+      scenario: pickScenario({ explicit: t.scenario === null ? null : String(t.scenario), attempt }),
+      vals: {
+        code: String(t.code), title: String(t.title), phase: String(phase.title), risk: String(t.risk), size: t.size ? String(t.size) : '',
+        attempt: String(attempt), description: t.description ? String(t.description) : '', acceptance: listValue(list('acceptance')),
+        owned: listValue(list('owned')), deps: listValue(list('deps')), gate: t.gate ? String(t.gate) : '', manual: t.manual ? String(t.manual) : '',
+        repo: repoPath,
+      },
+      rules: rulesLines(settings),
+      settings,
+      env: { dir: this.c.dir, repoPath },
+    });
+    warn.push(...r.warnings);
+    return r.text;
   }
 
   /** task-create in the plan's run, then the row. A replay with the same attempt returns the same Orca task. */
-  private async createOrcaTask(task: Row, plan: Row, phase: Row): Promise<string | ActionOutcome> {
+  private async createOrcaTask(task: Row, plan: Row, phase: Row, warn: string[] = []): Promise<string | ActionOutcome> {
     const attempt = Number(task.attempts) + 1;
     const r = await callOrca(this.c, 'task-create', {
-      spec: this.taskSpec(task, plan, phase, attempt),
+      spec: this.taskSpec(task, plan, phase, attempt, warn),
       'task-title': cut(`${task.code} ${task.title}`, 120),
       run: String(plan.orca_run_id),
       'retry-request': `mk-task-${task.id}-${attempt}`,
@@ -240,30 +262,42 @@ export class Actions {
       const why = task.status === 'failed' || task.status === 'cancelled' ? 'retry it first' : `it is ${task.status}`;
       refuse('conflict', `task ${task.code} cannot start: ${why}`);
     }
-    const route = String(task.route || phase.route || '').trim().split(/\s+/).filter(Boolean);
-    const agent = optStr(a, 'agent', 40) ?? route[0];
-    if (!agent) refuse('bad_args', `task ${task.code} has no route; choose an agent`);
-    const model = optStr(a, 'model', 80) ?? route[1];
-    const effort = optStr(a, 'effort', 20) ?? route[2];
+    const settings = loadSettings(this.c.dir);
+    const resolved = resolveRoute(settings, {
+      args: { agent: optStr(a, 'agent', 40), model: optStr(a, 'model', 80), effort: optStr(a, 'effort', 20) },
+      task: String(task.route ?? ''), phase: String(phase.route ?? ''), size: task.size === null ? null : String(task.size),
+    });
+    if (!resolved.ok) throw new Refuse(resolved.error);
+    const { agent, model, effort } = resolved.route;
 
-    const max = setting<number>(loadSettings(this.c.dir), 'routing.maxLanes');
+    const max = setting<number>(settings, 'routing.maxLanes');
     const live = Number(one(this.c.db, "SELECT COUNT(*) AS n FROM lane WHERE ended_at IS NULL AND state IN ('working','waiting','blocked')")!.n);
     if (live >= max) refuse('conflict', `${live} lanes are already running (the limit is ${max}); raise "Lanes at once" in Settings or wait`, { code: 'max_lanes' });
 
+    const quota = checkQuota(this.c.db, settings, agent);
+    if (quota.refuse) throw new Refuse(quota.refuse);
+    const warnings = quota.warnings;
+
+    const threshold = setting<number>(settings, 'safety.confirmRiskAtLeast');
+    if (Number(task.risk) >= threshold && a.confirm !== true) {
+      refuse('conflict', `task ${task.code} has risk ${task.risk}, at or above "Ask before risk" (${threshold}) in Settings > Safety; confirm to start it`, { code: 'needs_confirm' });
+    }
+
     let orcaTaskId = task.orca_task_id ? String(task.orca_task_id) : '';
     if (!orcaTaskId) {
-      const made = await this.createOrcaTask(task, plan, phase);
+      const made = await this.createOrcaTask(task, plan, phase, warnings);
       if (typeof made !== 'string') return made;
       orcaTaskId = made;
     }
     const attempt = Number(one(this.c.db, 'SELECT attempts FROM plan_task WHERE id = ?', task.id as number)!.attempts);
-    const args: ActionArgs = { task: orcaTaskId, worktree: 'new-child', agent, run: String(plan.orca_run_id), 'retry-request': `mk-start-${task.id}-${attempt}` };
+    const worktree = setting<string>(settings, 'general.mode') === 'solo' ? `path:${this.repoPath(String(plan.repo_id))}` : 'new-child';
+    const args: ActionArgs = { task: orcaTaskId, worktree, agent: orcaAgentId(agent), run: String(plan.orca_run_id), 'retry-request': `mk-start-${task.id}-${attempt}` };
     if (model) args.model = model;
     if (effort) args.effort = effort;
     const r = await callOrca(this.c, 'worker-start', args);
     this.sync.request();
     if (!r.ok) return orcaFailure(`task ${task.code} was created in Orca (${orcaTaskId}) but its worker did not start`, r);
-    return { ok: true, task: { id: task.id, code: task.code, orcaTaskId } };
+    return { ok: true, task: { id: task.id, code: task.code, orcaTaskId }, ...(warnings.length ? { warnings } : {}) };
   }
 
   private async taskRetry(taskId: number): Promise<ActionOutcome> {
@@ -271,10 +305,11 @@ export class Actions {
     if (!['failed', 'cancelled'].includes(String(task.status)) && task.last_state !== 'missing') {
       refuse('conflict', `task ${task.code} is ${task.status}; only a failed, cancelled or missing task can be retried`);
     }
-    const made = await this.createOrcaTask(task, plan, phase);
+    const warnings: string[] = [];
+    const made = await this.createOrcaTask(task, plan, phase, warnings);
     if (typeof made !== 'string') return made;
     this.sync.request();
-    return { ok: true, task: { id: task.id, code: task.code, orcaTaskId: made, attempts: Number(task.attempts) + 1 } };
+    return { ok: true, task: { id: task.id, code: task.code, orcaTaskId: made, attempts: Number(task.attempts) + 1 }, ...(warnings.length ? { warnings } : {}) };
   }
 
   private async taskCancel(taskId: number): Promise<ActionOutcome> {
@@ -300,17 +335,22 @@ export class Actions {
     return String(r.path);
   }
 
+  /** The inbox of a repo under the current settings (`plans.inboxDir`, the agents the route check accepts). */
+  private target(repoId: string): InboxTarget {
+    return { repoId, repoPath: this.repoPath(repoId), settings: readSettings(this.c) };
+  }
+
   private inboxImport(a: Args, reimport: boolean): ActionOutcome {
     const repoId = reqStr(a, 'repoId');
     const name = planFile(reqStr(a, 'name'));
-    const repoPath = this.repoPath(repoId);
+    const t = this.target(repoId);
     if (reimport) {
-      scanInbox(this.c.db, { repoId, repoPath });
-      const f = one(this.c.db, 'SELECT plan_id FROM inbox_file WHERE repo_id = ? AND path = ?', repoId, `inbox/${name}`);
+      scanInbox(this.c.db, t);
+      const f = one(this.c.db, 'SELECT plan_id FROM inbox_file WHERE repo_id = ? AND path = ?', repoId, `${inboxPlace(t).prefix}/${name}`);
       if (!f?.plan_id) refuse('conflict', `${name} has no plan to update; use import`);
     }
     try {
-      const res = importFile(this.c.db, { repoId, repoPath }, name);
+      const res = importFile(this.c.db, t, name);
       return { ok: true, result: res };
     } catch (e) {
       if (e instanceof ImportError) return fail('conflict', e.message, { details: { conflicts: e.conflicts } });
@@ -318,9 +358,10 @@ export class Actions {
     }
   }
 
-  private inboxRoot(a: Args): { repoId: string; name: string; root: string } {
+  private inboxRoot(a: Args): { repoId: string; name: string; root: string; prefix: string; t: InboxTarget } {
     const repoId = reqStr(a, 'repoId');
-    return { repoId, name: planFile(reqStr(a, 'name')), root: join(this.repoPath(repoId), '.matrixkoder', 'inbox') };
+    const t = this.target(repoId);
+    return { repoId, name: planFile(reqStr(a, 'name')), root: inboxPlace(t).folder, prefix: inboxPlace(t).prefix, t };
   }
 
   private fileRow(repoId: string, path: string): Row | undefined {
@@ -328,24 +369,24 @@ export class Actions {
   }
 
   private inboxArchive(a: Args): ActionOutcome {
-    const { repoId, name, root } = this.inboxRoot(a);
+    const { repoId, name, root, prefix, t } = this.inboxRoot(a);
     const src = join(root, name);
     const dst = join(root, 'archive', name);
     if (!existsSync(src)) refuse('not_found', `${name} is not in the inbox`);
     if (existsSync(dst)) refuse('conflict', `${name} already exists in inbox/archive`);
-    scanInbox(this.c.db, { repoId, repoPath: this.repoPath(repoId) });
+    scanInbox(this.c.db, t);
     mkdirSync(join(root, 'archive'), { recursive: true });
     renameSync(src, dst);
     const at = this.c.clock.now();
     tx(this.c.db, () => {
-      this.c.db.prepare("DELETE FROM inbox_file WHERE repo_id = ? AND path = ? AND status IN ('missing','deleted')").run(repoId, `inbox/archive/${name}`);
-      this.c.db.prepare("UPDATE inbox_file SET path = ?, status = 'archived', status_at = ? WHERE repo_id = ? AND path = ?").run(`inbox/archive/${name}`, at, repoId, `inbox/${name}`);
+      this.c.db.prepare("DELETE FROM inbox_file WHERE repo_id = ? AND path = ? AND status IN ('missing','deleted')").run(repoId, `${prefix}/archive/${name}`);
+      this.c.db.prepare("UPDATE inbox_file SET path = ?, status = 'archived', status_at = ? WHERE repo_id = ? AND path = ?").run(`${prefix}/archive/${name}`, at, repoId, `${prefix}/${name}`);
     });
-    return { ok: true, file: this.fileRow(repoId, `inbox/archive/${name}`) ?? null };
+    return { ok: true, file: this.fileRow(repoId, `${prefix}/archive/${name}`) ?? null };
   }
 
   private inboxRestore(a: Args): ActionOutcome {
-    const { repoId, name, root } = this.inboxRoot(a);
+    const { repoId, name, root, prefix, t } = this.inboxRoot(a);
     const src = join(root, 'archive', name);
     const dst = join(root, name);
     if (!existsSync(src)) refuse('not_found', `${name} is not in inbox/archive`);
@@ -353,24 +394,24 @@ export class Actions {
     renameSync(src, dst);
     const at = this.c.clock.now();
     tx(this.c.db, () => {
-      this.c.db.prepare("DELETE FROM inbox_file WHERE repo_id = ? AND path = ? AND status IN ('missing','deleted')").run(repoId, `inbox/${name}`);
-      this.c.db.prepare('UPDATE inbox_file SET path = ?, status_at = ? WHERE repo_id = ? AND path = ?').run(`inbox/${name}`, at, repoId, `inbox/archive/${name}`);
+      this.c.db.prepare("DELETE FROM inbox_file WHERE repo_id = ? AND path = ? AND status IN ('missing','deleted')").run(repoId, `${prefix}/${name}`);
+      this.c.db.prepare('UPDATE inbox_file SET path = ?, status_at = ? WHERE repo_id = ? AND path = ?').run(`${prefix}/${name}`, at, repoId, `${prefix}/archive/${name}`);
     });
-    scanInbox(this.c.db, { repoId, repoPath: this.repoPath(repoId) }); // recompute new or changed
-    return { ok: true, file: this.fileRow(repoId, `inbox/${name}`) ?? null };
+    scanInbox(this.c.db, t); // recompute new or changed
+    return { ok: true, file: this.fileRow(repoId, `${prefix}/${name}`) ?? null };
   }
 
   /** Copy to inbox/.deleted/<name>-<time>/, check the copy is byte for byte the same, then remove the original. */
   private inboxDelete(a: Args): ActionOutcome {
-    const { repoId, name, root } = this.inboxRoot(a);
+    const { repoId, name, root, prefix, t } = this.inboxRoot(a);
     const where = a.location === 'archive' ? 'archive' : '';
     const src = join(root, where, name);
     if (!existsSync(src) || !statSync(src).isFile()) refuse('not_found', `${name} is not in the ${where ? 'archive' : 'inbox'}`);
-    scanInbox(this.c.db, { repoId, repoPath: this.repoPath(repoId) });
+    scanInbox(this.c.db, t);
     const at = this.c.clock.now();
     const base = `${name.replace(/\.md$/, '')}-${stamp(at)}`;
     let leaf = base;
-    for (let n = 2; existsSync(join(root, '.deleted', leaf)) || one(this.c.db, 'SELECT 1 AS x FROM inbox_file WHERE repo_id = ? AND path = ?', repoId, `inbox/.deleted/${leaf}/${name}`); n++) leaf = `${base}-${n}`;
+    for (let n = 2; existsSync(join(root, '.deleted', leaf)) || one(this.c.db, 'SELECT 1 AS x FROM inbox_file WHERE repo_id = ? AND path = ?', repoId, `${prefix}/.deleted/${leaf}/${name}`); n++) leaf = `${base}-${n}`;
     const folder = join(root, '.deleted', leaf);
     mkdirSync(folder, { recursive: true });
     const copy = join(folder, name);
@@ -379,10 +420,10 @@ export class Actions {
       rmSync(folder, { recursive: true, force: true });
       refuse('store_failed', `the copy of ${name} did not match; nothing was deleted`);
     }
-    const rel = `inbox/${where ? 'archive/' : ''}${name}`;
+    const rel = `${prefix}/${where ? 'archive/' : ''}${name}`;
     // row first (it can fail), then remove the original, so a failure never loses the file
     tx(this.c.db, () =>
-      this.c.db.prepare("UPDATE inbox_file SET status = 'deleted', path = ?, status_at = ? WHERE repo_id = ? AND path = ?").run(`inbox/.deleted/${leaf}/${name}`, at, repoId, rel),
+      this.c.db.prepare("UPDATE inbox_file SET status = 'deleted', path = ?, status_at = ? WHERE repo_id = ? AND path = ?").run(`${prefix}/.deleted/${leaf}/${name}`, at, repoId, rel),
     );
     rmSync(src);
     return { ok: true, deletedTo: folder };
@@ -394,7 +435,12 @@ export class Actions {
   private async cli(argv: string[], key: string, slow = false): Promise<ActionOutcome> {
     // An injected runner (tests) stays in this process; the real one is synchronous, so it goes to a child.
     const { code, out, err } = slow && this.c.cliOrca === realOrca ? await this.cliChild(argv) : this.cliInline(argv);
-    if (code === 0) return { ok: true, [key]: parseJson<unknown>(out, null) };
+    if (code === 0) {
+      const parsed = parseJson<unknown>(out, null);
+      // bug.fix: template fallbacks (C10) ride along as the action's own warnings[].
+      const w = key === 'bug' && parsed && typeof parsed === 'object' ? (parsed as { warnings?: unknown }).warnings : undefined;
+      return { ok: true, [key]: parsed, ...(Array.isArray(w) && w.length ? { warnings: w as string[] } : {}) };
+    }
     const message = (err.split('\n').find((l) => l.startsWith('mk:')) ?? err).replace(/^mk:\s*/, '').trim() || 'the command failed';
     if (code === 2) return fail('bad_args', message);
     if (/^no (bug|todo) /.test(message)) return fail('not_found', message);
@@ -408,7 +454,7 @@ export class Actions {
     let err = '';
     const code = cliMain(argv, {
       out: (l) => (out += l),
-      err: (l) => (err += l),
+      err: (l) => (err += `${l}\n`),
       env: { MK_REPORTED_BY: 'user' },
       cwd: this.c.dir,
       orca: this.c.cliOrca,
@@ -495,7 +541,9 @@ export class Actions {
     const dropped = droppedV1Key(patch as Settings);
     if (dropped) refuse('bad_args', `"${dropped}" is a settings v1 key that no longer exists`, { details: { key: dropped } });
     try {
-      return { ok: true, settings: saveSettings(patch as Settings, this.c.dir) };
+      const settings = saveSettings(patch as Settings, this.c.dir);
+      this.sync.retime();
+      return { ok: true, settings };
     } catch (e) {
       if (e instanceof SettingsError) return fail('bad_args', e.message, { details: { issues: e.issues } });
       throw e;
@@ -505,7 +553,9 @@ export class Actions {
   private settingsReset(a: Args): ActionOutcome {
     const section = reqStr(a, 'section', 40);
     try {
-      return { ok: true, settings: resetSettings(section, this.c.dir) };
+      const settings = resetSettings(section, this.c.dir);
+      this.sync.retime();
+      return { ok: true, settings };
     } catch (e) {
       if (e instanceof SettingsError) return fail('bad_args', e.message, { details: { issues: e.issues } });
       throw e;

@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { openDb, tx, nextBugId, nextCounter, dataDir, dbPath, SCHEMA_VERSION } from '../../out/store/db.js';
+import { MIGRATIONS, openDb, tx, nextBugId, nextCounter, dataDir, dbPath, SCHEMA_VERSION } from '../../out/store/db.js';
 import { backupIfDue, prune, runMaintenance } from '../../out/store/maintenance.js';
 import { tmpDataDir, TABLES, VIEWS, INDEXES } from './helpers.mjs';
 
@@ -99,7 +99,7 @@ test('two writers at once (child process plus this one) both commit every row; i
   assert.equal(db.prepare("SELECT COUNT(*) AS c FROM bug WHERE title LIKE 'parent-%'").get().c, N);
   assert.equal(db.prepare("SELECT COUNT(*) AS c FROM bug WHERE title LIKE 'child-%'").get().c, N);
   assert.equal(db.prepare('SELECT COUNT(DISTINCT id) AS c FROM bug').get().c, 2 * N, 'every B-n unique');
-  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM schema_version').get().c, 1, 'migrated exactly once');
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM schema_version').get().c, SCHEMA_VERSION, 'each migration applied exactly once');
   assert.equal(db.prepare('PRAGMA integrity_check').get().integrity_check, 'ok');
   db.close();
 });
@@ -215,4 +215,28 @@ test('prune applies the section 7 rules and never touches bug, todo, plan or cou
   assert.equal(n('SELECT COUNT(*) AS c FROM plan'), 1);
   assert.equal(out.event_log, 100);
   db.close();
+});
+
+test('migration 2: a live v1 database gains plan_task.scenario with existing rows NULL (K6)', () => {
+  const dir = tmpDataDir('db');
+  // Build a v1 database the way the old code did: migration 1 only.
+  const raw = new DatabaseSync(dbPath(dir));
+  raw.exec('PRAGMA foreign_keys = ON');
+  raw.exec(MIGRATIONS[0].sql);
+  raw.prepare('INSERT INTO schema_version(version, applied_at, note) VALUES(1, ?, ?)').run(Date.now(), MIGRATIONS[0].note);
+  const t = Date.now();
+  raw.prepare("INSERT INTO plan(id, slug, repo_id, title, status, created_at, updated_at) VALUES(1,'p','r','P','imported',?,?)").run(t, t);
+  raw.prepare("INSERT INTO plan_phase(id, plan_id, code, ord, title) VALUES(1,1,'A',1,'A')").run();
+  raw.prepare("INSERT INTO plan_task(id, plan_id, phase_id, code, ord, title, created_at, updated_at) VALUES(1,1,1,'A.1',1,'t',?,?)").run(t, t);
+  assert.ok(!raw.prepare('PRAGMA table_info(plan_task)').all().some((c) => c.name === 'scenario'));
+  raw.close();
+
+  const db = openDb(dir);
+  assert.equal(db.prepare('SELECT MAX(version) AS v FROM schema_version').get().v, SCHEMA_VERSION);
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM schema_version').get().c, SCHEMA_VERSION);
+  assert.equal(db.prepare('SELECT scenario FROM plan_task WHERE id = 1').get().scenario, null);
+  assert.throws(() => db.prepare("UPDATE plan_task SET scenario = 'bogus' WHERE id = 1").run(), /CHECK/);
+  db.prepare("UPDATE plan_task SET scenario = 'review' WHERE id = 1").run();
+  db.close();
+  openDb(dir).close(); // a second open does nothing
 });

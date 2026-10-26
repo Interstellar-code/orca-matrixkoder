@@ -84,7 +84,6 @@ export const MODEL_SEED: Record<string, ModelEntry[]> = {
   omp: [],
 };
 
-const DEFAULT_ROUTES = ['claude haiku low', 'claude sonnet medium', 'claude opus high'];
 const NEVER_RUN_DEFAULT = ['git reset --hard', 'git push --force', 'git clean -fdx', 'rm -rf ~', 'npm publish'];
 
 export function defaultSettings(): Settings {
@@ -135,7 +134,7 @@ type Rule =
   | { t: 'str'; nullable?: boolean; max?: number }
   | { t: 'strs'; maxItems: number; itemMax: number }
   | { t: 'time' }
-  | { t: 'route' }
+  | { t: 'route'; def: string }
   | { t: 'relpath'; max: number }
   | { t: 'tpl'; max: number }
   | { t: 'models'; optional: true }
@@ -165,9 +164,9 @@ const RULES: Record<string, Rule> = {
   'agents.*.models': { t: 'models', optional: true },
   'agents.*.model': { t: 'model' },
   'agents.*.effort': { t: 'effort' },
-  'routing.bySize.trivial': { t: 'route' },
-  'routing.bySize.standard': { t: 'route' },
-  'routing.bySize.complex': { t: 'route' },
+  'routing.bySize.trivial': { t: 'route', def: 'claude haiku low' },
+  'routing.bySize.standard': { t: 'route', def: 'claude sonnet medium' },
+  'routing.bySize.complex': { t: 'route', def: 'claude opus high' },
   'routing.maxLanes': int(1, 12),
   'quota.floor.claude.sessionPct': int(0, 100),
   'quota.floor.claude.weeklyPct': int(0, 100),
@@ -284,7 +283,7 @@ function check(rule: Rule, v: Json | undefined, s: Settings, agentId = ''): stri
       const words = v.trim().split(/\s+/);
       if (words.length > 3) return 'must be "agent [model [effort]]"';
       // a route the user never changed is not theirs to fix (a trimmed models list can orphan it; task.start still checks it)
-      if (DEFAULT_ROUTES.includes(v)) return null;
+      if (v === rule.def) return null;
       // C9, with every agent counted as routable: turning an agent off must never make a save fail
       const agents = getPath(s, ['agents']);
       const routable = isObj(agents) ? Object.fromEntries(Object.entries(agents).map(([id, a]) => [id, isObj(a) ? { ...a, routable: true } : a])) : {};
@@ -328,9 +327,12 @@ function check(rule: Rule, v: Json | undefined, s: Settings, agentId = ''): stri
       if (typeof v !== 'string' || (v !== '' && !(EFFORTS as readonly string[]).includes(v))) return `must be one of "", ${EFFORTS.map((x) => JSON.stringify(x)).join(', ')}`;
       const model = getPath(s, ['agents', agentId, 'model']);
       const entry = typeof model === 'string' ? modelsOf(s, agentId).find((m) => m.id === model) : undefined;
-      if (v !== '' && entry && Array.isArray(entry.efforts) && entry.efforts.length > 0 && !entry.efforts.includes(v)) {
-        return `model "${entry.id}" takes ${entry.efforts.map((x) => JSON.stringify(x)).join(', ')} (or empty)`;
-      }
+      if (v === '') return null;
+      // C9: Orca refuses these, so a saved default must never carry them
+      if (agentId === 'omp' || agentId === 'opencode') return `${agentId} does not support an effort`;
+      if (typeof model !== 'string' || model === '') return 'needs a model (--effort requires --model)';
+      if (entry && (!Array.isArray(entry.efforts) || entry.efforts.length === 0)) return `model "${entry.id}" takes no effort (the effort is part of its id)`;
+      if (entry && !entry.efforts.includes(v)) return `model "${entry.id}" takes ${entry.efforts.map((x) => JSON.stringify(x)).join(', ')} (or empty)`;
       return null;
     }
   }

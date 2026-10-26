@@ -175,9 +175,10 @@ test('agent model and effort follow the agent models list', () => {
   // an empty models list accepts any model; the user can also add their own
   const free = saveSettings({ agents: { opencode: { model: 'glm-5', effort: '' } } }, dir);
   assert.equal(free.agents.opencode.model, 'glm-5');
-  const own = saveSettings({ agents: { omp: { models: [{ id: 'mine', efforts: ['low'], note: 'x' }], model: 'mine', effort: 'low' } } }, dir);
+  const own = saveSettings({ agents: { omp: { models: [{ id: 'mine', efforts: ['low'], note: 'x' }], model: 'mine', effort: '' } } }, dir);
   assert.deepEqual(own.agents.omp.models, [{ id: 'mine', efforts: ['low'], note: 'x' }]);
   assert.throws(() => saveSettings({ agents: { omp: { effort: 'high' } } }, dir), /agents\.omp\.effort/);
+  assert.throws(() => saveSettings({ agents: { omp: { model: 'mine', effort: 'low' } } }, dir), /agents\.omp\.effort/, 'omp takes no effort even for a listed model');
   assert.throws(() => saveSettings({ agents: { codex: { model: 'gpt-6-luna', effort: 'ultra' } } }, dir), /agents\.codex\.effort/);
 });
 
@@ -285,4 +286,27 @@ test('describeSettings: agent ids over 40 characters get no schema rows, and 20 
   assert.ok(d['agents.shortid.model']);
   assert.equal(Object.keys(d).filter((k) => k.length > 100).length, 0);
   assert.ok(Buffer.byteLength(JSON.stringify({ schema: d })) < 64 * 1024);
+});
+
+test('USE.1 review fixes: "__proto__" is no agent, an effort C9 refuses is refused at save, a default route exempts only its own key', () => {
+  const s = defaultSettings();
+  const r = checkRoute('__proto__', s);
+  assert.equal(r.ok, false);
+  assert.match(r.issue, /unknown agent/);
+  assert.equal(checkRoute('constructor', s).ok, false);
+  assert.equal(checkRoute('toString', s).ok, false);
+
+  const issues = (patch) => validateSettings(mergeSettings(defaultSettings(), patch)).map((i) => i.key);
+  assert.ok(issues({ agents: { omp: { model: 'm', effort: 'high' } } }).includes('agents.omp.effort'), 'omp takes no effort');
+  assert.ok(issues({ agents: { opencode: { effort: 'low' } } }).includes('agents.opencode.effort'), 'opencode takes no effort');
+  assert.ok(issues({ agents: { codex: { model: '', effort: 'high' } } }).includes('agents.codex.effort'), 'an effort needs a model');
+  assert.ok(issues({ agents: { agy: { model: 'gemini-3.1-pro-high', effort: 'high' } } }).includes('agents.agy.effort'), 'an empty efforts list takes no effort');
+  assert.deepEqual(issues({ agents: { claude: { model: 'opus', effort: 'max' } } }), []);
+  assert.deepEqual(issues({ agents: { omp: { model: 'm', effort: '' } } }), []);
+
+  // a default string is exempt only on its own size; the same text on another size is checked like any other route
+  const trimmed = { agents: { claude: { models: [{ id: 'opus', efforts: ['low'], note: '' }] } } };
+  assert.deepEqual(issues({ ...trimmed, routing: { bySize: { complex: 'claude opus high' } } }), [], 'its own default stays exempt');
+  assert.deepEqual(issues({ ...trimmed, routing: { bySize: { trivial: 'claude opus high' } } }), ['routing.bySize.trivial'], 'another size is checked');
+  assert.deepEqual(issues({ ...trimmed, routing: { bySize: { standard: 'claude haiku low' } } }), ['routing.bySize.standard']);
 });

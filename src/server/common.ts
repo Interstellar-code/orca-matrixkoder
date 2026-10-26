@@ -5,6 +5,7 @@ import { homedir } from 'node:os';
 import type { Db } from '../store/db.js';
 import type { OrcaRunner } from '../store/cli.js';
 import type { Runner } from '../orca/index.js';
+import { defaultSettings, loadSettings, type Settings } from '../store/settings.js';
 
 /** Injected so tests can move time and fire timers by hand. */
 export interface Clock {
@@ -43,10 +44,12 @@ export interface ServerCtx {
   /** The mk CLI's Orca runner (sync). Bug fix and run creation for bugs go through it. */
   cliOrca: OrcaRunner;
   clock: Clock;
-  /** Length of the Undo window for Approve and Answer. */
-  undoMs: number;
+  /** Length of the Undo window for Approve and Answer. Set only by tests; otherwise `general.undoSeconds` (read at each use). */
+  undoMs?: number;
   /** Called after a write the sync loop should hear about (a decision was sent, a plan started). */
   requestSync: () => void;
+  /** Shows one desktop notification (worker.ts fills it with `notifications.show`). Absent = no host; tests stub it. Use the Notifier, not this. */
+  notify?: (n: { title: string; body: string }) => unknown;
   log: (message: string) => void;
 }
 
@@ -110,3 +113,13 @@ export function homeAbbrev(p: string): string {
 
 export const num = (v: unknown): number => (typeof v === 'bigint' ? Number(v) : Number(v ?? 0));
 export const maybeNum = (v: unknown): number | null => (v === null || v === undefined ? null : Number(v));
+
+/** The user's settings, or the defaults when mk-settings.json cannot be read (a bad value must not stop a sync or an import). */
+export function readSettings(c: Pick<ServerCtx, 'dir' | 'log'>): Settings {
+  try {
+    return loadSettings(c.dir);
+  } catch (e) {
+    c.log(`[settings] mk-settings.json was not used: ${(e as Error).message}`);
+    return defaultSettings();
+  }
+}

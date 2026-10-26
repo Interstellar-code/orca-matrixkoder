@@ -4,7 +4,7 @@
  * runs it in memory and the first `saveSettings` replaces the file (after copying it to mk-settings.v1.bak.json).
  * Only v1 values that differ from V1_DEFAULTS are carried, so a user who never touched a v1 default gets the v2 one.
  */
-import { defaultSettings, getPath, mergeSettings, normalizeValue, validateSettings, SETTINGS_SCHEMA, UNSAFE_KEYS, type Json, type Settings } from './settings.js';
+import { defaultSettings, EFFORTS, getPath, mergeSettings, normalizeValue, validateSettings, SETTINGS_SCHEMA, UNSAFE_KEYS, type Json, type Settings } from './settings.js';
 
 /** The v1 defaults, moved here from settings.ts. */
 export const V1_DEFAULTS: Settings = {
@@ -172,6 +172,13 @@ export function migrateV1(v1: Settings): Migrated {
       const [, id, field] = agent;
       // v1 defaults for agents missing from V1_DEFAULTS do not exist, so any value is carried
       if (field === 'model' && typeof value === 'string') value = value.trim();
+      if (field === 'effort') {
+        // the cross-field C9 rules (needs a model, omp/opencode, empty efforts) run in the final pass below, once every field is in
+        if (same(value, getPath(V1_DEFAULTS, path.split('.')))) return;
+        if (typeof value === 'string' && (value === '' || (EFFORTS as readonly string[]).includes(value))) setPath(out, `agents.${id}.effort`, value);
+        else notes.push(`${path}: unusable value ${JSON.stringify(value)?.slice(0, 40)}; the default for agents.${id}.effort was used`);
+        return;
+      }
       return carry(path, `agents.${id}.${field}`, value);
     }
     if (isObj(value)) {
@@ -219,26 +226,6 @@ export function migrateV1(v1: Settings): Migrated {
     }
   }
 
-  // C9 refuses an effort for omp and opencode, for a model with no effort levels, and for no model at all: do not carry one.
-  if (isObj(out.agents)) {
-    const merged = mergeSettings(defaults, out);
-    const all = isObj(merged.agents) ? merged.agents : {};
-    for (const [id, a] of Object.entries(out.agents)) {
-      if (!isObj(a) || typeof a.effort !== 'string' || a.effort === '') continue;
-      const cfg = all[id];
-      const model = isObj(cfg) && typeof cfg.model === 'string' ? cfg.model : '';
-      const list = isObj(cfg) && Array.isArray(cfg.models) ? cfg.models.filter(isObj) : [];
-      const why =
-        id === 'omp' || id === 'opencode' ? `${id} does not support an effort`
-        : model === '' ? 'it has no model, and an effort needs one'
-        : list.length > 0 && list.every((m) => !Array.isArray(m.efforts) || m.efforts.length === 0) ? `${id} models take no effort (it is part of the model id)`
-        : null;
-      if (why) {
-        notes.push(`agents.${id}.effort: ${JSON.stringify(a.effort)} was dropped, ${why}`);
-        a.effort = '';
-      }
-    }
-  }
   return { settings: out, notes };
 }
 

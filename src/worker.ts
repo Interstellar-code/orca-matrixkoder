@@ -132,6 +132,7 @@ export async function registerCommandModules(context: PluginContext, keeper: Ser
 let active: PluginContext | null = null;
 const keeper = createServiceKeeper(() => startService({
   log: (m) => (active ? active.log(m) : console.log(m)),
+  notify: (n) => active?.host.call('notifications.show', n),
   keepAlive: () => active?.host.call('workspace.readContext'),
 }));
 
@@ -155,10 +156,12 @@ export default async function activate(context: PluginContext): Promise<void> {
     keeper.current()?.sync.onAgentStatus(event);
 
     if (event.state === 'done') {
-      await host.call('notifications.show', {
-        title: 'MatrixKoder: Lane Verified',
-        body: `Worker in pane ${event.paneKey} has completed its task turn.`
-      });
+      await keeper.current()?.notifier.notify(
+        'laneDone',
+        `laneDone:${event.paneKey}:${Math.floor((event.receivedAt || Date.now()) / 60_000)}`,
+        'MatrixKoder: Lane Verified',
+        `Worker in pane ${event.paneKey} has completed its task turn.`,
+      );
     }
   });
 

@@ -7,7 +7,9 @@
  * and the snapshot rebuilt, down to one row per list.
  */
 import { all, one, type Db, type Row } from '../store/db.js';
-import { defaultSettings, describeSettings, loadSettingsDetailed, setting, SPEC_SCENARIOS, type Settings } from '../store/settings.js';
+import { defaultSettings, describeSettings, loadSettingsDetailed, setting, type Settings } from '../store/settings.js';
+import { templateStatuses } from '../store/spec-templates.js';
+import { providerOf } from './providers.js';
 import { cut, homeAbbrev, maybeNum, num, parseJson, type ServerCtx } from './common.js';
 
 export const SCREENS = ['projects', 'overview', 'lanes', 'plan', 'waiting', 'events', 'inbox', 'bugs', 'todo', 'settings'] as const;
@@ -481,6 +483,11 @@ class Builder {
     return { new: n('new') + n('changed'), imported: n('imported'), archived: n('archived') };
   }
 
+  /** `plans.inboxDir`, relative to the repo root. */
+  private inboxRel(): string {
+    return setting<string>(this.settings as Settings, 'plans.inboxDir');
+  }
+
   private inboxFull(): Obj {
     const rows = all(
       this.db,
@@ -490,7 +497,7 @@ class Builder {
     );
     return {
       ...this.inboxCounts(),
-      dir: this.repo ? `${homeAbbrev(String(this.repo.path))}/.matrixkoder/inbox` : null,
+      dir: this.repo ? `${homeAbbrev(String(this.repo.path))}/${this.inboxRel()}` : null,
       files: rows.map((f) => ({
         id: Number(f.id), name: String(f.name), title: f.title === null ? null : cut(f.title, 120), editedAt: Number(f.mtime), check: String(f.fit),
         missing: parseJson<string[]>(f.missing, []).slice(0, 8).map((m) => cut(m, 80)), state: String(f.status), planId: f.plan_id ?? null, planSlug: f.plan_slug ?? null,
@@ -554,7 +561,6 @@ class Builder {
   // ---------------------------------------------------------------- settings
 
   private settingsBlock(): Obj {
-    const providerOf: Record<string, string> = { claude: 'claude', codex: 'codex', agy: 'antigravity', opencode: 'opencodeGo', gemini: 'gemini' };
     const quota = all(this.db, 'SELECT * FROM quota');
     const clis = all(this.db, 'SELECT * FROM agent_cli ORDER BY agent_id');
     return {
@@ -562,11 +568,10 @@ class Builder {
       schema: describeSettings(this.settings as Settings),
       migrationNotes: this.migrationNotes.slice(0, 40).map((n) => cut(n, 200)),
       lastScreen: one(this.db, "SELECT value FROM kv WHERE key = 'panel.lastScreen'")?.value ?? null,
-      // placeholder until USE.5 fills in the real template status for the active repo (C10)
-      specTemplates: Object.fromEntries(SPEC_SCENARIOS.map((k) => [k, { path: '', source: 'builtin', ok: true, issue: null }])),
+      specTemplates: templateStatuses(this.settings as Settings, { dir: this.c.dir, repoPath: String(this.repo?.path ?? '') }),
       agents: clis.map((a) => ({
         id: String(a.agent_id), found: num(a.found) === 1, cli: a.cli_path ?? null, version: a.version ?? null,
-        quota: quota.filter((q) => q.provider === providerOf[String(a.agent_id)]).map((q) => ({
+        quota: quota.filter((q) => q.provider === providerOf(String(a.agent_id))).map((q) => ({
           label: q.win === 'session' ? (q.window_minutes === 300 ? '5h window' : 'Session') : q.win === 'weekly' ? 'Weekly' : 'Monthly',
           leftPct: q.used_percent === null ? null : Math.max(0, Math.round(100 - Number(q.used_percent))), resetsAt: maybeNum(q.resets_at),
           note: q.error ? cut(q.error, 80) : null,
@@ -574,7 +579,7 @@ class Builder {
       })),
       baseBranch: this.repo?.base_ref ?? 'main',
       dataDir: homeAbbrev(this.c.dir),
-      inboxDir: this.repo ? `${homeAbbrev(String(this.repo.path))}/.matrixkoder/inbox` : null,
+      inboxDir: this.repo ? `${homeAbbrev(String(this.repo.path))}/${this.inboxRel()}` : null,
       version: this.info.version,
     };
   }

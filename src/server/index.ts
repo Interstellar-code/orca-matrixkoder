@@ -10,8 +10,9 @@ import { realOrca, type OrcaRunner } from '../store/cli.js';
 import { dataDir, openDb } from '../store/db.js';
 import { runMaintenance } from '../store/maintenance.js';
 import { Actions, ACTION_NAMES } from './actions.js';
-import { realClock, type ActionOutcome, type Clock, type CliProber, type GitRunner, type ServerCtx } from './common.js';
+import { readSettings, realClock, type ActionOutcome, type Clock, type CliProber, type GitRunner, type ServerCtx } from './common.js';
 import { Decisions } from './decisions.js';
+import { Notifier } from './notify.js';
 import { startHttp, type DashboardServer } from './http.js';
 import { buildState, eventDetail, eventsPage, type StateQuery } from './snapshot.js';
 import { Sync } from './sync.js';
@@ -30,10 +31,13 @@ export interface ServiceOptions {
   /** The dashboard page's folder. Default: web/ next to the worker's own out/ folder, never the repo. */
   webDir?: string;
   undoMs?: number;
+  /** Shows one desktop notification: `{title, body}`. Default: none (the notifier then sends nothing). */
+  notify?: (n: { title: string; body: string }) => unknown;
   /** false in tests: no timers, no first pull. */
   loops?: boolean;
   fastMs?: number;
   slowMs?: number;
+  filesMs?: number;
   /** Called every 60 s so Orca does not reap the idle worker (a cheap host call). */
   keepAlive?: () => unknown;
   keepAliveMs?: number;
@@ -47,6 +51,7 @@ export interface Service {
   readonly ctx: ServerCtx;
   readonly sync: Sync;
   readonly actions: Actions;
+  readonly notifier: Notifier;
   /** The same data as GET /api/state, for the mk.state worker command. */
   state(q?: StateQuery): unknown;
   events(q?: { before?: number; limit?: number }): unknown;
@@ -80,13 +85,15 @@ export async function startService(opts: ServiceOptions = {}): Promise<Service> 
     runner: opts.runner ?? execOrca,
     cliOrca: opts.cliOrca ?? realOrca,
     clock: opts.clock ?? realClock,
-    undoMs: opts.undoMs ?? 10_000,
+    undoMs: opts.undoMs,
     requestSync: () => sync.request(),
+    notify: opts.notify,
     log,
   };
-  sync = new Sync(ctx, { git: opts.git, probeCli: opts.probeCli });
+  const notifier = new Notifier(ctx);
+  sync = new Sync(ctx, { git: opts.git, probeCli: opts.probeCli, notifier });
   const decisions = new Decisions(ctx);
-  const actions = new Actions(ctx, sync, decisions);
+  const actions = new Actions(ctx, sync, decisions, notifier);
   const version = pluginVersion();
 
   const state = (q: StateQuery = {}): unknown => buildState(ctx, q, { version });
@@ -98,7 +105,7 @@ export async function startService(opts: ServiceOptions = {}): Promise<Service> 
 
   let keep: NodeJS.Timeout | null = null;
   if (opts.loops !== false) {
-    sync.start({ fastMs: opts.fastMs, slowMs: opts.slowMs });
+    sync.start({ fastMs: opts.fastMs, slowMs: opts.slowMs, filesMs: opts.filesMs });
     if (opts.keepAlive) {
       const ping = opts.keepAlive;
       keep = setInterval(() => {
@@ -117,13 +124,13 @@ export async function startService(opts: ServiceOptions = {}): Promise<Service> 
   const replayed = await decisions.replay();
   if (replayed.ran || replayed.expired || replayed.scheduled) log(`[decisions] replay: ${replayed.ran} sent, ${replayed.expired} expired, ${replayed.scheduled} waiting`);
   try {
-    runMaintenance(db, dir, ctx.clock.now());
+    runMaintenance(db, dir, ctx.clock.now(), readSettings(ctx));
   } catch (e) {
     log(`[maintenance] ${(e as Error).message}`);
   }
 
   return {
-    url: http.url, port: http.port, token: http.token, ctx, sync, actions,
+    url: http.url, port: http.port, token: http.token, ctx, sync, actions, notifier,
     state, events, event, action,
     async close() {
       if (keep) clearInterval(keep);

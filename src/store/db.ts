@@ -9,6 +9,7 @@ import { mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { SCHEMA_V1 } from './schema-v1.js';
+import { SCHEMA_V2 } from './schema-v2.js';
 
 export type Db = DatabaseSync;
 export type Row = Record<string, string | number | bigint | Uint8Array | null>;
@@ -20,7 +21,10 @@ export interface Migration {
 }
 
 /** Ordered list; add a new entry (never edit an old one) to change the schema. */
-export const MIGRATIONS: Migration[] = [{ version: 1, note: 'schema v1', sql: SCHEMA_V1 }];
+export const MIGRATIONS: Migration[] = [
+  { version: 1, note: 'schema v1', sql: SCHEMA_V1 },
+  { version: 2, note: 'plan_task.scenario', sql: SCHEMA_V2 },
+];
 
 export const SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version;
 

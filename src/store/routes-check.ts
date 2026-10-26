@@ -33,8 +33,11 @@ export function checkRoute(route: string | RouteParts, settings: Settings): Rout
   const model = parts.model ?? '';
   const effort = parts.effort ?? '';
   if (parts.extra.length) return bad(`too many words; a route is "agent [model [effort]]"`);
+  for (const [what, v] of [['model', model], ['effort', effort]] as const) {
+    if (v.startsWith('-') || /\s/.test(v)) return bad(`${what} "${v}" is not allowed (it must not start with "-" or contain spaces)`);
+  }
   const agents = isObj(settings.agents) ? settings.agents : {};
-  const cfg = agents[agent];
+  const cfg = Object.hasOwn(agents, agent) ? agents[agent] : undefined; // own keys only: "__proto__" is not an agent
   if (!agent || !isObj(cfg)) return bad(`unknown agent "${agent}"`);
   if (cfg.routable === false) return bad(`agent "${agent}" is not routable (turn it on under Settings > Routing & Quota)`);
   const list = (Array.isArray(cfg.models) ? cfg.models : []).filter((m): m is { [k: string]: Json } => isObj(m) && typeof m.id === 'string');
