@@ -27,6 +27,8 @@ import type {
 } from '../orca/index.js';
 import { all, one, tx, type Db } from '../store/db.js';
 import { scanInbox } from '../store/import.js';
+import { loadSettings, setting } from '../store/settings.js';
+import { Notifier } from './notify.js';
 import { CANCELLED_RESULT, cut, isoToMs, J, type CliProbe, type CliProber, type GitRunner, type ServerCtx } from './common.js';
 import { deriveLaneState, recomputeBugs, recomputePlanTasks } from './status.js';
 
@@ -63,13 +65,20 @@ export interface SyncOptions {
   probeCli?: CliProber;
   /** How long to wait after an Orca event before pulling (default 500 ms). */
   debounceMs?: number;
+  /** Sends the notifications sync raises (default: one built from the context). */
+  notifier?: Notifier;
 }
+
+type Alert = Parameters<Notifier['notify']>;
 
 export class Sync {
   private readonly c: ServerCtx;
   private readonly git: GitRunner;
   private readonly probe: CliProber;
   private readonly debounceMs: number;
+  private readonly notifier: Notifier;
+  /** Notifications noticed inside a transaction; sent by `flushAlerts` once it has committed. */
+  private alerts: Alert[] = [];
   private readonly misses = new Map<string, number>();
   private readonly lastTool = new Map<number, string>();
   private queue: Promise<unknown> = Promise.resolve();
@@ -82,6 +91,7 @@ export class Sync {
     this.git = opts.git ?? execGit;
     this.probe = opts.probeCli ?? execProbe;
     this.debounceMs = opts.debounceMs ?? 500;
+    this.notifier = opts.notifier ?? new Notifier(ctx);
   }
 
   private get db(): Db {
@@ -289,7 +299,9 @@ export class Sync {
     tx(this.db, () => this.reconcileLanes(at));
     recomputePlanTasks(this.db, at);
     recomputeBugs(this.db, at);
+    this.collectStalls(at);
     await this.pullGit();
+    await this.flushAlerts();
   }
 
   private applyPs(p: WorktreePsProjection, at: number, paneKeys: Set<string>): number {
@@ -422,14 +434,20 @@ export class Sync {
       // the dashboard's own cancel (actions.ts taskCancel) sets result "cancelled"; free text that merely mentions it is not a cancel
       return t ? { state: t.status, cancelled: t.status === 'failed' && (t.result ?? '').trim().toLowerCase() === CANCELLED_RESULT } : { state: 'missing', cancelled: false };
     };
-    for (const row of all(db, 'SELECT id, orca_task_id, last_state, status FROM plan_task WHERE orca_run_id = ? AND orca_task_id IS NOT NULL AND dropped_at IS NULL', runId)) {
+    for (const row of all(db, 'SELECT id, code, title, orca_task_id, last_state, status FROM plan_task WHERE orca_run_id = ? AND orca_task_id IS NOT NULL AND dropped_at IS NULL', runId)) {
       const { state, cancelled } = stateOf(String(row.orca_task_id));
-      if (state !== row.last_state) db.prepare('UPDATE plan_task SET last_state = ?, last_state_at = ?, updated_at = ? WHERE id = ?').run(state, at, at, row.id as number);
+      if (state !== row.last_state) {
+        db.prepare('UPDATE plan_task SET last_state = ?, last_state_at = ?, updated_at = ? WHERE id = ?').run(state, at, at, row.id as number);
+        if (state === 'failed' && !cancelled) this.alert('taskFailed', `taskFailed:plan_task:${row.id}:${row.orca_task_id}`, 'MatrixKoder: task failed', `${String(row.code)} ${cut(String(row.title), 120)} failed.`);
+      }
       if (cancelled && row.status !== 'cancelled') db.prepare("UPDATE plan_task SET status = 'cancelled', updated_at = ? WHERE id = ?").run(at, row.id as number);
     }
-    for (const row of all(db, 'SELECT id, orca_task_id, last_state FROM bug WHERE orca_run_id = ? AND orca_task_id IS NOT NULL', runId)) {
-      const { state } = stateOf(String(row.orca_task_id));
-      if (state !== row.last_state) db.prepare('UPDATE bug SET last_state = ?, last_state_at = ? WHERE id = ?').run(state, at, String(row.id));
+    for (const row of all(db, 'SELECT id, title, orca_task_id, last_state FROM bug WHERE orca_run_id = ? AND orca_task_id IS NOT NULL', runId)) {
+      const { state, cancelled } = stateOf(String(row.orca_task_id));
+      if (state !== row.last_state) {
+        db.prepare('UPDATE bug SET last_state = ?, last_state_at = ? WHERE id = ?').run(state, at, String(row.id));
+        if (state === 'failed' && !cancelled) this.alert('taskFailed', `taskFailed:bug:${row.id}:${row.orca_task_id}`, 'MatrixKoder: bug fix failed', `${String(row.id)} ${cut(String(row.title), 120)}: the fix task failed.`);
+      }
     }
     return tl.tasks.length;
   }
@@ -527,6 +545,7 @@ export class Sync {
          ON CONFLICT(id) DO UPDATE SET title=excluded.title, body=excluded.body, options=excluded.options, orca_status=excluded.orca_status,
            resolution=excluded.resolution, resolved_at=excluded.resolved_at, orca_task_id=excluded.orca_task_id, last_seen_at=excluded.last_seen_at, gone_at=NULL`,
       ).run(g.id, runId, g.taskId || null, title || '(no title)', body, J(g.options), status, g.resolution === null ? null : cut(g.resolution, 300), isoToMs(g.createdAt) ?? at, isoToMs(g.resolvedAt), at, at);
+      if (!had && status === 'pending') this.alert('ask', `ask:${g.id}`, 'MatrixKoder: waiting for you', title || '(no title)', runId);
       if (!had && status === 'pending') this.addEvent('ask', isoToMs(g.createdAt) ?? at, `gate: ${title}`, null, `ask:${g.id}`, repoRow ? String(repoRow.repo_id) : null, { kind: 'gate', task: g.taskId });
     }
     for (const a of all(db, "SELECT id FROM ask WHERE kind = 'gate' AND run_id = ? AND gone_at IS NULL", runId)) {
@@ -574,6 +593,7 @@ export class Sync {
         const reply = msgs.find((r) => r.sequence > m.sequence && r.threadId === thread && r.to === m.from && r.type !== 'heartbeat' && r.type !== 'question');
         const prev = one(db, 'SELECT orca_status FROM ask WHERE id = ?', m.id);
         const status = reply || prev?.orca_status === 'answered' ? 'answered' : 'pending';
+        if (!prev && status === 'pending') this.alert('ask', `ask:${m.id}`, 'MatrixKoder: waiting for you', title || '(question)', m.runId);
         db.prepare(
           `INSERT INTO ask(id, kind, run_id, orca_task_id, dispatch_id, thread_id, title, body, options, orca_status, asked_at, resolved_at, first_seen_at, last_seen_at)
            VALUES(?,'question',?,?,?,?,?,?,?,?,?,?,?,?)
@@ -718,6 +738,43 @@ export class Sync {
     this.applyResult('hosts', t0, hosts, (v) => this.applyHosts(v, at));
     await this.refreshBaseRefs();
     await this.probeAgentClis();
+    await this.flushAlerts();
+  }
+
+  // ---------------------------------------------------------------- notifications (C6)
+
+  private alert(...a: Alert): void {
+    this.alerts.push(a);
+  }
+
+  /** Send what the apply steps noticed. Runs outside the transactions: a send is async and may type into a terminal. */
+  private async flushAlerts(): Promise<void> {
+    const todo = this.alerts;
+    this.alerts = [];
+    for (const a of todo) {
+      try {
+        await this.notifier.notify(...a);
+      } catch (e) {
+        this.c.log(`[notify] ${(e as Error).message}`);
+      }
+    }
+  }
+
+  /** A dispatch lane whose worker is still going but has sent no heartbeat for `lanes.stallMinutes`. */
+  private collectStalls(at: number): void {
+    const limit = setting<number>(loadSettings(this.c.dir), 'lanes.stallMinutes') * 60_000;
+    const rows = all(
+      this.db,
+      `SELECT lane_key, label, last_heartbeat_at FROM lane
+        WHERE kind = 'dispatch' AND ended_at IS NULL AND last_heartbeat_at IS NOT NULL
+          AND (worker_state IS NULL OR worker_state IN ('starting','ready','start_unknown'))`,
+    );
+    for (const l of rows) {
+      const beat = Number(l.last_heartbeat_at);
+      if (at - beat <= limit) continue;
+      const mins = Math.floor((at - beat) / 60_000);
+      this.alert('stall', `stall:${String(l.lane_key)}:${beat}`, 'MatrixKoder: lane may be stuck', `Lane ${String(l.label)} has sent no heartbeat for ${mins} minutes.`);
+    }
   }
 
   private applyRepos(r: RepoListProjection, at: number): number {
@@ -753,8 +810,22 @@ export class Sync {
         n++;
       }
     }
+    this.collectLowQuota();
     void at;
     return n;
+  }
+
+  /** quotaLow: a pulled window with less left than its floor (the same floors task.start checks). One alert per reset of the window. */
+  private collectLowQuota(): void {
+    const settings = loadSettings(this.c.dir);
+    for (const q of all(this.db, 'SELECT provider, win, used_percent, resets_at FROM quota WHERE used_percent IS NOT NULL')) {
+      const key = q.win === 'session' ? 'sessionPct' : q.win === 'weekly' ? 'weeklyPct' : null;
+      if (!key) continue;
+      const group = q.provider === 'claude' ? 'claude' : 'others';
+      const floor = setting<number>(settings, `quota.floor.${group}.${key}`);
+      const left = Math.max(0, Math.round(100 - Number(q.used_percent)));
+      if (left < floor) this.alert('quotaLow', `quotaLow:${String(q.provider)}:${String(q.win)}:${q.resets_at ?? 'none'}`, 'MatrixKoder: quota running low', `${String(q.provider)} ${String(q.win)} quota is at ${left}% left (floor ${floor}%).`);
+    }
   }
 
   private applyHosts(h: HostListProjection, at: number): number {

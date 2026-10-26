@@ -1188,13 +1188,16 @@ test('T3: the snapshot settings block carries values, schema, migrationNotes and
   assert.ok(migrated.migrationNotes.some((n) => n.includes('lanes.stallMinutes')));
 });
 
-test('T3: notify.test is a stub that refuses with conflict / not_ready and sends nothing', async (t) => {
+test('T3: notify.test goes through the notifier: one notification with a host, a no_host refusal without one, no Orca call either way', async (t) => {
   const w = await world(t);
   const r = await w.act('notify.test', {});
   assert.equal(r.ok, false);
   assert.equal(r.error.kind, 'conflict');
-  assert.equal(r.error.code, 'not_ready');
-  assert.match(r.error.message, /notifier not built yet/);
+  assert.equal(r.error.code, 'no_host');
+  const sent = [];
+  w.svc.ctx.notify = (n) => { sent.push(n); };
+  assert.deepEqual(await w.act('notify.test', {}), { ok: true, sent: true });
+  assert.equal(sent.length, 1);
   assert.equal(w.runner.calls.length, 0);
 });
 

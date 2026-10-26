@@ -47,6 +47,8 @@ export interface ServerCtx {
   undoMs: number;
   /** Called after a write the sync loop should hear about (a decision was sent, a plan started). */
   requestSync: () => void;
+  /** Shows one desktop notification (worker.ts fills it with `notifications.show`). Absent = no host; tests stub it. Use the Notifier, not this. */
+  notify?: (n: { title: string; body: string }) => unknown;
   log: (message: string) => void;
 }
 

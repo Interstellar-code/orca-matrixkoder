@@ -21,6 +21,7 @@ import { droppedV1Key } from '../store/settings-migrate.js';
 import { loadSettings, resetSettings, saveSettings, setting, SettingsError, type Settings } from '../store/settings.js';
 import { CANCELLED_RESULT, cut, fail, J, parseJson, type ActionError, type ActionOutcome, type ServerCtx } from './common.js';
 import { Decisions } from './decisions.js';
+import { Notifier } from './notify.js';
 import { orcaAgentId } from './providers.js';
 import { checkQuota, resolveRoute } from './routes.js';
 import { callOrca, orcaFailure, receiptId } from './orca-call.js';
@@ -80,9 +81,11 @@ export class Actions {
   readonly decisions: Decisions;
   private readonly c: ServerCtx;
   private readonly sync: Sync;
+  private readonly notifier: Notifier;
 
-  constructor(ctx: ServerCtx, sync: Sync, decisions: Decisions) {
+  constructor(ctx: ServerCtx, sync: Sync, decisions: Decisions, notifier: Notifier = new Notifier(ctx)) {
     this.c = ctx;
+    this.notifier = notifier;
     this.sync = sync;
     this.decisions = decisions;
   }
@@ -131,7 +134,7 @@ export class Actions {
       case 'settings.reset': return this.settingsReset(a);
       case 'settings.export': return { ok: true, settings: loadSettings(this.c.dir) };
       case 'ui.remember': return this.uiRemember(a);
-      case 'notify.test': return fail('conflict', 'notifier not built yet', { code: 'not_ready' });
+      case 'notify.test': return this.notifier.test();
     }
   }
 
