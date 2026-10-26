@@ -1185,4 +1185,37 @@ describe('Settings screens integration tests (T9)', () => {
     })()`);
     assert.equal(dialogClosed, true, 'Confirm dialog must be closed after confirmation');
   });
+
+  test('Plan screen shows Retry, not Start, on a failed task that has no Orca task', async () => {
+    const baseSnap = await evaluate('window.MK.getState()');
+    const failedSnap = JSON.parse(JSON.stringify(baseSnap));
+    const tasks = (failedSnap.plan?.phases ?? []).flatMap((ph) => ph.tasks ?? []);
+    assert.ok(tasks.length > 0, 'fixture plan must have tasks');
+    for (const t of tasks) {
+      t.status = 'failed';
+      delete t.orcaTaskId;
+      delete t.orca_task_id;
+    }
+    devServer.setSnapshot(failedSnap);
+    try {
+      await evaluate('window.MK.refresh()');
+      await evaluate('window.MK.go("Plan")');
+      await new Promise((r) => setTimeout(r, 200));
+      const counts = await evaluate(`(() => {
+        const host = document.querySelector('[data-screen="Plan"]');
+        if (!host || !host.shadowRoot) return null;
+        const btns = Array.from(host.shadowRoot.querySelectorAll('button'));
+        return {
+          start: btns.filter((b) => b.getAttribute('aria-label') === 'Start task').length,
+          retry: btns.filter((b) => (b.textContent || '').trim() === 'Retry task').length,
+        };
+      })()`);
+      assert.ok(counts, 'Plan screen must render');
+      assert.ok(counts.retry > 0, 'a failed task shows Retry task');
+      assert.equal(counts.start, 0, 'a failed task with no Orca task must not show Start task');
+    } finally {
+      devServer.setSnapshot(baseSnap);
+      await evaluate('window.MK.refresh()');
+    }
+  });
 });

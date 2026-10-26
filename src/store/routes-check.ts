@@ -2,7 +2,7 @@
  * Route check (contract C9): is "agent [model [effort]]" something Orca can launch, given the user's settings?
  * Used by plan import and by `task.start`. Pure; it reads only the settings object it is given.
  */
-import type { Json, Settings } from './settings.js';
+import { setting, type Json, type Settings } from './settings.js';
 
 export type RouteCheck = { ok: true } | { ok: false; issue: string };
 
@@ -39,8 +39,9 @@ export function checkRoute(route: string | RouteParts, settings: Settings): Rout
   const agents = isObj(settings.agents) ? settings.agents : {};
   const cfg = Object.hasOwn(agents, agent) ? agents[agent] : undefined; // own keys only: "__proto__" is not an agent
   if (!agent || !isObj(cfg)) return bad(`unknown agent "${agent}"`);
-  if (cfg.routable === false) return bad(`agent "${agent}" is not routable (turn it on under Settings > Routing & Quota)`);
-  const list = (Array.isArray(cfg.models) ? cfg.models : []).filter((m): m is { [k: string]: Json } => isObj(m) && typeof m.id === 'string');
+  if (setting<boolean>(settings, `agents.${agent}.routable`) === false) return bad(`agent "${agent}" is not routable (turn it on under Settings > Routing & Quota)`);
+  const models = setting<Json>(settings, `agents.${agent}.models`);
+  const list = (Array.isArray(models) ? models : []).filter((m): m is { [k: string]: Json } => isObj(m) && typeof m.id === 'string');
   const entry = model ? list.find((m) => m.id === model) : undefined;
   if (model && list.length > 0 && !entry) return bad(`model "${model}" is not in the ${agent} model list`);
   if (effort) {

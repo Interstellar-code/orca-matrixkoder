@@ -291,7 +291,7 @@ class Component extends DCLogic {
         const canRetry = t.status === 'failed';
         const hasOrcaTask = Boolean(t.orcaTaskId || t.orca_task_id);
         const isDone = t.status === 'done' || t.status === 'completed';
-        const canStart = !hasOrcaTask && !isDone;
+        const canStart = !hasOrcaTask && !isDone && t.status !== 'failed';
         const tIdVal = (typeof t.id === 'number' || (typeof t.id === 'string' && /^\d+$/.test(t.id))) ? Number(t.id) : (t.id ?? t.code);
 
         return {

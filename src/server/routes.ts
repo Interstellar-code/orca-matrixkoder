@@ -61,15 +61,17 @@ export function resolveRoute(settings: Settings, input: RouteInput): Resolved {
     source = size ? 'size' : 'standard';
   }
   const parsed = source === 'args' ? { agent: args.agent as string, model: args.model, effort: args.effort, extra: [] as string[] } : parseRoute(text);
-  const cfg = isObj(settings.agents) && Object.hasOwn(settings.agents, parsed.agent) ? settings.agents[parsed.agent] : undefined;
-  const dflt = (k: 'model' | 'effort'): string => (isObj(cfg) && typeof cfg[k] === 'string' ? (cfg[k] as string) : '');
+  const dflt = (k: 'model' | 'effort'): string => {
+    const v = setting<string>(settings, `agents.${parsed.agent}.${k}`);
+    return typeof v === 'string' ? v : '';
+  };
   const route: Route = { agent: parsed.agent, model: parsed.model || dflt('model'), effort: parsed.effort || dflt('effort') };
   const from = { args: 'the request', task: 'the task route', phase: 'the phase route', size: 'Settings > Routing', standard: 'Settings > Routing' }[source];
   const named = (why: string): string => `route "${[route.agent, route.model, route.effort].filter(Boolean).join(' ')}" (from ${from}) cannot start: ${why}`;
   if (parsed.extra.length) return bad('bad_args', named(`a route is "agent [model [effort]]"`), 'bad_route');
   const r = checkRoute(route, asRoutable(settings));
   if (!r.ok) return bad('bad_args', named(`${r.issue}; fix it under Settings > Routing & Quota`), 'bad_route');
-  if (isObj(cfg) && cfg.routable === false) {
+  if (setting<boolean>(settings, `agents.${route.agent}.routable`) === false) {
     return bad('bad_args', named(`agent "${route.agent}" is turned off (agents.${route.agent}.routable)`), 'not_routable');
   }
   return { ok: true, route, source };
