@@ -133,6 +133,9 @@
         }
         cur[parts[parts.length - 1]] = v;
       }
+      if (key.startsWith('look.')) {
+        applyLook();
+      }
       if (comp && typeof comp.action === 'function') {
         return comp.action('settings.save', { patch });
       }
@@ -243,15 +246,119 @@
   const instances = {};
   let current = null;
 
+  const ZOOM_MAP = { S: '0.9', M: '1', L: '1.15' };
+  let currentZoom = '1';
+
+  function isMotionReduced(reduceMotion) {
+    if (reduceMotion === 'on') return true;
+    if (reduceMotion === 'off') return false;
+    try {
+      if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  function applyLook() {
+    const snap = window.MK_DATA || {};
+    const settings = snap.settings || {};
+    const values = settings.values || {};
+    const look = values.look || {};
+    const rain = look.rain || {};
+    const rainEnabled = rain.enabled !== undefined ? rain.enabled : true;
+    const brightness = typeof rain.brightness === 'number' ? rain.brightness : 60;
+    const speed = rain.speed || 'normal';
+    const reduceMotion = look.reduceMotion || 'os';
+    const textSize = look.textSize || 'M';
+    const density = look.density || 'comfy';
+
+    const motionReduced = isMotionReduced(reduceMotion);
+    const rainActive = rainEnabled && !motionReduced;
+    currentZoom = ZOOM_MAP[textSize] || '1';
+
+    // CSS variables on root
+    const root = document.documentElement;
+    if (root && root.style) {
+      root.style.setProperty('--mk-zoom', currentZoom);
+      root.style.setProperty('--mk-text-size', textSize);
+      root.style.setProperty('--mk-density', density);
+      root.style.setProperty('--mk-rain-brightness', `${brightness}%`);
+      root.style.setProperty('--mk-rain-speed', speed);
+      root.style.setProperty('--mk-rain-enabled', rainActive ? '1' : '0');
+    }
+
+    // Classes on documentElement and body
+    const targets = [document.documentElement, document.body].filter(Boolean);
+    targets.forEach((el) => {
+      // Density
+      el.classList.remove('compact', 'comfy', 'density-compact', 'density-comfy');
+      el.classList.add(density);
+      el.classList.add('density-' + density);
+
+      // Text size
+      el.classList.remove('text-size-s', 'text-size-m', 'text-size-l');
+      el.classList.add('text-size-' + textSize.toLowerCase());
+
+      // Motion
+      el.classList.remove('reduce-motion', 'motion-reduce');
+      if (motionReduced) {
+        el.classList.add('reduce-motion', 'motion-reduce');
+      }
+
+      // Rain
+      el.classList.remove('rain-on', 'rain-off');
+      el.classList.add(rainActive ? 'rain-on' : 'rain-off');
+    });
+
+    // Apply zoom and density to each mounted screen host
+    for (const k in mounted) {
+      if (mounted[k]) {
+        mounted[k].style.zoom = currentZoom;
+        mounted[k].classList.remove('compact', 'comfy', 'density-compact', 'density-comfy');
+        mounted[k].classList.add(density);
+        mounted[k].classList.add('density-' + density);
+      }
+    }
+
+    // Re-render mounted screen instances
+    for (const k in instances) {
+      if (instances[k] && typeof instances[k].__render === 'function') {
+        instances[k].__render();
+      }
+    }
+  }
+
   // Rain effect utility
   const GLYPHS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
   function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
   function makeRain(seed) {
+    const snap = window.MK_DATA || {};
+    const settings = snap.settings || {};
+    const values = settings.values || {};
+    const look = values.look || {};
+    const rain = look.rain || {};
+    const enabled = rain.enabled !== undefined ? rain.enabled : true;
+    const brightness = typeof rain.brightness === 'number' ? rain.brightness : 60;
+    const speed = rain.speed || 'normal';
+    const reduceMotion = look.reduceMotion || 'os';
+
+    const motionReduced = isMotionReduced(reduceMotion);
+    if (!enabled || motionReduced) {
+      return [];
+    }
+
+    let speedMult = 1.0;
+    if (speed === 'slow') speedMult = 1.6;
+    else if (speed === 'fast') speedMult = 0.6;
+
+    const brightScale = Math.max(0, Math.min(100, brightness)) / 60;
+
     const R = rng(seed), out = [];
     for (let i = 0; i < 30; i++) {
       const n = 14 + Math.floor(R() * 26), g = [];
       for (let k = 0; k < n; k++) g.push(GLYPHS[Math.floor(R() * GLYPHS.length)]);
-      const dur = 7 + R() * 9, delay = -R() * dur, op = 0.16 + R() * 0.22;
+      const dur = (7 + R() * 9) * speedMult, delay = -R() * dur, op = Math.min(1, (0.16 + R() * 0.22) * brightScale);
       out.push({ glyphs: g.join('\n'), style: 'left:' + (i * 14.6 + R() * 4).toFixed(1) + 'px;opacity:' + op.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's' });
     }
     return out;
@@ -408,6 +515,7 @@
         window.MK_DATA = Object.assign({}, window.MK_DATA, json);
         window.MK_STALE = false;
         hideStaleBanner();
+        applyLook();
       } else {
         window.MK_STALE = true;
         showStaleBanner(`Data may be stale · server returned ${res.status}`);
@@ -492,6 +600,7 @@
     const host = document.createElement('div');
     host.className = 'mk-screen';
     host.dataset.screen = name;
+    host.style.zoom = currentZoom;
     const root = host.attachShadow({ mode: 'open' });
     const style = document.createElement('style');
     style.textContent = BASE_CSS + def.css;
@@ -525,10 +634,35 @@
     return (mounted[name] = host);
   }
 
+  function screenToRememberName(name) {
+    if (!name) return 'projects';
+    if (name === 'Main' || name === 'Overview') return 'overview';
+    if (name.startsWith('Settings')) return 'settings';
+    return name.toLowerCase();
+  }
+
+  function resolveStartScreen() {
+    const snap = window.MK_DATA || {};
+    const settings = snap.settings || {};
+    const values = settings.values || {};
+    const general = values.general || {};
+    const openOnStart = general.openOnStart || 'last';
+    let target = openOnStart;
+    if (target === 'last') {
+      target = settings.lastScreen || 'projects';
+    }
+    if (!target) target = 'projects';
+    const lower = String(target).toLowerCase();
+    if (lower === 'overview' || lower === 'main') return 'Main';
+    if (lower === 'settings') return 'Settings';
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  }
+
   function go(name) {
     if (name === 'Overview') name = 'Main';
     if (!window.MK_SCREENS[name]) name = window.MK_START;
     if (current === name && mounted[name]) return;
+    const isChange = current !== null && current !== name;
     const host = mounted[name] || mount(name);
     for (const k in mounted) mounted[k].hidden = k !== name;
     if (host) host.hidden = false;
@@ -536,6 +670,9 @@
     try {
       history.replaceState(null, '', '#' + (name === 'Main' ? 'overview' : name.toLowerCase()));
     } catch (_) { /* sandboxed frame */ }
+    if (isChange) {
+      action('ui.remember', { screen: screenToRememberName(name) });
+    }
     fetchState(name);
   }
 
@@ -548,12 +685,13 @@
   window.MK = {
     go,
     action,
+    applyLook,
     refresh: () => fetchState(current),
     getState: () => window.MK_DATA,
     getToken: () => token,
     getApiBase: () => apiBase,
   };
-  window.MK_BOOT = () => {
+  window.MK_BOOT = async () => {
     let initial = (location.hash || '').slice(1);
     if (initial.includes('=')) initial = '';
     if (initial) {
@@ -561,7 +699,14 @@
       if (lower === 'overview' || lower === 'main') initial = 'Main';
       else initial = lower.charAt(0).toUpperCase() + lower.slice(1);
     }
+    if (!initial) {
+      if (!window.MK_DATA || !window.MK_DATA.settings || !window.MK_DATA.settings.values || !Object.keys(window.MK_DATA.settings.values).length) {
+        await fetchState();
+      }
+      initial = resolveStartScreen();
+    }
     go(initial || window.MK_START);
+    applyLook();
     startPolling();
   };
 })();

@@ -131,7 +131,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
           </sc-for>
           <sc-if value="{{r.noPlans}}">
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0">
-              <span style="font-size: 12px; color: #7fae8c">No plan running · {{r.idleWorktrees}} idle worktrees</span>
+              <span style="font-size: 12px; color: #7fae8c">{{r.noPlanLabel}}</span>
               <a class="btn sm" href="Inbox.dc.html" style="text-decoration: none">Start a plan</a>
             </div>
           </sc-if>
@@ -164,6 +164,10 @@ class Component extends DCLogic {
   renderVals() {
     const s = this.state;
     const proj = this.getData('projects') || {};
+    const settings = this.getData('settings') || {};
+    const values = settings.values || {};
+    const mode = (values.general && values.general.mode) || 'orchestrator';
+    const isSolo = mode === 'solo';
     const badges = this.getBadges() || {};
     const meta = this.getMeta() || {};
 
@@ -209,11 +213,12 @@ class Component extends DCLogic {
       return {
         id: r.id,
         name: r.name || 'Project',
-        sub: `${r.path || '~'} · ${r.worktrees || 0} worktrees`,
+        sub: isSolo ? (r.path || '~') : `${r.path || '~'} · ${r.worktrees || 0} worktrees`,
         pillText,
         pillStyle,
         plans: planRows,
         noPlans: !hasPlans,
+        noPlanLabel: isSolo ? 'No plan running' : `No plan running · ${r.idleWorktrees || 0} idle worktrees`,
         idleWorktrees: r.idleWorktrees || 0,
       };
     });

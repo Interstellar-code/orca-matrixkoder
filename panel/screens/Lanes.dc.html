@@ -102,7 +102,9 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
           <span style="width: 34px; height: 34px; border-radius: 9px; {{l.badgeStyle}}; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0">{{l.label}}</span>
           <span style="display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 1px">
             <span style="font-size: 13px; font-weight: 600; color: #e6fff0">{{l.agent}} <span style="font-weight: 400; color: #8bbf9a">· {{l.modelEffort}}</span></span>
-            <span class="mono" style="font-size: 11px; color: #7fae8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{l.branchHead}}</span>
+            <sc-if value="{{l.showBranch}}">
+              <span class="mono" style="font-size: 11px; color: #7fae8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{l.branchHead}}</span>
+            </sc-if>
           </span>
           <span class="pill {{l.pillCls}}">{{l.status}}</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7fae8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="{{l.chevStyle}}"><path d="m6 9 6 6 6-6"></path></svg>
@@ -114,7 +116,9 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
             <span style="font-size: 13px; line-height: 18px; color: #e6fff0">{{l.taskTitle}}</span>
           </div>
           <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px">
-            <div class="kv"><span>Worktree</span><span>{{l.worktreePath}}</span></div>
+            <sc-if value="{{l.showWorktree}}">
+              <div class="kv"><span>Worktree</span><span>{{l.worktreePath}}</span></div>
+            </sc-if>
             <div class="kv"><span>Commits</span><span>{{l.commitsAhead}}</span></div>
             <div class="kv"><span>Started</span><span>{{l.startedTime}}</span></div>
             <div class="kv"><span>Changes</span><span>{{l.changesStat}}</span></div>
@@ -172,6 +176,10 @@ class Component extends DCLogic {
     const lanes = this.getData('lanes') || [];
     const badges = this.getBadges() || {};
     const meta = this.getMeta() || {};
+    const settings = this.getData('settings') || {};
+    const values = settings.values || {};
+    const mode = (values.general && values.general.mode) || 'orchestrator';
+    const isSolo = mode === 'solo';
 
     let nWorking = 0, nWaiting = 0, nIdle = 0, nFailed = 0;
     for (const l of lanes) {
@@ -232,6 +240,8 @@ class Component extends DCLogic {
         agent: l.agent || 'Agent',
         modelEffort: [l.model, l.effort].filter(Boolean).join(' · ') || 'auto',
         branchHead: `${l.branch || 'main'} · ${(l.head || '').slice(0, 7)}`,
+        showBranch: !isSolo,
+        showWorktree: !isSolo,
         status,
         badgeStyle,
         pillCls,
@@ -266,7 +276,9 @@ class Component extends DCLogic {
       rain: window.MK_RAIN(11),
       tabs: window.MK_TABS('lanes', badges, (t) => {}),
       planTitle: meta.planId || 'MatrixKoder Plan',
-      summaryText: `${lanes.length} worktrees · ${badges.waiting || 0} waiting on you`,
+      summaryText: isSolo
+        ? `${lanes.length} lanes · ${badges.waiting || 0} waiting on you`
+        : `${lanes.length} worktrees · ${badges.waiting || 0} waiting on you`,
       filters: filterObjs,
       laneList,
       hasNoLanes: laneList.length === 0,

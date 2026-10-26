@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Settings · Theme</title>
+<title>Settings · Appearance</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -16,6 +16,8 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 .mono{font-family:'Geist Mono',ui-monospace,Menlo,monospace}
 .ib{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:1px solid #143d22;background:#06150b;color:#8bbf9a;cursor:pointer;padding:0;text-decoration:none;box-sizing:border-box}
 .ib:hover{background:#0c2414;color:#b9e8c4}
+.btn{font-family:'Geist',system-ui,sans-serif;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:9px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #143d22;background:#06150b;color:#b9e8c4;text-decoration:none;box-sizing:border-box;white-space:nowrap}
+.btn:hover{background:#0c2414;color:#b9e8c4}
 .rain{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
 .rcol{position:absolute;top:0;width:14px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;line-height:15px;text-align:center;white-space:pre-line;color:#19e35a;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 85%,#000 100%);mask-image:linear-gradient(to bottom,transparent 0%,#000 85%,#000 100%);animation-name:fall;animation-timing-function:linear;animation-iteration-count:infinite}
 @keyframes fall{from{transform:translateY(-110%)}to{transform:translateY(1300px)}}
@@ -68,7 +70,7 @@ input[type=range]{accent-color:#19e35a;width:110px}
       <input id="ss" class="search" placeholder="Search all settings">
     </div>
     <nav aria-label="Settings sections" style="display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(4,14,7,.86); border: 1px solid #0f2a17">
-      <sc-for list="{{stabs}}" as="s" hint-placeholder-count="7"><a class="{{s.cls}}" href="{{s.href}}" aria-current="{{s.cur}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg><span>{{s.label}}</span></a></sc-for>
+      <sc-for list="{{stabs}}" as="s" hint-placeholder-count="6"><a class="{{s.cls}}" href="{{s.href}}" aria-current="{{s.cur}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg><span>{{s.label}}</span></a></sc-for>
     </nav>
   </header>
 
@@ -77,16 +79,18 @@ input[type=range]{accent-color:#19e35a;width:110px}
     <section class="card" aria-labelledby="l-rain">
       <h2 id="l-rain" class="sec">Matrix rain</h2>
       <div class="row"><div class="lbl"><span>Show rain</span><span>Falling glyphs behind every screen</span></div><button class="{{rainCls}}" aria-pressed="{{rainP}}" aria-label="Show rain" onClick="{{flipRain}}"><span class="kn"></span></button></div>
-      <div class="row"><div class="lbl"><span>Brightness</span><span>Keep it low so cards stay readable</span></div><label for="rb" class="sr">Rain brightness</label><input id="rb" type="range" min="20" max="100" step="10" value="{{bright}}" onChange="{{setBright}}"><span class="mono" style="font-size: 12px; color: #e6fff0; width: 36px; text-align: right">{{bright}}%</span></div>
+      <div class="row"><div class="lbl"><span>Brightness</span><span>Keep it low so cards stay readable</span></div><label for="rb" class="sr">Rain brightness</label><input id="rb" type="range" min="0" max="100" step="5" value="{{bright}}" onChange="{{setBright}}" onInput="{{setBright}}"><span class="mono" style="font-size: 12px; color: #e6fff0; width: 36px; text-align: right">{{bright}}%</span></div>
       <div class="row"><div class="lbl"><span>Speed</span><span>How fast the columns fall</span></div>
         <div class="segc" role="group" aria-label="Rain speed"><sc-for list="{{speeds}}" as="o" hint-placeholder-count="3"><button class="{{o.cls}}" aria-pressed="{{o.p}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div>
       </div>
-      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Reduce motion</span><span>Stops the rain and all animation</span></div><button class="{{calmCls}}" aria-pressed="{{calmP}}" aria-label="Reduce motion" onClick="{{flipCalm}}"><span class="kn"></span></button></div>
+      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Reduce motion</span><span>Stops the rain and all animation</span></div>
+        <div class="segc" role="group" aria-label="Reduce motion"><sc-for list="{{motions}}" as="o" hint-placeholder-count="3"><button class="{{o.cls}}" aria-pressed="{{o.p}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div>
+      </div>
     </section>
 
     <section class="card" aria-labelledby="l-col">
       <h2 id="l-col" class="sec">Colours</h2>
-      <div class="row"><div class="lbl"><span>Follow Orca theme</span><span>Use Orca's colour tokens instead of the Matrix palette</span></div><button class="{{orcaCls}}" aria-pressed="{{orcaP}}" aria-label="Follow Orca theme" onClick="{{flipOrca}}"><span class="kn"></span></button></div>
+      <div class="row"><div class="lbl"><span>Follow Orca theme</span><span>Light and dark theme</span></div><span style="font-size: 12px; color: #7fae8c">Set in Orca: Settings > Appearance</span></div>
       <div style="display: flex; justify-content: space-between; padding: 8px 0 14px; border-top: 1px solid #0d2414">
         <span class="swatch"><span style="background: #020604"></span><span>ground</span></span>
         <span class="swatch"><span style="background: #04110a"></span><span>card</span></span>
@@ -107,91 +111,72 @@ input[type=range]{accent-color:#19e35a;width:110px}
       </div>
     </section>
 
+    <section class="card" aria-label="Reset appearance" style="padding: 12px 14px; display: flex; align-items: center; justify-content: space-between">
+      <div class="lbl"><span>Reset to defaults</span><span>Restore default appearance settings</span></div>
+      <button class="btn" onClick="{{resetLook}}">Reset</button>
+    </section>
+
   </main>
 
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
 class Component extends DCLogic {
-  constructor(p) {
-    super(p);
-    this.state = {
-      rain: true,
-      bright: 60,
-      speed: 'normal',
-      calm: false,
-      orca: false,
-      size: 'M',
-      dens: 'comfy',
-    };
-  }
-  seg(key, opts) {
-    const s = this.state;
-    return opts.map(([id, label]) => ({
-      label,
-      cls: s[key] === id ? 'on' : '',
-      p: String(s[key] === id),
-      pick: () => {
-        this.setState({ [key]: id });
-        const patch = key === 'speed'
-          ? { theme: { rain: { speed: id } } }
-          : key === 'size'
-          ? { theme: { textSize: id } }
-          : { theme: { density: id } };
-        this.action('settings.save', { patch });
-      },
-    }));
-  }
-  sw(key) {
-    const v = this.state[key];
-    return {
-      cls: 'sw' + (v ? ' on' : ''),
-      p: String(v),
-      flip: () => {
-        const next = !v;
-        this.setState({ [key]: next });
-        if (key === 'rain') {
-          this.action('settings.save', { patch: { theme: { rain: { enabled: next } } } });
-        } else if (key === 'calm') {
-          this.action('settings.save', { patch: { theme: { reduceMotion: next } } });
-        }
-      },
-    };
-  }
   renderVals() {
-    const s = this.state;
+    const bind = (k) => this.bind(k);
+    const rainEnabledBind = bind('look.rain.enabled');
+    const rainBrightnessBind = bind('look.rain.brightness');
+    const rainSpeedBind = bind('look.rain.speed');
+    const reduceMotionBind = bind('look.reduceMotion');
+    const textSizeBind = bind('look.textSize');
+    const densityBind = bind('look.density');
+
     const proj = this.getData('projects') || {};
     const repo = (proj.repos && proj.repos[0]) || {};
     const repoName = repo.name || 'orca-matrixkoder';
 
-    const r = this.sw('rain');
-    const c = this.sw('calm');
-    const o = this.sw('orca');
+    const rainVal = rainEnabledBind.val !== undefined ? rainEnabledBind.val : true;
+    const brightVal = typeof rainBrightnessBind.val === 'number' ? rainBrightnessBind.val : 60;
+    const speedVal = rainSpeedBind.val || 'normal';
+    const motionVal = reduceMotionBind.val || 'os';
+    const sizeVal = textSizeBind.val || 'M';
+    const densVal = densityBind.val || 'comfy';
+
+    const isCalm = motionVal === 'on';
+    const rainOn = rainVal && !isCalm;
+
+    const seg = (b, opts) => opts.map(([id, label]) => ({
+      label,
+      cls: b.val === id ? 'on' : '',
+      p: String(b.val === id),
+      pick: () => b.save(id),
+    }));
 
     return {
+      rain: window.MK_RAIN ? window.MK_RAIN(101) : [],
       stabs: window.MK_STABS ? window.MK_STABS('look') : [],
       repoName,
-      rain: window.MK_RAIN ? window.MK_RAIN(101) : [],
-      rainOn: s.rain && !s.calm,
-      rainStyle: 'opacity:' + (s.bright / 60).toFixed(2),
-      rainCls: r.cls,
-      rainP: r.p,
-      flipRain: r.flip,
-      calmCls: c.cls,
-      calmP: c.p,
-      flipCalm: c.flip,
-      orcaCls: o.cls,
-      orcaP: o.p,
-      flipOrca: o.flip,
-      bright: s.bright,
-      setBright: (e) => {
-        const next = Number(e.target.value);
-        this.setState({ bright: next });
-        this.action('settings.save', { patch: { theme: { rain: { brightness: next } } } });
-      },
-      speeds: this.seg('speed', [['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast']]),
-      sizes: this.seg('size', [['S', 'S'], ['M', 'M'], ['L', 'L']]),
-      dens: this.seg('dens', [['compact', 'Compact'], ['comfy', 'Comfortable']]),
+
+      rainOn,
+      rainStyle: 'opacity:' + (brightVal / 60).toFixed(2),
+      rainCls: 'sw' + (rainVal ? ' on' : ''),
+      rainP: String(!!rainVal),
+      flipRain: () => rainEnabledBind.save(!rainVal),
+
+      bright: brightVal,
+      setBright: (e) => rainBrightnessBind.save(Number(e.target.value)),
+
+      speeds: seg(rainSpeedBind, [['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast']]),
+      motions: seg(reduceMotionBind, [['os', 'OS'], ['on', 'On'], ['off', 'Off']]),
+
+      calmCls: 'sw' + (isCalm ? ' on' : ''),
+      calmP: String(isCalm),
+      flipCalm: () => reduceMotionBind.save(isCalm ? 'os' : 'on'),
+
+      sizes: seg(textSizeBind, [['S', 'S'], ['M', 'M'], ['L', 'L']]),
+      dens: seg(densityBind, [['compact', 'Compact'], ['comfy', 'Comfortable']]),
+
+      resetLook: () => this.action('settings.reset', { section: 'look' }),
     };
   }
 }

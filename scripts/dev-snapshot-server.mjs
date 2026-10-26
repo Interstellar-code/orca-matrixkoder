@@ -104,8 +104,10 @@ export function createDevServer(options = {}) {
   const fixturePath = options.snapshotPath || FIXTURE_PATH;
   let mode = options.mode || 'normal'; // 'normal' | 'empty' | 'fail'
   const recordedActions = [];
+  let customSnapshot = null;
 
   function getSnapshot() {
+    if (customSnapshot) return JSON.parse(JSON.stringify(customSnapshot));
     if (mode === 'empty') return emptySnapshot();
     if (existsSync(fixturePath)) {
       return JSON.parse(readFileSync(fixturePath, 'utf8'));
@@ -297,6 +299,7 @@ export function createDevServer(options = {}) {
         url,
         actions: recordedActions,
         setMode: (m) => { mode = m; },
+        setSnapshot: (s) => { customSnapshot = s ? JSON.parse(JSON.stringify(s)) : null; },
         close: () => new Promise((cb) => server.close(cb)),
       });
     });

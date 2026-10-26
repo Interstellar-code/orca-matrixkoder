@@ -318,9 +318,9 @@ describe('Chrome headless integration tests (T7)', () => {
     ];
 
     for (const [screen, selector, expectedAction] of screenActionChecks) {
-      devServer.actions.length = 0;
       await evaluate(`window.MK.go("${screen}")`);
       await new Promise((r) => setTimeout(r, 150));
+      devServer.actions.length = 0;
 
       const clickResult = await evaluate(`(() => {
         const host = document.querySelector('[data-screen="${screen}"]');
@@ -336,8 +336,9 @@ describe('Chrome headless integration tests (T7)', () => {
       // Wait for the action to reach devServer
       let foundAction = null;
       for (let i = 0; i < 20; i++) {
-        if (devServer.actions.length > 0) {
-          foundAction = devServer.actions[0]?.name;
+        const nonUiAction = devServer.actions.find((a) => a.name !== 'ui.remember');
+        if (nonUiAction) {
+          foundAction = nonUiAction.name;
           break;
         }
         await new Promise((r) => setTimeout(r, 50));
