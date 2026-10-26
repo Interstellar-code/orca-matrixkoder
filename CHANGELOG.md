@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1 - 2026-10-26
+
+Sidebar launcher panel.
+
+- The version badge now shows the plugin's real version, read from `orca-plugin.json` at build time (it was stuck at 0.2.0).
+- Open Dashboard (`⌥⌘D`) is now the main item on the panel. Orca runs sidebar panels in a sandbox that cannot open a tab or run a plugin command, so the panel cannot have a clickable link; the shortcut and `⌘J` › MatrixKoder: Open Dashboard are the ways in.
+- Version 0.3.1 in `package.json`, `package-lock.json`, `orca-plugin.json` and `orca-marketplace.json` (`ref` `v0.3.1`).
+
 ## 0.3.0 - 2026-10-26
 
 Settings v2: every setting now changes what MatrixKoder does, and the screens show the saved values.
