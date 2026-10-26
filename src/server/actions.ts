@@ -209,7 +209,23 @@ export class Actions {
     if (list('owned').length) lines.push('', `Files you own: ${list('owned').join(', ')}`);
     if (t.gate) lines.push('', `Gate: ${t.gate}`);
     if (t.manual) lines.push(`Manual check: ${t.manual}`);
+    const rules = this.rulesSection(loadSettings(this.c.dir));
+    if (rules.length) lines.push('', ...rules);
     return lines.join('\n');
+  }
+
+  /** C7/C8: advisory rules from settings. MK does not filter anything an agent does; this only tells it. */
+  private rulesSection(settings: Settings): string[] {
+    const branches = setting<string[]>(settings, 'safety.protectedBranches');
+    const never = setting<string[]>(settings, 'safety.neverRun');
+    const lines: string[] = [];
+    if (branches.length) lines.push(`- Protected branches (never commit or merge to them): ${branches.join(', ')}`);
+    if (never.length) lines.push('- Never run these commands:', ...never.map((x) => `  - ${x}`));
+    if (setting<boolean>(settings, 'safety.askBeforePush')) lines.push('- Ask before any push');
+    if (setting<string>(settings, 'general.mode') === 'solo') {
+      lines.push('- Solo mode: work in this checkout; use in-session subagents for parallel parts, not Orca lanes or worktrees');
+    }
+    return lines.length ? ['Rules from MatrixKoder settings:', ...lines] : [];
   }
 
   /** task-create in the plan's run, then the row. A replay with the same attempt returns the same Orca task. */
@@ -261,6 +277,11 @@ export class Actions {
     if (quota.refuse) throw new Refuse(quota.refuse);
     const warnings = quota.warnings;
 
+    const threshold = setting<number>(settings, 'safety.confirmRiskAtLeast');
+    if (Number(task.risk) >= threshold && a.confirm !== true) {
+      refuse('conflict', `task ${task.code} has risk ${task.risk}, at or above "Ask before risk" (${threshold}) in Settings > Safety; confirm to start it`, { code: 'needs_confirm' });
+    }
+
     let orcaTaskId = task.orca_task_id ? String(task.orca_task_id) : '';
     if (!orcaTaskId) {
       const made = await this.createOrcaTask(task, plan, phase);
@@ -268,7 +289,8 @@ export class Actions {
       orcaTaskId = made;
     }
     const attempt = Number(one(this.c.db, 'SELECT attempts FROM plan_task WHERE id = ?', task.id as number)!.attempts);
-    const args: ActionArgs = { task: orcaTaskId, worktree: 'new-child', agent: orcaAgentId(agent), run: String(plan.orca_run_id), 'retry-request': `mk-start-${task.id}-${attempt}` };
+    const worktree = setting<string>(settings, 'general.mode') === 'solo' ? `path:${this.repoPath(String(plan.repo_id))}` : 'new-child';
+    const args: ActionArgs = { task: orcaTaskId, worktree, agent: orcaAgentId(agent), run: String(plan.orca_run_id), 'retry-request': `mk-start-${task.id}-${attempt}` };
     if (model) args.model = model;
     if (effort) args.effort = effort;
     const r = await callOrca(this.c, 'worker-start', args);
