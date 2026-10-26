@@ -1,6 +1,6 @@
 +++ 1 Top block — plan identity [toml]
 plan = "mk-settings-v2"
-status = "draft"
+status = "done"
 created = 2026-10-25
 runs = []
 integration = "main"
@@ -504,4 +504,5 @@ bundle = "npm run build"
 - 2026-10-26 — review — SCHEMA re-review of the fix round (Opus high): APPROVE, 3 minor findings carried into USE.1 (checkRoute own-key check for `__proto__`; settings validation refuses agent efforts the C9 launch rules refuse; the default bySize exemption only for that size's own default); default-route exemption confirmed safe; p1 probe throws were a missing argument, not a bug. SCHEMA merged to main — orchestrator
 - 2026-10-26 — review — USE (Opus high): CHANGES NEEDED, 1 medium (throwing settings reads in notify and the sync collectors could lose a notification, roll back quota rows and stop git refresh) and 3 low (inbox prefix overlap, route args starting with "-", rounded quota floor), fixed in 8cb3c8c43c9; a laneDone dropped while the service is down is left as a design note. Re-review (Opus high): APPROVE. USE merged to main (15528ee8aef), main gates 274/274 and tsc clean — orchestrator
 - 2026-10-26 — review — SCREENS (agy gemini-3.8-flash-medium): APPROVE, 2 low findings: a failed task with no Orca task shows both Start and Retry (fixed in SHIP.1: Start hidden on failed tasks), and optional chaining at SettingsRouting.dc.html:471 (kept; the panel runs in Orca's Chromium). SCREENS merged to main (810ce18e222), main gates 292/292 and tsc clean — orchestrator
+- 2026-10-26 — review — SHIP (agy gemini-3.8-flash-medium): APPROVE, no findings; T8 mutation runs confirm it fails on an unread key, a missing family read and a missing prefix. SHIP.1 50715308572 (dead-key check, agents.* read through setting(), Start hidden on failed tasks); SHIP.2 0a9ac07210b (out/ and web/ rebuilt, version 0.3.0, CHANGELOG, test/manual/settings-v2.md). Main 295/295, tsc clean. Not tagged, not pushed: both wait for the user — orchestrator
 /+++
