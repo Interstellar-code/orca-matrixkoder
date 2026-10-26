@@ -27,6 +27,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 .card{border-radius:14px;background:rgba(4,17,10,.86);backdrop-filter:blur(3px);border:1px solid #0f2a17;padding:4px 14px}
 .sec{margin:0;padding:12px 0 6px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8bbf9a}
 .row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #0d2414}
+.sec + .row{border-top:0}
 .lbl{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
 .lbl span:first-child{font-size:13px;color:#e6fff0}
 .lbl span:last-child{font-size:11.5px;line-height:16px;color:#7fae8c}
@@ -35,18 +36,19 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 .search::placeholder{color:#5f9a70}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .step{display:flex;align-items:center;border:1px solid #1c4a2b;border-radius:9px;overflow:hidden}
-.step button{font-family:'Geist',system-ui,sans-serif;width:32px;height:30px;border:0;background:#06150b;color:#b9e8c4;font-size:15px;cursor:pointer}
+.step button{font-family:'Geist',system-ui,sans-serif;width:28px;height:28px;border:0;background:#06150b;color:#b9e8c4;font-size:14px;cursor:pointer}
 .step button:hover{background:#0c2414}
-.step span{width:34px;text-align:center;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;color:#e6fff0}
+.step span{min-width:38px;padding:0 4px;text-align:center;font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;color:#e6fff0}
 .sw{width:44px;height:26px;border-radius:13px;border:1px solid #1c4a2b;background:#0b1c10;position:relative;cursor:pointer;padding:0;flex-shrink:0}
 .sw .kn{position:absolute;top:4px;left:4px;width:16px;height:16px;border-radius:50%;background:#5f9a70;transition:left .15s}
 .sw.on{background:#19e35a;border-color:#19e35a}
 .sw.on .kn{left:22px;background:#021006}
 .inp{font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #1c4a2b;background:#020a05;color:#e6fff0;outline:none;width:100%;box-sizing:border-box}
 .inp:focus{border-color:#19e35a}
+.pill{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:11px;font-size:11px;font-weight:600;white-space:nowrap}
 </style>
 </helmet>
-<div class="mk" style="width: 440px; height: 1240px; box-sizing: border-box; background: #020604; display: flex; flex-direction: column; border-left: 1px solid #0f2a17; position: relative; overflow: hidden">
+<div class="mk" style="width: 440px; min-height: 1240px; box-sizing: border-box; background: #020604; display: flex; flex-direction: column; border-left: 1px solid #0f2a17; position: relative; overflow-y: auto">
 
   <div class="rain" aria-hidden="true">
     <sc-for list="{{rain}}" as="c" hint-placeholder-count="0">
@@ -72,18 +74,58 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
     </nav>
   </header>
 
-  <main style="position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 20px; overflow: hidden">
+  <main style="position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 20px; overflow-y: auto">
+
+    <sc-if value="{{showSoloHint}}">
+      <div class="row" style="padding: 10px 12px; border-radius: 10px; background: #221b08; border: 1px solid #5c4515; font-size: 12px; line-height: 17px; color: #f5d799" aria-label="Shared checkout hint">Solo mode: lanes share this checkout; set Lanes at once to 1 to avoid clashes</div>
+    </sc-if>
 
     <section class="card" aria-labelledby="w-flow">
       <h2 id="w-flow" class="sec">Work Flow</h2>
-      <div class="row"><div class="lbl"><span>Stall threshold</span><span>Mark lane stalled after heartbeat age</span></div><span class="mono" style="font-size: 12px; color: #b9e8c4">{{stallMinutes}}m</span></div>
-      <div class="row"><div class="lbl"><span>Default bug risk</span><span>Initial risk for newly filed bugs (1-5)</span></div><span class="mono" style="font-size: 12px; color: #b9e8c4">{{defaultRisk}}</span></div>
-      <div class="row"><div class="lbl"><span>Plan auto-import</span><span>Automatically import new valid plan files</span></div><span class="mono" style="font-size: 12px; color: #b9e8c4">{{autoImport}}</span></div>
+      <div class="row">
+        <div class="lbl"><span>Stall threshold</span><span>Mark lane stalled after heartbeat age</span></div>
+        <div class="step">
+          <button aria-label="Decrease stall threshold" onClick="{{lessStall}}">−</button>
+          <span aria-live="polite">{{stallMinutes}}m</span>
+          <button aria-label="Increase stall threshold" onClick="{{moreStall}}">+</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="lbl"><span>Default bug risk</span><span>Initial risk for newly filed bugs (1-5)</span></div>
+        <div class="step">
+          <button aria-label="Decrease default bug risk" onClick="{{lessRisk}}">−</button>
+          <span aria-live="polite">{{defaultRisk}}</span>
+          <button aria-label="Increase default bug risk" onClick="{{moreRisk}}">+</button>
+        </div>
+      </div>
+      <div class="row" style="flex-direction: column; align-items: stretch; gap: 6px">
+        <div class="lbl"><span>Plan inbox folder</span><span>Repo-relative directory scanned for plan files</span></div>
+        <input class="inp" aria-label="Plan inbox folder" value="{{inboxDir}}" onChange="{{changeInboxDir}}">
+      </div>
+      <div class="row" style="padding-bottom: 14px">
+        <div class="lbl"><span>Plan auto-import</span><span>Automatically import new valid plan files</span></div>
+        <button class="sw {{autoImportCls}}" aria-pressed="{{autoImportP}}" aria-label="Plan auto-import" onClick="{{toggleAutoImport}}"><span class="kn"></span></button>
+      </div>
     </section>
 
     <section class="card" aria-labelledby="w-templates">
       <h2 id="w-templates" class="sec">Task spec templates</h2>
-      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Templates</span><span>Investigate, implement, subdispatch, review, fix</span></div><span class="mono" style="font-size: 11.5px; color: #7fae8c">Built-in defaults</span></div>
+      <p style="margin: 0 0 10px; font-size: 11.5px; line-height: 16px; color: #7fae8c">One markdown template path per scenario. Leave empty to use MatrixKoder built-in template.</p>
+      <sc-for list="{{templates}}" as="t">
+        <div class="row" style="flex-direction: column; align-items: stretch; gap: 6px; padding: 10px 0">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+            <div class="lbl">
+              <span style="font-weight: 600">{{t.label}}</span>
+              <span>{{t.purpose}}</span>
+            </div>
+            <span class="pill" style="{{t.statusStyle}}">{{t.statusText}}</span>
+          </div>
+          <div>
+            <label class="sr" for="tmpl-{{t.id}}">Spec template for {{t.id}}</label>
+            <input id="tmpl-{{t.id}}" class="inp" aria-label="Spec template for {{t.id}}" placeholder="Built-in template (empty)" value="{{t.path}}" onChange="{{t.changePath}}">
+          </div>
+        </div>
+      </sc-for>
     </section>
 
   </main>
@@ -96,22 +138,82 @@ class Component extends DCLogic {
     super(p);
   }
   renderVals() {
+    const bind = (k) => this.bind(k);
     const s = this.getData('settings') || {};
     const proj = this.getData('projects') || {};
     const repo = (proj.repos && proj.repos[0]) || {};
     const repoName = repo.name || 'orca-matrixkoder';
+
     const values = s.values || {};
-    const lanes = values.lanes || {};
-    const bugs = values.bugs || {};
-    const plans = values.plans || {};
+    const general = values.general || {};
+    const mode = general.mode || 'orchestrator';
+
+    const routing = values.routing || {};
+    const maxLanes = routing.maxLanes ?? 3;
+    const showSoloHint = mode === 'solo' && maxLanes > 1;
+
+    const stallBind = bind('lanes.stallMinutes');
+    const bugRiskBind = bind('bugs.defaultRisk');
+    const inboxDirBind = bind('plans.inboxDir');
+    const autoImportBind = bind('plans.autoImport');
+
+    const autoImport = !!autoImportBind.val;
+
+    const specStatuses = s.specTemplates || {};
+    const scenarios = [
+      { id: 'investigate', label: 'Investigate', purpose: 'Read-only research or spike; no edits, report findings' },
+      { id: 'implement', label: 'Implement', purpose: 'Build with explicit file/component ownership' },
+      { id: 'subdispatch', label: 'Subdispatch', purpose: 'Lead worker that splits task and spawns helpers' },
+      { id: 'review', label: 'Review', purpose: 'Code review and verification, no edits, a verdict' },
+      { id: 'fix', label: 'Fix', purpose: 'Targeted bug fix or retry of a failed attempt' },
+    ];
+
+    const templates = scenarios.map((sc) => {
+      const b = bind('work.specTemplates.' + sc.id);
+      const st = specStatuses[sc.id] || {};
+      let statusText = 'built-in';
+      let statusStyle = 'background:#0d2a16;color:#8bbf9a';
+      if (st.issue) {
+        statusText = st.issue;
+        statusStyle = 'background:#3a1512;color:#ff9b8a';
+      } else if (st.source === 'file' && st.ok) {
+        statusText = 'file ok';
+        statusStyle = 'background:#123a1e;color:#19e35a';
+      }
+
+      return {
+        id: sc.id,
+        label: sc.label,
+        purpose: sc.purpose,
+        path: b.val || '',
+        statusText,
+        statusStyle,
+        changePath: (e) => b.save(e && e.target ? e.target.value : ''),
+      };
+    });
 
     return {
       rain: window.MK_RAIN ? window.MK_RAIN(75) : [],
       stabs: window.MK_STABS ? window.MK_STABS('work') : [],
       repoName,
-      stallMinutes: lanes.stallMinutes ?? 15,
-      defaultRisk: bugs.defaultRisk ?? 3,
-      autoImport: plans.autoImport ? 'on' : 'off',
+      showSoloHint,
+
+      stallMinutes: stallBind.val ?? 15,
+      lessStall: () => stallBind.step(-1),
+      moreStall: () => stallBind.step(1),
+
+      defaultRisk: bugRiskBind.val ?? 3,
+      lessRisk: () => bugRiskBind.step(-1),
+      moreRisk: () => bugRiskBind.step(1),
+
+      inboxDir: inboxDirBind.val || '.matrixkoder/inbox',
+      changeInboxDir: (e) => inboxDirBind.save(e && e.target ? e.target.value : ''),
+
+      autoImportCls: autoImport ? 'on' : '',
+      autoImportP: String(autoImport),
+      toggleAutoImport: () => autoImportBind.toggle(),
+
+      templates,
     };
   }
 }

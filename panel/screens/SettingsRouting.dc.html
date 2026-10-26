@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Settings · Routing</title>
+<title>Settings · Routing &amp; Quota</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -18,6 +18,7 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 .ib:hover{background:#0c2414;color:#b9e8c4}
 .btn{font-family:'Geist',system-ui,sans-serif;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:9px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #143d22;background:#06150b;color:#b9e8c4;text-decoration:none;box-sizing:border-box;white-space:nowrap}
 .btn:hover{background:#0c2414;color:#b9e8c4}
+.btn.sm{height:24px;padding:0 8px;font-size:11px;border-radius:6px}
 .rain{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
 .rcol{position:absolute;top:0;width:14px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;line-height:15px;text-align:center;white-space:pre-line;color:#19e35a;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 85%,#000 100%);mask-image:linear-gradient(to bottom,transparent 0%,#000 85%,#000 100%);animation-name:fall;animation-timing-function:linear;animation-iteration-count:infinite}
 @keyframes fall{from{transform:translateY(-110%)}to{transform:translateY(1300px)}}
@@ -40,14 +41,21 @@ a{color:#4fd1c5}a:hover{color:#7fe3d9}
 .sw.on{background:#19e35a;border-color:#19e35a}
 .sw.on .kn{left:22px;background:#021006}
 .step{display:flex;align-items:center;border:1px solid #1c4a2b;border-radius:9px;overflow:hidden}
-.step button{font-family:'Geist',system-ui,sans-serif;width:32px;height:30px;border:0;background:#06150b;color:#b9e8c4;font-size:15px;cursor:pointer}
+.step button{font-family:'Geist',system-ui,sans-serif;width:28px;height:28px;border:0;background:#06150b;color:#b9e8c4;font-size:14px;cursor:pointer}
 .step button:hover{background:#0c2414}
-.step span{width:34px;text-align:center;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;color:#e6fff0}
-.tier{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid #0d2414;font-size:12.5px}
-input[type=range]{accent-color:#19e35a;width:110px}
+.step span{min-width:38px;padding:0 4px;text-align:center;font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;color:#e6fff0}
+.segc{display:flex;padding:3px;border-radius:9px;background:#040e07;border:1px solid #0f2a17}
+.segc button{font-family:'Geist',system-ui,sans-serif;height:26px;padding:0 10px;border:0;border-radius:7px;background:transparent;color:#8bbf9a;font-size:12px;font-weight:500;cursor:pointer}
+.segc button.on{background:#0d2a16;color:#e6fff0}
+.pill{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:11px;font-size:11px;font-weight:600;white-space:nowrap}
+.kv{display:flex;align-items:center;gap:8px;font-size:12px}
+.meter{flex:1;height:6px;border-radius:3px;background:#0b1c10;overflow:hidden}
+.inp{font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid #1c4a2b;background:#020a05;color:#e6fff0;outline:none;box-sizing:border-box}
+.inp:focus{border-color:#19e35a}
+select.inp{height:28px;padding:0 8px;color-scheme:dark}
 </style>
 </helmet>
-<div class="mk" style="width: 440px; height: 1240px; box-sizing: border-box; background: #020604; display: flex; flex-direction: column; border-left: 1px solid #0f2a17; position: relative; overflow: hidden">
+<div class="mk" style="width: 440px; min-height: 1240px; box-sizing: border-box; background: #020604; display: flex; flex-direction: column; border-left: 1px solid #0f2a17; position: relative; overflow-y: auto">
 
   <div class="rain" aria-hidden="true">
     <sc-for list="{{rain}}" as="c" hint-placeholder-count="0">
@@ -69,36 +77,228 @@ input[type=range]{accent-color:#19e35a;width:110px}
       <input id="ss" class="search" placeholder="Search all settings">
     </div>
     <nav aria-label="Settings sections" style="display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(4,14,7,.86); border: 1px solid #0f2a17">
-      <sc-for list="{{stabs}}" as="s" hint-placeholder-count="7"><a class="{{s.cls}}" href="{{s.href}}" aria-current="{{s.cur}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg><span>{{s.label}}</span></a></sc-for>
+      <sc-for list="{{stabs}}" as="s" hint-placeholder-count="6"><a class="{{s.cls}}" href="{{s.href}}" aria-current="{{s.cur}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg><span>{{s.label}}</span></a></sc-for>
     </nav>
   </header>
 
-  <main style="position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 20px; overflow: hidden">
+  <main style="position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 20px; overflow-y: auto">
 
-    <section class="card" aria-labelledby="r-jev">
-      <h2 id="r-jev" class="sec">Who picks the route</h2>
-      <div class="row"><div class="lbl"><span>Route with Jev</span><span>Jev picks agent, model and effort for each task</span></div><button class="{{jevCls}}" aria-pressed="{{jevP}}" aria-label="Route with Jev" onClick="{{flipJev}}"><span class="kn"></span></button></div>
-      <div class="row"><div class="lbl"><span>When Jev is unsure</span><span>Read-only jobs take the lower pick; builds go one tier up</span></div><span class="mono" style="font-size: 11.5px; color: #b9e8c4">risk based</span></div>
-      <div class="row"><div class="lbl"><span>Ask before destructive tasks</span><span>Anything that deletes, resets or force-pushes</span></div><button class="{{askCls}}" aria-pressed="{{askP}}" aria-label="Ask before destructive tasks" onClick="{{flipAsk}}"><span class="kn"></span></button></div>
-    </section>
-
-    <section class="card" aria-labelledby="r-fall">
-      <h2 id="r-fall" class="sec">{{fallTitle}}</h2>
-      <sc-for list="{{tiers}}" as="t" hint-placeholder-count="4">
-        <div class="tier"><span style="color: #8bbf9a">{{t.size}}</span><span class="mono" style="font-size: 12px; color: #e6fff0">{{t.route}}</span><button class="btn" style="height: 26px; font-size: 11.5px" disabled title="Not supported in web dashboard">Edit</button></div>
-      </sc-for>
-      <div style="height: 6px"></div>
-    </section>
-
+    <!-- Limits & Quota floors -->
     <section class="card" aria-labelledby="r-cap">
-      <h2 id="r-cap" class="sec">Limits</h2>
-      <div class="row"><div class="lbl"><span>Lanes at once</span><span>Most worktrees MK runs in parallel</span></div>
-        <div class="step"><button aria-label="Fewer lanes" onClick="{{less}}">−</button><span aria-live="polite">{{lanes}}</span><button aria-label="More lanes" onClick="{{more}}">+</button></div>
+      <h2 id="r-cap" class="sec">Limits &amp; Quota Policy</h2>
+      <div class="row">
+        <div class="lbl"><span>Lanes at once</span><span>Most worktrees MK runs in parallel</span></div>
+        <div class="step">
+          <button aria-label="Fewer lanes" onClick="{{lessLanes}}">−</button>
+          <span aria-live="polite">{{maxLanes}}</span>
+          <button aria-label="More lanes" onClick="{{moreLanes}}">+</button>
+        </div>
       </div>
-      <div class="row"><div class="lbl"><span>Spare Claude below</span><span>Prefer other agents when Claude's 5h quota is under this</span></div>
-        <label for="spare" class="sr">Spare Claude below</label><input id="spare" type="range" min="10" max="60" step="5" value="{{spare}}" onChange="{{setSpare}}"><span class="mono" style="font-size: 12px; color: #e6fff0; width: 34px; text-align: right">{{spare}}%</span>
+      <div class="row">
+        <div class="lbl"><span>Action below quota floor</span><span>What to do when an agent's quota drops below floor</span></div>
+        <div class="segc" role="group" aria-label="Action below quota floor">
+          <button class="{{onBelowOffCls}}" onClick="{{setBelowOff}}">off</button>
+          <button class="{{onBelowWarnCls}}" onClick="{{setBelowWarn}}">warn</button>
+          <button class="{{onBelowBlockCls}}" onClick="{{setBelowBlock}}">block</button>
+        </div>
       </div>
-      <div class="row" style="padding-bottom: 14px"><div class="lbl"><span>Final reviews</span><span>Always a separate reviewer from the builder</span></div><span class="mono" style="font-size: 11.5px; color: #b9e8c4">required</span></div>
+      <div class="row">
+        <div class="lbl"><span>Claude 5h floor</span><span>Percent left in 5h session quota</span></div>
+        <div class="step">
+          <button aria-label="Decrease Claude 5h floor" onClick="{{lessClaudeSession}}">−</button>
+          <span aria-live="polite">{{claudeSessionFloor}}%</span>
+          <button aria-label="Increase Claude 5h floor" onClick="{{moreClaudeSession}}">+</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="lbl"><span>Claude weekly floor</span><span>Percent left in weekly quota</span></div>
+        <div class="step">
+          <button aria-label="Decrease Claude weekly floor" onClick="{{lessClaudeWeekly}}">−</button>
+          <span aria-live="polite">{{claudeWeeklyFloor}}%</span>
+          <button aria-label="Increase Claude weekly floor" onClick="{{moreClaudeWeekly}}">+</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="lbl"><span>Other agents 5h floor</span><span>Codex, AGY and others session floor</span></div>
+        <div class="step">
+          <button aria-label="Decrease others 5h floor" onClick="{{lessOthersSession}}">−</button>
+          <span aria-live="polite">{{othersSessionFloor}}%</span>
+          <button aria-label="Increase others 5h floor" onClick="{{moreOthersSession}}">+</button>
+        </div>
+      </div>
+      <div class="row" style="padding-bottom: 14px">
+        <div class="lbl"><span>Other agents weekly floor</span><span>Codex, AGY and others weekly floor</span></div>
+        <div class="step">
+          <button aria-label="Decrease others weekly floor" onClick="{{lessOthersWeekly}}">−</button>
+          <span aria-live="polite">{{othersWeeklyFloor}}%</span>
+          <button aria-label="Increase others weekly floor" onClick="{{moreOthersWeekly}}">+</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Routes by task size -->
+    <section class="card" aria-labelledby="r-fall">
+      <h2 id="r-fall" class="sec">Routes by task size</h2>
+      <p style="margin: 0 0 8px; font-size: 11.5px; line-height: 16px; color: #7fae8c">Default route assigned to each plan task size. Choose from installed agent models or enter free text.</p>
+      <sc-for list="{{tiers}}" as="t">
+        <div class="row" style="flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 0">
+          <div style="display: flex; align-items: center; justify-content: space-between">
+            <span style="font-weight: 600; color: #e6fff0">{{t.sizeLabel}}</span>
+            <span class="mono" style="font-size: 12px; color: #19e35a">{{t.route}}</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap">
+            <select class="inp" aria-label="Route for {{t.size}} agent" onChange="{{t.changeAgent}}">
+              <sc-for list="{{t.agentOptions}}" as="ao">
+                <option value="{{ao.val}}">{{ao.label}}</option>
+              </sc-for>
+            </select>
+            <sc-if value="{{t.hasModels}}">
+              <select class="inp" aria-label="Route for {{t.size}} model" onChange="{{t.changeModel}}">
+                <sc-for list="{{t.modelOptions}}" as="mo">
+                  <option value="{{mo.val}}">{{mo.label}}</option>
+                </sc-for>
+              </select>
+            </sc-if>
+            <sc-if value="{{t.noModels}}">
+              <input class="inp" style="width: 120px" aria-label="Route for {{t.size}} model" placeholder="Model (free text)" value="{{t.freeModel}}" onChange="{{t.changeFreeModel}}">
+            </sc-if>
+            <sc-if value="{{t.hasEfforts}}">
+              <select class="inp" aria-label="Route for {{t.size}} effort" onChange="{{t.changeEffort}}">
+                <sc-for list="{{t.effortOptions}}" as="eo">
+                  <option value="{{eo.val}}">{{eo.label}}</option>
+                </sc-for>
+              </select>
+            </sc-if>
+            <sc-if value="{{t.noModels}}">
+              <input class="inp" style="width: 90px" aria-label="Route for {{t.size}} effort" placeholder="Effort" value="{{t.freeEffort}}" onChange="{{t.changeFreeEffort}}">
+            </sc-if>
+          </div>
+        </div>
+      </sc-for>
+    </section>
+
+    <!-- Agents & Models -->
+    <section class="card" aria-labelledby="r-agents">
+      <h2 id="r-agents" class="sec">Agents &amp; Quota</h2>
+      <sc-for list="{{agentsList}}" as="a">
+        <div style="margin: 10px 0 16px; padding: 12px; border-radius: 12px; background: rgba(3,10,6,.94); border: 1px solid #143d22; display: flex; flex-direction: column; gap: 10px">
+          <!-- Agent header -->
+          <div style="display: flex; align-items: center; gap: 10px">
+            <div style="{{a.avatarStyle}}">{{a.initial}}</div>
+            <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
+              <span style="font-size: 13.5px; font-weight: 600; color: #e6fff0">{{a.name}}</span>
+              <span class="mono" style="font-size: 11px; color: #7fae8c">{{a.cli}}</span>
+            </div>
+            <span class="pill" style="{{a.pillStyle}}">{{a.state}}</span>
+            <button class="sw {{a.routableCls}}" aria-pressed="{{a.routableP}}" aria-label="Use {{a.name}}" onClick="{{a.flipRoutable}}"><span class="kn"></span></button>
+          </div>
+
+          <!-- Live Quota next to floors -->
+          <sc-if value="{{a.hasQuota}}">
+            <div style="display: flex; flex-direction: column; gap: 6px; padding: 8px 0; border-top: 1px solid #0d2414">
+              <sc-for list="{{a.quotaRows}}" as="q">
+                <div class="kv">
+                  <span>{{q.label}}</span>
+                  <div class="meter"><div style="{{q.style}}"></div></div>
+                  <span class="mono" style="width: 60px; text-align: right; color: #b9e8c4">{{q.text}}</span>
+                  <span style="font-size: 11px; color: #7fae8c; margin-left: 4px">{{q.floorNote}}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{a.noQuota}}">
+            <div class="kv" style="padding: 6px 0; border-top: 1px solid #0d2414">
+              <span>Quota</span>
+              <span style="color: #7fae8c">Not reported by this CLI</span>
+              <span style="font-size: 11px; color: #7fae8c; margin-left: 6px">{{a.floorNote}}</span>
+            </div>
+          </sc-if>
+
+          <!-- Default model and effort -->
+          <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px solid #0d2414">
+            <div class="lbl"><span>Default model &amp; effort</span><span>Fallback model when brief route specifies no model</span></div>
+            <div style="display: flex; gap: 8px; align-items: center">
+              <sc-if value="{{a.hasModels}}">
+                <select class="inp" aria-label="Default model for {{a.name}}" onChange="{{a.changeDefaultModel}}">
+                  <sc-for list="{{a.modelPickOptions}}" as="mpo">
+                    <option value="{{mpo.val}}">{{mpo.label}}</option>
+                  </sc-for>
+                </select>
+                <sc-if value="{{a.hasEffortOptions}}">
+                  <select class="inp" aria-label="Default effort for {{a.name}}" onChange="{{a.changeDefaultEffort}}">
+                    <sc-for list="{{a.effortPickOptions}}" as="epo">
+                      <option value="{{epo.val}}">{{epo.label}}</option>
+                    </sc-for>
+                  </select>
+                </sc-if>
+              </sc-if>
+              <sc-if value="{{a.noModels}}">
+                <input class="inp" style="width: 140px" aria-label="Default model for {{a.name}}" placeholder="Default model (free text)" value="{{a.defaultModelVal}}" onChange="{{a.changeDefaultModel}}">
+                <input class="inp" style="width: 100px" aria-label="Default effort for {{a.name}}" placeholder="Effort" value="{{a.defaultEffortVal}}" onChange="{{a.changeDefaultEffort}}">
+              </sc-if>
+            </div>
+          </div>
+
+          <!-- Models table: add, edit, remove, efforts per model -->
+          <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px solid #0d2414">
+            <div style="display: flex; align-items: center; justify-content: space-between">
+              <span style="font-size: 12px; font-weight: 600; color: #b9e8c4">Models ({{a.modelsCount}})</span>
+              <sc-if value="{{a.canShowAddBtn}}">
+                <button class="btn sm" aria-label="Add model to {{a.id}}" onClick="{{a.startAdd}}">+ Add model</button>
+              </sc-if>
+            </div>
+
+            <!-- Add model form -->
+            <sc-if value="{{a.isAdding}}">
+              <div style="display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 8px; background: #020a05; border: 1px solid #1c4a2b">
+                <div style="font-size: 11.5px; font-weight: 600; color: #e6fff0">Add model to {{a.name}}</div>
+                <input class="inp" aria-label="New model ID for {{a.id}}" placeholder="Model ID (e.g. gpt-6-astra)" value="{{a.addId}}" onInput="{{a.changeAddId}}" onChange="{{a.changeAddId}}">
+                <input class="inp" aria-label="New model efforts for {{a.id}}" placeholder="Efforts: low, medium, high (comma separated)" value="{{a.addEfforts}}" onInput="{{a.changeAddEfforts}}" onChange="{{a.changeAddEfforts}}">
+                <input class="inp" aria-label="New model note for {{a.id}}" placeholder="Note (optional)" value="{{a.addNote}}" onInput="{{a.changeAddNote}}" onChange="{{a.changeAddNote}}">
+                <div style="display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px">
+                  <button class="btn sm" onClick="{{a.cancelAdd}}">Cancel</button>
+                  <button class="btn sm" style="background: #143d22; color: #e6fff0" aria-label="Save new model for {{a.id}}" onClick="{{a.saveAdd}}">Save model</button>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- Model rows -->
+            <sc-for list="{{a.modelsList}}" as="m">
+              <div style="display: flex; flex-direction: column; gap: 4px; padding: 6px 0; border-top: 1px solid #0d2414">
+                <sc-if value="{{m.notEditing}}">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+                    <div style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+                      <div style="display: flex; align-items: center; gap: 6px">
+                        <span class="mono" style="font-size: 12px; font-weight: 600; color: #e6fff0">{{m.id}}</span>
+                        <span class="mono" style="font-size: 11px; color: #7fae8c">[{{m.effortsText}}]</span>
+                      </div>
+                      <sc-if value="{{m.hasNote}}">
+                        <span style="font-size: 11px; color: #5f9a70; line-height: 14px">{{m.note}}</span>
+                      </sc-if>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-shrink: 0">
+                      <button class="btn sm" aria-label="Edit model {{m.id}} for {{a.id}}" onClick="{{m.startEdit}}">Edit</button>
+                      <button class="btn sm" style="color: #ff9b8a" aria-label="Remove model {{m.id}} from {{a.id}}" onClick="{{m.remove}}">Remove</button>
+                    </div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{m.isEditing}}">
+                  <div style="display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 8px; background: #020a05; border: 1px solid #1c4a2b">
+                    <div style="font-size: 11px; font-weight: 600; color: #e6fff0">Edit model {{m.id}}</div>
+                    <input class="inp" aria-label="Edit model ID for {{m.id}}" value="{{m.editIdVal}}" onInput="{{m.changeEditId}}" onChange="{{m.changeEditId}}">
+                    <input class="inp" aria-label="Edit model efforts for {{m.id}}" placeholder="Efforts comma-separated" value="{{m.editEffortsVal}}" onInput="{{m.changeEditEfforts}}" onChange="{{m.changeEditEfforts}}">
+                    <input class="inp" aria-label="Edit model note for {{m.id}}" placeholder="Note" value="{{m.editNoteVal}}" onInput="{{m.changeEditNote}}" onChange="{{m.changeEditNote}}">
+                    <div style="display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px">
+                      <button class="btn sm" onClick="{{m.cancelEdit}}">Cancel</button>
+                      <button class="btn sm" style="background: #143d22; color: #e6fff0" aria-label="Save model {{m.id}} changes" onClick="{{m.saveEdit}}">Save</button>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
     </section>
 
   </main>
@@ -106,64 +306,430 @@ input[type=range]{accent-color:#19e35a;width:110px}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":1240}}'>
+function quotaBar(left) {
+  var c = left < 25 ? '#ff7a66' : left < 50 ? '#e8b04a' : '#19e35a';
+  return 'height:100%;border-radius:3px;width:' + Math.min(100, Math.max(0, left)) + '%;background:' + c;
+}
+
+function parseEffortList(str) {
+  if (!str) return [];
+  return str.split(',').map(function (s) { return s.trim(); }).filter(function (s) { return Boolean(s); });
+}
+
 class Component extends DCLogic {
   constructor(p) {
     super(p);
-    this.state = { jev: true, ask: true, lanes: 3, spare: 30 };
+    this.state = {
+      addingAgentId: null,
+      addId: '',
+      addEfforts: 'low, medium, high',
+      addNote: '',
+      editingAgentId: null,
+      editingIndex: null,
+      editId: '',
+      editEfforts: '',
+      editNote: '',
+    };
   }
-  renderVals() {
-    const s = this.state;
-    const proj = this.getData('projects') || {};
-    const repo = (proj.repos && proj.repos[0]) || {};
-    const repoName = repo.name || 'orca-matrixkoder';
 
-    const defaultTiers = [
-      ['Trivial', 'claude haiku · low'],
-      ['Standard', 'claude sonnet · medium'],
-      ['Complex', 'claude opus · high'],
-      ['Final review', 'claude fable · max'],
-    ];
+  addModel(agentId, modelObj) {
+    var snap = window.MK_DATA || {};
+    var settings = snap.settings || {};
+    var values = settings.values || {};
+    var agents = values.agents || {};
+    var agent = agents[agentId] || {};
+    var curModels = Array.isArray(agent.models) ? agent.models.slice() : [];
+    curModels.push(modelObj);
+    return this.action('settings.save', { patch: { agents: { [agentId]: { models: curModels } } } });
+  }
+
+  editModel(agentId, index, patch) {
+    var snap = window.MK_DATA || {};
+    var settings = snap.settings || {};
+    var values = settings.values || {};
+    var agents = values.agents || {};
+    var agent = agents[agentId] || {};
+    var curModels = Array.isArray(agent.models) ? agent.models.slice() : [];
+    if (curModels[index]) {
+      curModels[index] = Object.assign({}, curModels[index], patch);
+    }
+    return this.action('settings.save', { patch: { agents: { [agentId]: { models: curModels } } } });
+  }
+
+  removeModel(agentId, index) {
+    var snap = window.MK_DATA || {};
+    var settings = snap.settings || {};
+    var values = settings.values || {};
+    var agents = values.agents || {};
+    var agent = agents[agentId] || {};
+    var curModels = Array.isArray(agent.models) ? agent.models.slice() : [];
+    curModels.splice(index, 1);
+    return this.action('settings.save', { patch: { agents: { [agentId]: { models: curModels } } } });
+  }
+
+  renderVals() {
+    var self = this;
+    var bind = function (k) { return self.bind(k); };
+    var s = this.getData('settings') || {};
+    var proj = this.getData('projects') || {};
+    var repo = (proj.repos && proj.repos[0]) || {};
+    var repoName = repo.name || 'orca-matrixkoder';
+
+    var values = s.values || {};
+    var routing = values.routing || {};
+    var quota = values.quota || {};
+    var agentsVal = values.agents || {};
+
+    // 1. Limits: routing.maxLanes
+    var lanesBind = bind('routing.maxLanes');
+
+    // 2. Quota onBelowFloor: off | warn | block
+    var belowBind = bind('quota.onBelowFloor');
+    var belowVal = belowBind.val || 'block';
+
+    // 3. Quota floors
+    var claudeSessBind = bind('quota.floor.claude.sessionPct');
+    var claudeWeekBind = bind('quota.floor.claude.weeklyPct');
+    var othersSessBind = bind('quota.floor.others.sessionPct');
+    var othersWeekBind = bind('quota.floor.others.weeklyPct');
+
+    var claudeSessFloor = claudeSessBind.val ?? 40;
+    var claudeWeekFloor = claudeWeekBind.val ?? 30;
+    var othersSessFloor = othersSessBind.val ?? 10;
+    var othersWeekFloor = othersWeekBind.val ?? 15;
+
+    // 4. Routes by task size
+    var sizes = ['trivial', 'standard', 'complex'];
+    var sizeLabels = { trivial: 'Trivial', standard: 'Standard', complex: 'Complex' };
+    var detectedAgents = Array.isArray(s.agents) ? s.agents : [];
+
+    // Map of agents available
+    var agentKeys = ['claude', 'codex', 'agy', 'opencode', 'omp'];
+    Object.keys(agentsVal).forEach(function (k) {
+      if (!agentKeys.includes(k)) agentKeys.push(k);
+    });
+
+    var tiers = sizes.map(function (sz) {
+      var b = bind('routing.bySize.' + sz);
+      var routeStr = b.val || (sz === 'trivial' ? 'claude haiku low' : sz === 'standard' ? 'claude sonnet medium' : 'claude opus high');
+      var parts = routeStr.split(/\s+/).filter(Boolean);
+      var curAgent = parts[0] || 'claude';
+      var curModel = parts[1] || '';
+      var curEffort = parts[2] || '';
+
+      var agentData = agentsVal[curAgent] || {};
+      var agentModels = Array.isArray(agentData.models) ? agentData.models : [];
+      var hasModels = agentModels.length > 0;
+
+      var curModelObj = agentModels.find(function (m) { return m.id === curModel; });
+      var modelEfforts = curModelObj && Array.isArray(curModelObj.efforts) ? curModelObj.efforts : [];
+      var hasEfforts = hasModels && modelEfforts.length > 0;
+
+      var agentOptions = agentKeys.map(function (ak) {
+        return { val: ak, label: ak, selected: ak === curAgent };
+      });
+
+      var modelOptions = [];
+      if (hasModels) {
+        modelOptions.push({ val: '', label: '(default model)', selected: !curModel });
+        agentModels.forEach(function (m) {
+          modelOptions.push({ val: m.id, label: m.id, selected: m.id === curModel });
+        });
+      }
+
+      var effortOptions = [];
+      if (hasEfforts) {
+        effortOptions.push({ val: '', label: '(default effort)', selected: !curEffort });
+        modelEfforts.forEach(function (ef) {
+          effortOptions.push({ val: ef, label: ef, selected: ef === curEffort });
+        });
+      }
+
+      var saveRoute = function (a, m, e) {
+        var res = [a, m, e].filter(Boolean).join(' ');
+        b.save(res);
+      };
+
+      return {
+        size: sz,
+        sizeLabel: sizeLabels[sz] || sz,
+        route: routeStr,
+        curAgent: curAgent,
+        curModel: curModel,
+        curEffort: curEffort,
+        hasModels: hasModels,
+        noModels: !hasModels,
+        hasEfforts: hasEfforts,
+        agentOptions: agentOptions,
+        modelOptions: modelOptions,
+        effortOptions: effortOptions,
+        freeModel: curModel,
+        freeEffort: curEffort,
+
+        changeAgent: function (e) {
+          var nextA = e && e.target ? e.target.value : curAgent;
+          var nextModels = agentsVal[nextA]?.models || [];
+          var nextM = nextModels[0]?.id || '';
+          var nextEfforts = nextModels[0]?.efforts || [];
+          var nextE = nextEfforts[0] || '';
+          saveRoute(nextA, nextM, nextE);
+        },
+        changeModel: function (e) {
+          var nextM = e && e.target ? e.target.value : '';
+          var targetModel = agentModels.find(function (m) { return m.id === nextM; });
+          var nextE = targetModel && targetModel.efforts && targetModel.efforts.length ? targetModel.efforts[0] : '';
+          saveRoute(curAgent, nextM, nextE);
+        },
+        changeFreeModel: function (e) {
+          var nextM = e && e.target ? e.target.value : '';
+          saveRoute(curAgent, nextM, curEffort);
+        },
+        changeEffort: function (e) {
+          var nextE = e && e.target ? e.target.value : '';
+          saveRoute(curAgent, curModel, nextE);
+        },
+        changeFreeEffort: function (e) {
+          var nextE = e && e.target ? e.target.value : '';
+          saveRoute(curAgent, curModel, nextE);
+        },
+      };
+    });
+
+    // 5. Agents list
+    var agentNames = {
+      claude: 'Claude Code',
+      codex: 'Codex',
+      agy: 'AGY',
+      opencode: 'OpenCode',
+      omp: 'OMP',
+    };
+    var agentTints = {
+      claude: ['#0d2a16', '#19e35a'],
+      codex: ['#0a2f2c', '#4fd1c5'],
+      agy: ['#221b08', '#e8b04a'],
+      opencode: ['#0b1c10', '#7fae8c'],
+      omp: ['#160c24', '#b98aff'],
+    };
+
+    var agentsList = agentKeys.map(function (id) {
+      var detected = detectedAgents.find(function (d) { return d.id === id; }) || {};
+      var cfg = agentsVal[id] || {};
+      var name = agentNames[id] || (id.charAt(0).toUpperCase() + id.slice(1));
+      var tint = agentTints[id] || ['#0b1c10', '#7fae8c'];
+      var isFound = detected.found !== undefined ? detected.found : true;
+      var cli = detected.cli || (isFound ? id + ' · on PATH' : id + ' · not found');
+
+      // Routable switch bound to agents.<id>.routable
+      var routableBind = bind('agents.' + id + '.routable');
+      var isRoutable = routableBind.val !== undefined ? !!routableBind.val : true;
+
+      // Quota rows next to floors
+      var quotaItems = Array.isArray(detected.quota) ? detected.quota : [];
+      var hasQuota = isFound && quotaItems.length > 0;
+      var isClaude = id === 'claude';
+      var quotaRows = quotaItems.map(function (q) {
+        var label = q.label || '';
+        var leftPct = q.leftPct != null ? q.leftPct : 0;
+        var isWeek = /week/i.test(label);
+        var floorVal = isClaude ? (isWeek ? claudeWeekFloor : claudeSessFloor) : (isWeek ? othersWeekFloor : othersSessFloor);
+        return {
+          label: label,
+          text: leftPct + '% left',
+          style: quotaBar(leftPct),
+          floorNote: '(floor: ' + floorVal + '%)',
+        };
+      });
+
+      var floorNote = isClaude
+        ? '(floors: ' + claudeSessFloor + '% 5h / ' + claudeWeekFloor + '% week)'
+        : '(floors: ' + othersSessFloor + '% 5h / ' + othersWeekFloor + '% week)';
+
+      // Default model and effort
+      var modelBind = bind('agents.' + id + '.model');
+      var effortBind = bind('agents.' + id + '.effort');
+      var defaultModel = modelBind.val || '';
+      var defaultEffort = effortBind.val || '';
+
+      var models = Array.isArray(cfg.models) ? cfg.models : [];
+      var hasModels = models.length > 0;
+
+      var curModelObj = models.find(function (m) { return m.id === defaultModel; });
+      var modelEfforts = curModelObj && Array.isArray(curModelObj.efforts) ? curModelObj.efforts : [];
+      var hasEffortOptions = hasModels && modelEfforts.length > 0;
+
+      var modelPickOptions = [{ val: '', label: 'Default (none)', selected: !defaultModel }];
+      models.forEach(function (m) {
+        modelPickOptions.push({ val: m.id, label: m.id, selected: m.id === defaultModel });
+      });
+
+      var effortPickOptions = [{ val: '', label: 'Default (none)', selected: !defaultEffort }];
+      modelEfforts.forEach(function (ef) {
+        effortPickOptions.push({ val: ef, label: ef, selected: ef === defaultEffort });
+      });
+
+      var isAdding = self.state.addingAgentId === id;
+
+      var modelsList = models.map(function (m, idx) {
+        var isEditing = self.state.editingAgentId === id && self.state.editingIndex === idx;
+        var effortsText = Array.isArray(m.efforts) && m.efforts.length ? m.efforts.join(', ') : 'in model id';
+        return {
+          id: m.id,
+          effortsText: effortsText,
+          hasNote: Boolean(m.note),
+          note: m.note || '',
+          notEditing: !isEditing,
+          isEditing: isEditing,
+          editIdVal: isEditing ? self.state.editId : m.id,
+          editEffortsVal: isEditing ? self.state.editEfforts : (m.efforts || []).join(', '),
+          editNoteVal: isEditing ? self.state.editNote : (m.note || ''),
+
+          startEdit: function () {
+            self.setState({
+              editingAgentId: id,
+              editingIndex: idx,
+              editId: m.id,
+              editEfforts: (m.efforts || []).join(', '),
+              editNote: m.note || '',
+            });
+          },
+          cancelEdit: function () {
+            self.setState({ editingAgentId: null, editingIndex: null });
+          },
+          changeEditId: function (e) {
+            self.setState({ editId: e && e.target ? e.target.value : '' });
+          },
+          changeEditEfforts: function (e) {
+            self.setState({ editEfforts: e && e.target ? e.target.value : '' });
+          },
+          changeEditNote: function (e) {
+            self.setState({ editNote: e && e.target ? e.target.value : '' });
+          },
+          saveEdit: function () {
+            var updated = {
+              id: self.state.editId.trim() || m.id,
+              efforts: parseEffortList(self.state.editEfforts),
+              note: self.state.editNote.trim(),
+            };
+            self.editModel(id, idx, updated);
+            self.setState({ editingAgentId: null, editingIndex: null });
+          },
+          remove: function () {
+            self.removeModel(id, idx);
+          },
+        };
+      });
+
+      return {
+        id: id,
+        name: name,
+        cli: cli,
+        initial: (id.charAt(0) || 'A').toUpperCase(),
+        state: isFound ? 'Ready' : 'Missing',
+        avatarStyle: 'width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;background:' + tint[0] + ';color:' + tint[1],
+        pillStyle: isFound ? 'background:#123a1e;color:#19e35a' : 'background:#3a1512;color:#ff9b8a',
+
+        routableCls: isRoutable ? 'on' : '',
+        routableP: String(isRoutable),
+        flipRoutable: function () {
+          routableBind.toggle();
+        },
+
+        hasQuota: hasQuota,
+        noQuota: !hasQuota,
+        quotaRows: quotaRows,
+        floorNote: floorNote,
+
+        hasModels: hasModels,
+        noModels: !hasModels,
+        defaultModelVal: defaultModel,
+        defaultEffortVal: defaultEffort,
+        modelPickOptions: modelPickOptions,
+        hasEffortOptions: hasEffortOptions,
+        effortPickOptions: effortPickOptions,
+
+        changeDefaultModel: function (e) {
+          modelBind.save(e && e.target ? e.target.value : '');
+        },
+        changeDefaultEffort: function (e) {
+          effortBind.save(e && e.target ? e.target.value : '');
+        },
+
+        modelsCount: models.length,
+        modelsList: modelsList,
+
+        canShowAddBtn: !isAdding,
+        isAdding: isAdding,
+        addId: self.state.addId,
+        addEfforts: self.state.addEfforts,
+        addNote: self.state.addNote,
+
+        startAdd: function () {
+          self.setState({
+            addingAgentId: id,
+            addId: '',
+            addEfforts: 'low, medium, high',
+            addNote: '',
+          });
+        },
+        cancelAdd: function () {
+          self.setState({ addingAgentId: null });
+        },
+        changeAddId: function (e) {
+          self.setState({ addId: e && e.target ? e.target.value : '' });
+        },
+        changeAddEfforts: function (e) {
+          self.setState({ addEfforts: e && e.target ? e.target.value : '' });
+        },
+        changeAddNote: function (e) {
+          self.setState({ addNote: e && e.target ? e.target.value : '' });
+        },
+        saveAdd: function () {
+          if (!self.state.addId.trim()) return;
+          var newM = {
+            id: self.state.addId.trim(),
+            efforts: parseEffortList(self.state.addEfforts),
+            note: self.state.addNote.trim(),
+          };
+          self.addModel(id, newM);
+          self.setState({ addingAgentId: null });
+        },
+      };
+    });
 
     return {
       rain: window.MK_RAIN ? window.MK_RAIN(79) : [],
       stabs: window.MK_STABS ? window.MK_STABS('routing') : [],
-      repoName,
-      jevCls: 'sw' + (s.jev ? ' on' : ''),
-      jevP: String(s.jev),
-      flipJev: () => {
-        const next = !s.jev;
-        this.setState({ jev: next });
-        this.action('settings.save', { patch: { routing: { useJev: next } } });
-      },
-      askCls: 'sw' + (s.ask ? ' on' : ''),
-      askP: String(s.ask),
-      flipAsk: () => {
-        const next = !s.ask;
-        this.setState({ ask: next });
-        this.action('settings.save', { patch: { routing: { askBeforeDestructive: next } } });
-      },
-      fallTitle: s.jev ? 'Fallback when Jev is down' : 'Routes by task size',
-      tiers: defaultTiers.map(([size, route]) => ({
-        size,
-        route,
-      })),
-      lanes: s.lanes,
-      less: () => {
-        const next = Math.max(1, s.lanes - 1);
-        this.setState({ lanes: next });
-        this.action('settings.save', { patch: { routing: { maxLanes: next } } });
-      },
-      more: () => {
-        const next = Math.min(8, s.lanes + 1);
-        this.setState({ lanes: next });
-        this.action('settings.save', { patch: { routing: { maxLanes: next } } });
-      },
-      spare: s.spare,
-      setSpare: (e) => {
-        const next = Number(e.target.value);
-        this.setState({ spare: next });
-        this.action('settings.save', { patch: { routing: { spareClaudeBelowPct: next } } });
-      },
+      repoName: repoName,
+
+      maxLanes: lanesBind.val ?? 3,
+      lessLanes: function () { return lanesBind.step(-1); },
+      moreLanes: function () { return lanesBind.step(1); },
+
+      onBelowOffCls: belowVal === 'off' ? 'on' : '',
+      onBelowWarnCls: belowVal === 'warn' ? 'on' : '',
+      onBelowBlockCls: belowVal === 'block' ? 'on' : '',
+      setBelowOff: function () { return belowBind.save('off'); },
+      setBelowWarn: function () { return belowBind.save('warn'); },
+      setBelowBlock: function () { return belowBind.save('block'); },
+
+      claudeSessionFloor: claudeSessFloor,
+      lessClaudeSession: function () { return claudeSessBind.step(-5); },
+      moreClaudeSession: function () { return claudeSessBind.step(5); },
+
+      claudeWeeklyFloor: claudeWeekFloor,
+      lessClaudeWeekly: function () { return claudeWeekBind.step(-5); },
+      moreClaudeWeekly: function () { return claudeWeekBind.step(5); },
+
+      othersSessionFloor: othersSessFloor,
+      lessOthersSession: function () { return othersSessBind.step(-5); },
+      moreOthersSession: function () { return othersSessBind.step(5); },
+
+      othersWeeklyFloor: othersWeekFloor,
+      lessOthersWeekly: function () { return othersWeekBind.step(-5); },
+      moreOthersWeekly: function () { return othersWeekBind.step(5); },
+
+      tiers: tiers,
+      agentsList: agentsList,
     };
   }
 }
