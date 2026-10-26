@@ -5,6 +5,8 @@
  * It reads nothing from disk and writes nothing.
  */
 
+import { SPEC_SCENARIOS } from './settings.js';
+
 export type Fit = 'pass' | 'partial' | 'not_a_plan';
 export type TomlValue = string | number | boolean | TomlValue[] | { [k: string]: TomlValue };
 export type TomlTable = { [k: string]: TomlValue };
@@ -203,6 +205,8 @@ export interface ParsedTask extends Omit<ParsedSubtask, 'parentBlock'> {
   covers: string[];
   subagent: boolean;
   parallel: boolean;
+  /** C10 scenario: the task's own, else its phase's; null when neither names one. */
+  scenario: string | null;
   subtasks: ParsedSubtask[];
 }
 
@@ -221,6 +225,7 @@ export interface ParsedPhase {
   route: string;
   reviewer: string;
   subagents: boolean;
+  scenario: string | null;
   qa: string[];
   serves: string[];
   hazards: string[];
@@ -291,6 +296,12 @@ export function parsePlan(text: string): ParseResult {
 
   const byNum = new Map<string, Block>();
   const missing: string[] = [];
+  const scenarioOf = (v: unknown, label: string): string | null => {
+    if (v === undefined) return null;
+    if (typeof v === 'string' && (SPEC_SCENARIOS as readonly string[]).includes(v)) return v;
+    missing.push(`${label}: scenario must be one of ${SPEC_SCENARIOS.join(', ')}`);
+    return null;
+  };
   for (const b of blocks) {
     if (byNum.has(b.num)) missing.push(`duplicate block ${b.num}`);
     else byNum.set(b.num, b);
@@ -348,6 +359,7 @@ export function parsePlan(text: string): ParseResult {
     };
     const size = typeof s.size === 'string' && SIZES.includes(s.size) ? s.size : null;
     if (s.size !== undefined && size === null) missing.push(`${L}: size must be trivial, standard or complex`);
+    const phScenario = scenarioOf(s.scenario, L);
     const body = textBlock?.body ?? '';
 
     const tasks: ParsedTask[] = [];
@@ -373,6 +385,7 @@ export function parsePlan(text: string): ParseResult {
       if (t.risk !== undefined && risk !== t.risk) missing.push(`task ${t.id}: risk must be a whole number from 1 to 5`);
       const tsize = typeof t.size === 'string' && SIZES.includes(t.size) ? t.size : null;
       if (t.size !== undefined && tsize === null) missing.push(`task ${t.id}: size must be trivial, standard or complex`);
+      const taskScenario = scenarioOf(t.scenario, `task ${t.id}`) ?? phScenario;
       const subtasks: ParsedSubtask[] = [];
       const subNums = [...byNum.keys()]
         .map((k) => new RegExp(`^5\\.${n}\\.${m}\\.(\\d+)$`).exec(k))
@@ -401,7 +414,7 @@ export function parsePlan(text: string): ParseResult {
         gate: typeof t.gate === 'string' ? t.gate : null,
         manual: typeof t.manual === 'string' ? t.manual : null,
         route: typeof t.route === 'string' ? t.route : '',
-        subagent: t.subagent === true, parallel: t.parallel === true,
+        subagent: t.subagent === true, parallel: t.parallel === true, scenario: taskScenario,
         subtasks,
       });
     }
@@ -413,7 +426,7 @@ export function parsePlan(text: string): ParseResult {
       commit: typeof s.commit === 'string' ? s.commit : null,
       size, route: typeof s.route === 'string' ? s.route : '',
       reviewer: typeof s.reviewer === 'string' ? s.reviewer : '',
-      subagents: s.subagents === undefined ? true : s.subagents === true,
+      subagents: s.subagents === undefined ? true : s.subagents === true, scenario: phScenario,
       serves: idsIn(bulletOf(body, 'Serves') ?? ''), hazards: idsIn(bulletOf(body, 'Hazards') ?? ''),
       carries: idsIn(bulletOf(body, 'Carries') ?? ''), buildOrder: bulletOf(body, 'Build order'),
       tasks,

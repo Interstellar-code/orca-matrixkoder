@@ -7,7 +7,8 @@
  * and the snapshot rebuilt, down to one row per list.
  */
 import { all, one, type Db, type Row } from '../store/db.js';
-import { defaultSettings, describeSettings, loadSettingsDetailed, setting, SPEC_SCENARIOS, type Settings } from '../store/settings.js';
+import { defaultSettings, describeSettings, loadSettingsDetailed, setting, type Settings } from '../store/settings.js';
+import { templateStatuses } from '../store/spec-templates.js';
 import { providerOf } from './providers.js';
 import { cut, homeAbbrev, maybeNum, num, parseJson, type ServerCtx } from './common.js';
 
@@ -567,8 +568,7 @@ class Builder {
       schema: describeSettings(this.settings as Settings),
       migrationNotes: this.migrationNotes.slice(0, 40).map((n) => cut(n, 200)),
       lastScreen: one(this.db, "SELECT value FROM kv WHERE key = 'panel.lastScreen'")?.value ?? null,
-      // placeholder until USE.5 fills in the real template status for the active repo (C10)
-      specTemplates: Object.fromEntries(SPEC_SCENARIOS.map((k) => [k, { path: '', source: 'builtin', ok: true, issue: null }])),
+      specTemplates: templateStatuses(this.settings as Settings, { dir: this.c.dir, repoPath: String(this.repo?.path ?? '') }),
       agents: clis.map((a) => ({
         id: String(a.agent_id), found: num(a.found) === 1, cli: a.cli_path ?? null, version: a.version ?? null,
         quota: quota.filter((q) => q.provider === providerOf(String(a.agent_id))).map((q) => ({

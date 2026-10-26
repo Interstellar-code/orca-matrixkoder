@@ -18,6 +18,7 @@ import { main as cliMain, realOrca } from '../store/cli.js';
 import { one, tx, type Row } from '../store/db.js';
 import { ImportError, importFile, inboxPlace, scanInbox, type InboxTarget } from '../store/import.js';
 import { droppedV1Key } from '../store/settings-migrate.js';
+import { listValue, pickScenario, renderSpec, rulesLines } from '../store/spec-templates.js';
 import { loadSettings, resetSettings, saveSettings, setting, SettingsError, type Settings } from '../store/settings.js';
 import { CANCELLED_RESULT, cut, fail, J, parseJson, readSettings, type ActionError, type ActionOutcome, type ServerCtx } from './common.js';
 import { Decisions } from './decisions.js';
@@ -206,38 +207,33 @@ export class Actions {
     return { task, plan, phase };
   }
 
-  private taskSpec(t: Row, plan: Row, phase: Row, attempt: number): string {
+  /** C10: the brief, rendered from the task's scenario template. Template fallbacks land in `warn`. */
+  private taskSpec(t: Row, plan: Row, phase: Row, attempt: number, warn: string[]): string {
     const list = (k: string): string[] => parseJson<string[]>(t[k], []);
-    const lines = [`mk-ref: plan:${plan.slug}:${t.code}#${attempt}`, '', `${t.code} ${t.title}`, `Phase: ${phase.title}`, `Risk: ${t.risk}/5`];
-    if (t.description) lines.push('', String(t.description));
-    if (list('acceptance').length) lines.push('', 'Acceptance:', ...list('acceptance').map((x) => `- ${x}`));
-    if (list('owned').length) lines.push('', `Files you own: ${list('owned').join(', ')}`);
-    if (t.gate) lines.push('', `Gate: ${t.gate}`);
-    if (t.manual) lines.push(`Manual check: ${t.manual}`);
-    const rules = this.rulesSection(loadSettings(this.c.dir));
-    if (rules.length) lines.push('', ...rules);
-    return lines.join('\n');
-  }
-
-  /** C7/C8: advisory rules from settings. MK does not filter anything an agent does; this only tells it. */
-  private rulesSection(settings: Settings): string[] {
-    const branches = setting<string[]>(settings, 'safety.protectedBranches');
-    const never = setting<string[]>(settings, 'safety.neverRun');
-    const lines: string[] = [];
-    if (branches.length) lines.push(`- Protected branches (never commit or merge to them): ${branches.join(', ')}`);
-    if (never.length) lines.push('- Never run these commands:', ...never.map((x) => `  - ${x}`));
-    if (setting<boolean>(settings, 'safety.askBeforePush')) lines.push('- Ask before any push');
-    if (setting<string>(settings, 'general.mode') === 'solo') {
-      lines.push('- Solo mode: work in this checkout; use in-session subagents for parallel parts, not Orca lanes or worktrees');
-    }
-    return lines.length ? ['Rules from MatrixKoder settings:', ...lines] : [];
+    const settings = loadSettings(this.c.dir);
+    const repoPath = this.repoPath(String(plan.repo_id));
+    const r = renderSpec({
+      ref: `mk-ref: plan:${plan.slug}:${t.code}#${attempt}`,
+      scenario: pickScenario({ explicit: t.scenario === null ? null : String(t.scenario), attempt }),
+      vals: {
+        code: String(t.code), title: String(t.title), phase: String(phase.title), risk: String(t.risk), size: t.size ? String(t.size) : '',
+        attempt: String(attempt), description: t.description ? String(t.description) : '', acceptance: listValue(list('acceptance')),
+        owned: listValue(list('owned')), deps: listValue(list('deps')), gate: t.gate ? String(t.gate) : '', manual: t.manual ? String(t.manual) : '',
+        repo: repoPath,
+      },
+      rules: rulesLines(settings),
+      settings,
+      env: { dir: this.c.dir, repoPath },
+    });
+    warn.push(...r.warnings);
+    return r.text;
   }
 
   /** task-create in the plan's run, then the row. A replay with the same attempt returns the same Orca task. */
-  private async createOrcaTask(task: Row, plan: Row, phase: Row): Promise<string | ActionOutcome> {
+  private async createOrcaTask(task: Row, plan: Row, phase: Row, warn: string[] = []): Promise<string | ActionOutcome> {
     const attempt = Number(task.attempts) + 1;
     const r = await callOrca(this.c, 'task-create', {
-      spec: this.taskSpec(task, plan, phase, attempt),
+      spec: this.taskSpec(task, plan, phase, attempt, warn),
       'task-title': cut(`${task.code} ${task.title}`, 120),
       run: String(plan.orca_run_id),
       'retry-request': `mk-task-${task.id}-${attempt}`,
@@ -289,7 +285,7 @@ export class Actions {
 
     let orcaTaskId = task.orca_task_id ? String(task.orca_task_id) : '';
     if (!orcaTaskId) {
-      const made = await this.createOrcaTask(task, plan, phase);
+      const made = await this.createOrcaTask(task, plan, phase, warnings);
       if (typeof made !== 'string') return made;
       orcaTaskId = made;
     }
@@ -309,10 +305,11 @@ export class Actions {
     if (!['failed', 'cancelled'].includes(String(task.status)) && task.last_state !== 'missing') {
       refuse('conflict', `task ${task.code} is ${task.status}; only a failed, cancelled or missing task can be retried`);
     }
-    const made = await this.createOrcaTask(task, plan, phase);
+    const warnings: string[] = [];
+    const made = await this.createOrcaTask(task, plan, phase, warnings);
     if (typeof made !== 'string') return made;
     this.sync.request();
-    return { ok: true, task: { id: task.id, code: task.code, orcaTaskId: made, attempts: Number(task.attempts) + 1 } };
+    return { ok: true, task: { id: task.id, code: task.code, orcaTaskId: made, attempts: Number(task.attempts) + 1 }, ...(warnings.length ? { warnings } : {}) };
   }
 
   private async taskCancel(taskId: number): Promise<ActionOutcome> {
@@ -438,7 +435,12 @@ export class Actions {
   private async cli(argv: string[], key: string, slow = false): Promise<ActionOutcome> {
     // An injected runner (tests) stays in this process; the real one is synchronous, so it goes to a child.
     const { code, out, err } = slow && this.c.cliOrca === realOrca ? await this.cliChild(argv) : this.cliInline(argv);
-    if (code === 0) return { ok: true, [key]: parseJson<unknown>(out, null) };
+    if (code === 0) {
+      const parsed = parseJson<unknown>(out, null);
+      // bug.fix: template fallbacks (C10) ride along as the action's own warnings[].
+      const w = key === 'bug' && parsed && typeof parsed === 'object' ? (parsed as { warnings?: unknown }).warnings : undefined;
+      return { ok: true, [key]: parsed, ...(Array.isArray(w) && w.length ? { warnings: w as string[] } : {}) };
+    }
     const message = (err.split('\n').find((l) => l.startsWith('mk:')) ?? err).replace(/^mk:\s*/, '').trim() || 'the command failed';
     if (code === 2) return fail('bad_args', message);
     if (/^no (bug|todo) /.test(message)) return fail('not_found', message);
@@ -452,7 +454,7 @@ export class Actions {
     let err = '';
     const code = cliMain(argv, {
       out: (l) => (out += l),
-      err: (l) => (err += l),
+      err: (l) => (err += `${l}\n`),
       env: { MK_REPORTED_BY: 'user' },
       cwd: this.c.dir,
       orca: this.c.cliOrca,

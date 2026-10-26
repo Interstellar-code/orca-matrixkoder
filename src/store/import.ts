@@ -175,7 +175,7 @@ export function scanInbox(db: Db, t: InboxTarget, at: number = now()): Row[] {
 const taskVals = (t: ParsedTask): Record<string, string | number | null> => ({
   title: t.title, description: t.description, acceptance: J(t.acceptance), covers: J(t.covers), deps: J(t.deps),
   risk: t.risk, size: t.size, gate: t.gate, manual: t.manual, route: t.route, refs: J(t.refs), owned: J(t.owned),
-  subagent: t.subagent ? 1 : 0, parallel: t.parallel ? 1 : 0,
+  subagent: t.subagent ? 1 : 0, parallel: t.parallel ? 1 : 0, scenario: t.scenario,
 });
 
 const phaseVals = (p: ParsedPhase): Record<string, string | number | null> => ({

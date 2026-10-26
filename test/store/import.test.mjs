@@ -343,3 +343,37 @@ unit = "npm test"
   assert.throws(() => parseToml('a = "open'), /not closed/);
   assert.equal(parsePlan('nothing here').fit, 'not_a_plan');
 });
+
+// ------------------------------------------------------------------------------------------------ C10 scenario (USE.5)
+
+const withScenario = (phaseScenario, taskEdits = []) => {
+  let text = planText().replace('id = "SPIKE"\n', `id = "SPIKE"\nscenario = ${JSON.stringify(phaseScenario)}\n`);
+  for (const [from, to] of taskEdits) text = text.replace(from, to);
+  return text;
+};
+
+test('USE.5: a phase scenario is copied to each of its tasks unless the task sets its own, and a re-import merge updates it', () => {
+  const { db, t, drop } = setup(withScenario('review', [['id = "SPIKE.2"\n', 'id = "SPIKE.2"\nscenario = "investigate"\n']]));
+  const r = importFile(db, t, NAME);
+  assert.equal(r.action, 'created', JSON.stringify(r));
+  assert.equal(q1(db, "SELECT scenario FROM plan_task WHERE code='SPIKE.1'").scenario, 'review');
+  assert.equal(q1(db, "SELECT scenario FROM plan_task WHERE code='SPIKE.2'").scenario, 'investigate', "the task's own wins");
+  assert.equal(q1(db, "SELECT scenario FROM plan_task WHERE code='STORE.1'").scenario, null, 'other phases stay NULL');
+  assert.ok(!('scenario' in q1(db, 'SELECT * FROM plan_phase LIMIT 1')), 'plan_phase gets no new column');
+
+  // a re-import with a different phase value updates the stored scenario (scenario is in taskVals)
+  drop(withScenario('implement', [['id = "SPIKE.2"\n', 'id = "SPIKE.2"\nscenario = "investigate"\n']]));
+  importFile(db, t, NAME);
+  assert.equal(q1(db, "SELECT scenario FROM plan_task WHERE code='SPIKE.1'").scenario, 'implement');
+  assert.equal(q1(db, "SELECT scenario FROM plan_task WHERE code='SPIKE.2'").scenario, 'investigate');
+});
+
+test('USE.5: a bad scenario value makes the fit partial and is named in missing[]', () => {
+  const bad = parsePlan(withScenario('plan-it'));
+  assert.equal(bad.fit, 'partial');
+  assert.ok(bad.missing.some((m) => /phase SPIKE: scenario must be one of/.test(m)), bad.missing.join('; '));
+  const badTask = parsePlan(planText().replace('id = "SPIKE.1"\n', 'id = "SPIKE.1"\nscenario = "ship"\n'));
+  assert.equal(badTask.fit, 'partial');
+  assert.ok(badTask.missing.some((m) => /task SPIKE\.1: scenario must be one of/.test(m)));
+  assert.equal(parsePlan(planText()).fit, 'pass');
+});

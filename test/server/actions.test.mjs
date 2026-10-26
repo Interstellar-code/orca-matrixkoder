@@ -1372,3 +1372,44 @@ test('SCHEMA fix 5: 20 agent ids of 1000 characters and huge migration notes kee
   assert.ok(st.migrationNotes.every((n) => n.length <= 200), 'each note is cut to 200 characters');
   assert.equal(Object.keys(st.schema).filter((k) => k.startsWith('agents.') && k.length > 100).length, 0, 'long agent ids get no schema rows');
 });
+
+test('USE.5: task.start renders the task scenario template; a bad user template falls back, with warnings in the reply and status in the snapshot', async (t) => {
+  const w = await world(t);
+  const plan = await w.importPlan();
+  await w.act('plan.start', { planId: plan.id });
+  const a = q1(w.svc, "SELECT * FROM plan_task WHERE plan_id = ? AND status = 'ready' AND dropped_at IS NULL ORDER BY id", plan.id);
+  w.svc.ctx.db.prepare("UPDATE plan_phase SET route = 'claude sonnet medium' WHERE id = ?").run(a.phase_id);
+  w.svc.ctx.db.prepare("UPDATE plan_task SET scenario = 'review' WHERE id = ?").run(a.id);
+  writeFileSync(join(w.repoPath, 'bad.md'), '{{title}} {{nope}}');
+  writeFileSync(join(w.dir, 'mk-settings.json'), JSON.stringify({ schema: 2, work: { specTemplates: { review: 'bad.md' } } }));
+  w.runner.calls.length = 0;
+  const ok = await w.act('task.start', { taskId: a.id });
+  assert.equal(ok.ok, true, JSON.stringify(ok));
+  const tpl = ok.warnings.filter((x) => x.startsWith('spec template'));
+  assert.equal(tpl.length, 1, ok.warnings.join(' | '));
+  assert.match(tpl[0], /spec template for review \(bad\.md\) not used: unknown placeholder \{\{nope\}\}/);
+  const spec = flagsOf(callsOf(w, 'orchestration', 'task-create')[0]).spec;
+  assert.equal(spec.split('\n')[0], `mk-ref: plan:${plan.slug}:${a.code}#1`);
+  assert.match(spec, /Scenario: review\./, 'the explicit scenario picked the review template (the built-in, after the fallback)');
+  assert.ok(spec.includes(`${a.code} ${a.title}`));
+
+  const st = (await get(w.svc, '/api/state').then((x) => x.json())).settings.specTemplates;
+  assert.equal(st.review.ok, false);
+  assert.equal(st.review.path, 'bad.md');
+  assert.equal(st.review.source, 'builtin');
+  assert.match(st.review.issue, /unknown placeholder/);
+  assert.deepEqual(st.fix, { path: '', source: 'builtin', ok: true, issue: null });
+});
+
+test('USE.5: bug.fix passes the template warnings through', async (t) => {
+  const w = await world(t);
+  writeFileSync(join(w.dir, 'mk-settings.json'), JSON.stringify({ schema: 2, work: { specTemplates: { fix: 'gone.md' } } }));
+  await w.act('bug.add', { repoId: 'repo-1', title: 'Rain overlaps', details: 'd', file: 'web/rain.js', line: 7, risk: 2 });
+  const r = await w.act('bug.fix', { bugId: 'B-1' });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.equal(r.warnings.length, 1);
+  assert.match(r.warnings[0], /spec template for fix \(gone\.md\) not used: the file does not exist/);
+  assert.deepEqual(r.bug.warnings, r.warnings);
+  const taskCreate = w.cli.find((c) => c[1] === 'task-create');
+  assert.match(taskCreate[taskCreate.indexOf('--spec') + 1], /Fix bug B-1: Rain overlaps/);
+});

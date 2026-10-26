@@ -252,3 +252,24 @@ test('the repo is found from the working directory: mk-data.db first, then orca 
   // MK_REPO env also works
   assert.equal(s.mk(['bug', 'add', '--title', 'env'], { env: { MK_REPO: 'repo-9' } }).json.repo_id, 'repo-9');
 });
+
+test('USE.5: mk bug fix renders the fix template; a bad user template falls back with warnings[] in the JSON and on stderr', () => {
+  const s = sandbox();
+  writeFileSync(join(s.dir, 'mk-settings.json'), JSON.stringify({ schema: 2, work: { specTemplates: { fix: 'nope/missing.md' } } }));
+  add(s, 'login crashes', 'repo-1', ['--file', 'src/login.ts', '--line', '9']);
+  const f = s.mk(['bug', 'fix', 'B-1']);
+  assert.equal(f.code, 0, f.stderr);
+  assert.equal(f.json.warnings.length, 1);
+  assert.match(f.json.warnings[0], /spec template for fix \(nope\/missing\.md\) not used: .*using the built-in template/);
+  assert.match(f.stderr, /^warning: spec template for fix/m);
+  const spec = (() => { const c = s.calls()[1]; return c[c.indexOf('--spec') + 1]; })();
+  assert.equal(spec.split('\n')[0], 'mk-ref: bug:B-1#1');
+  assert.match(spec, /Fix bug B-1: login crashes/);
+  assert.match(spec, /Reproduce the problem first/, 'the fix scenario text is in the built-in');
+  assert.ok(!spec.includes('{{'), 'no placeholder left behind');
+
+  // a clean run has no warnings key at all
+  const s2 = sandbox();
+  add(s2, 'x', 'repo-1');
+  assert.ok(!('warnings' in s2.mk(['bug', 'fix', 'B-1']).json));
+});
