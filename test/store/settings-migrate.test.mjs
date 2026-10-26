@@ -7,6 +7,7 @@ import {
   defaultSettings, loadSettings, loadSettingsDetailed, saveSettings, validateSettings, settingsPath, SETTINGS_SCHEMA,
 } from '../../out/store/settings.js';
 import { V1_DEFAULTS, migrateV1, droppedV1Key } from '../../out/store/settings-migrate.js';
+import { checkRoute } from '../../out/store/routes-check.js';
 import { tmpDataDir } from './helpers.mjs';
 
 const FIX = join(dirname(fileURLToPath(import.meta.url)), '..', 'fixtures', 'settings');
@@ -54,7 +55,7 @@ test('T2: a v1 file with every key changed migrates per C2 without throwing', ()
   assert.equal(s.sync.slowSeconds, 900, '200 min x 60 -> clamped to the v2 maximum');
   // fell back
   assert.equal(s.agents.agy.model, '', 'a model that is not in the seeded list falls back to the default');
-  assert.equal(s.agents.agy.effort, 'low');
+  assert.equal(s.agents.agy.effort, '', 'agy takes no effort and its model fell back to "", so the effort is dropped');
   // dropped keys are gone, unknown keys stay
   for (const k of ['alerts', 'theme', 'shortcuts']) assert.equal(s[k], undefined, k);
   assert.equal(s.routing.useJev, undefined);
@@ -64,6 +65,7 @@ test('T2: a v1 file with every key changed migrates per C2 without throwing', ()
   // notes list each clamp and fallback
   const has = (re) => assert.ok(notes.some((n) => re.test(n)), `${re} in ${JSON.stringify(notes)}`);
   has(/agents\.agy\.model/);
+  has(/agents\.agy\.effort/);
   has(/lanes\.stallMinutes.*clamped to 5/);
   has(/sync\.slowSeconds.*clamped to 900/);
   has(/safety\.neverRun.*10 of 50/);
@@ -182,4 +184,69 @@ test('droppedV1Key finds a v1-only key anywhere in a patch', () => {
   assert.equal(droppedV1Key({ routing: { spareClaudeBelowPct: 5 } }), 'routing.spareClaudeBelowPct');
   assert.equal(droppedV1Key({ routing: { askBeforeDestructive: false } }), 'routing.askBeforeDestructive');
   assert.equal(existsSync(settingsPath(tmpDataDir('mig'))), false);
+});
+
+// ---------------------------------------------------------------- SCHEMA review fixes
+const v1With = (patch) => {
+  const base = structuredClone(V1_DEFAULTS);
+  const merge = (a, b) => { for (const [k, v] of Object.entries(b)) a[k] = v && typeof v === 'object' && !Array.isArray(v) && a[k] ? merge(a[k], v) : v; return a; };
+  return merge(base, patch);
+};
+const loadV1 = (obj) => {
+  const dir = tmpDataDir('mig-fix');
+  writeFileSync(settingsPath(dir), typeof obj === 'string' ? obj : JSON.stringify(obj));
+  return loadSettingsDetailed(dir);
+};
+
+test('fix 1: an effort C9 would refuse is dropped with a note (omp, opencode, agy, empty model)', () => {
+  const { settings: s, migrationNotes: notes } = loadV1(v1With({
+    agents: {
+      opencode: { model: 'glm-5', effort: 'high' },
+      agy: { model: 'gemini-3.1-pro-high', effort: 'high' },
+      claude: { model: 'opus', effort: 'max' },
+      codex: { model: '', effort: 'high' },
+    },
+  }));
+  assert.deepEqual(validateSettings(s), []);
+  assert.equal(s.agents.opencode.effort, '');
+  assert.equal(s.agents.agy.effort, '');
+  assert.equal(s.agents.codex.effort, '', 'no model');
+  assert.equal(s.agents.claude.effort, 'max', 'a valid effort is still carried');
+  for (const id of ['opencode', 'agy', 'codex']) assert.ok(notes.some((n) => n.startsWith(`agents.${id}.effort`)), `${id} in ${JSON.stringify(notes)}`);
+  for (const id of ['claude', 'opencode', 'agy', 'codex']) {
+    const m = s.agents[id].model;
+    assert.deepEqual(checkRoute(`${id} ${m} ${s.agents[id].effort}`.trim(), s), { ok: true }, id);
+  }
+});
+
+test('fix 2: a carried v1 tier that fails C9 falls back to its default; validate names a bad bySize key', () => {
+  const { settings: s, migrationNotes: notes } = loadV1(v1With({ routing: { tiers: { standard: 'claude opus-4 high', complex: 'claude opus ultra', trivial: 'codex gpt-6-luna low' } } }));
+  assert.equal(s.routing.bySize.standard, 'claude sonnet medium', 'default');
+  assert.equal(s.routing.bySize.complex, 'claude opus high', 'default');
+  assert.equal(s.routing.bySize.trivial, 'codex gpt-6-luna low');
+  assert.ok(notes.some((n) => n.startsWith('routing.tiers.standard')), JSON.stringify(notes));
+  assert.ok(notes.some((n) => n.startsWith('routing.tiers.complex')), JSON.stringify(notes));
+  const d = defaultSettings();
+  const bad = (route) => validateSettings({ ...d, routing: { ...d.routing, bySize: { ...d.routing.bySize, standard: route } } });
+  assert.deepEqual(bad('claude opus-4 high').map((i) => i.key), ['routing.bySize.standard']);
+  assert.deepEqual(bad('claude opus ultra').map((i) => i.key), ['routing.bySize.standard']);
+  assert.deepEqual(bad('claude opus high'), []);
+  // turning an agent off must not make a save fail
+  assert.deepEqual(validateSettings({ ...d, agents: { ...d.agents, claude: { ...d.agents.claude, routable: false } } }), []);
+});
+
+test('fix 3: a v1 file naming an inherited Object key loads without throwing', () => {
+  for (const k of ['toString', 'constructor', 'hasOwnProperty', 'valueOf']) {
+    const { settings: s } = loadV1(`{"schema":1,"${k}":1,"agents":{"${k}":{"model":"x"}}}`);
+    assert.equal(s.schema, 2, k);
+  }
+});
+
+test('fix 4: a v1 file with __proto__ / constructor paths cannot pollute Object.prototype', () => {
+  loadV1('{"schema":1,"x":{"__proto__":{"polluted":1}},"__proto__":{"polluted2":1},"agents":{"__proto__":{"model":"p"},"constructor":{"prototype":{"polluted3":1}}}}');
+  loadV1('{"schema":2,"x":{"__proto__":{"polluted":1}}}');
+  assert.equal(({}).polluted, undefined);
+  assert.equal(({}).polluted2, undefined);
+  assert.equal(({}).polluted3, undefined);
+  assert.equal(({}).model, undefined);
 });

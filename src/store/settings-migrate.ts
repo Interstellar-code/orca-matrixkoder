@@ -4,7 +4,7 @@
  * runs it in memory and the first `saveSettings` replaces the file (after copying it to mk-settings.v1.bak.json).
  * Only v1 values that differ from V1_DEFAULTS are carried, so a user who never touched a v1 default gets the v2 one.
  */
-import { defaultSettings, getPath, mergeSettings, normalizeValue, validateSettings, SETTINGS_SCHEMA, type Json, type Settings } from './settings.js';
+import { defaultSettings, getPath, mergeSettings, normalizeValue, validateSettings, SETTINGS_SCHEMA, UNSAFE_KEYS, type Json, type Settings } from './settings.js';
 
 /** The v1 defaults, moved here from settings.ts. */
 export const V1_DEFAULTS: Settings = {
@@ -107,6 +107,7 @@ const V1_CONTAINERS = [
 
 function setPath(root: Obj, path: string, value: Json): void {
   const parts = path.split('.');
+  if (parts.some((p) => UNSAFE_KEYS.includes(p))) return;
   let cur = root;
   for (const p of parts.slice(0, -1)) {
     if (!isObj(cur[p])) cur[p] = {};
@@ -117,6 +118,7 @@ function setPath(root: Obj, path: string, value: Json): void {
 
 function delPath(root: Obj, path: string): boolean {
   const parts = path.split('.');
+  if (parts.some((p) => UNSAFE_KEYS.includes(p))) return false;
   let cur: Json | undefined = root;
   for (const p of parts.slice(0, -1)) {
     if (!isObj(cur)) return false;
@@ -148,7 +150,7 @@ export function migrateV1(v1: Settings): Migrated {
 
   const walk = (value: Json, path: string): void => {
     if (path !== '' && dropped(path)) return;
-    if (path in RENAMED) return carry(path, RENAMED[path], value);
+    if (Object.hasOwn(RENAMED, path)) return carry(path, RENAMED[path], value);
     if (path === 'theme.reduceMotion') {
       return carry(path, 'look.reduceMotion', value, (v) => (v === true ? 'on' : v === false ? 'os' : undefined));
     }
@@ -173,7 +175,7 @@ export function migrateV1(v1: Settings): Migrated {
       return carry(path, `agents.${id}.${field}`, value);
     }
     if (isObj(value)) {
-      for (const [k, v] of Object.entries(value)) walk(v, path === '' ? k : `${path}.${k}`);
+      for (const [k, v] of Object.entries(value)) if (!UNSAFE_KEYS.includes(k)) walk(v, path === '' ? k : `${path}.${k}`);
       return;
     }
     if (path === '') return;
@@ -191,7 +193,7 @@ export function migrateV1(v1: Settings): Migrated {
   // An agent id v2 does not seed (for example "gemini") must carry all three fields to validate: fill the rest.
   if (isObj(out.agents)) {
     for (const [id, a] of Object.entries(out.agents)) {
-      if (isObj(a) && !(id in (defaultSettings().agents as Obj))) {
+      if (isObj(a) && !Object.hasOwn(defaultSettings().agents as Obj, id)) {
         out.agents[id] = { routable: true, model: '', effort: '', ...a };
       }
     }
@@ -214,6 +216,27 @@ export function migrateV1(v1: Settings): Migrated {
       notes.push(`could not migrate cleanly (${issues.map((i) => i.key).join(', ')}); defaults were used`);
       for (const k of Object.keys(out)) if (k !== 'schema') delete out[k];
       break;
+    }
+  }
+
+  // C9 refuses an effort for omp and opencode, for a model with no effort levels, and for no model at all: do not carry one.
+  if (isObj(out.agents)) {
+    const merged = mergeSettings(defaults, out);
+    const all = isObj(merged.agents) ? merged.agents : {};
+    for (const [id, a] of Object.entries(out.agents)) {
+      if (!isObj(a) || typeof a.effort !== 'string' || a.effort === '') continue;
+      const cfg = all[id];
+      const model = isObj(cfg) && typeof cfg.model === 'string' ? cfg.model : '';
+      const list = isObj(cfg) && Array.isArray(cfg.models) ? cfg.models.filter(isObj) : [];
+      const why =
+        id === 'omp' || id === 'opencode' ? `${id} does not support an effort`
+        : model === '' ? 'it has no model, and an effort needs one'
+        : list.length > 0 && list.every((m) => !Array.isArray(m.efforts) || m.efforts.length === 0) ? `${id} models take no effort (it is part of the model id)`
+        : null;
+      if (why) {
+        notes.push(`agents.${id}.effort: ${JSON.stringify(a.effort)} was dropped, ${why}`);
+        a.effort = '';
+      }
     }
   }
   return { settings: out, notes };

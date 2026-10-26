@@ -50,7 +50,10 @@ export function buildState(c: ServerCtx, q: StateQuery = {}, info: SnapshotInfo 
   }
   // Last guard: the page is never sent over the limit. The settings values are the one block the caps cannot shrink.
   if (Buffer.byteLength(JSON.stringify(out)) > SNAPSHOT_LIMIT && out.settings && typeof out.settings === 'object') {
-    out = { ...out, settings: { ...(out.settings as Obj), values: {} } };
+    const block = out.settings as Obj;
+    const schema = Object.fromEntries(Object.entries((block.schema ?? {}) as Obj).filter(([k]) => !k.startsWith('agents.')));
+    out = { ...out, settings: { ...block, schema } };
+    if (Buffer.byteLength(JSON.stringify(out)) > SNAPSHOT_LIMIT) out = { ...out, settings: { ...block, schema, values: {} } };
   }
   return out;
 }
@@ -557,7 +560,7 @@ class Builder {
     return {
       values: knownSettings(this.settings, defaultSettings()),
       schema: describeSettings(this.settings as Settings),
-      migrationNotes: this.migrationNotes.slice(0, 40),
+      migrationNotes: this.migrationNotes.slice(0, 40).map((n) => cut(n, 200)),
       lastScreen: one(this.db, "SELECT value FROM kv WHERE key = 'panel.lastScreen'")?.value ?? null,
       // placeholder until USE.5 fills in the real template status for the active repo (C10)
       specTemplates: Object.fromEntries(SPEC_SCENARIOS.map((k) => [k, { path: '', source: 'builtin', ok: true, issue: null }])),

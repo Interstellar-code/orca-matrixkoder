@@ -1356,3 +1356,18 @@ else { console.error('unexpected ' + a.join(' ')); process.exit(1); }
   const missing = await w.act('bug.fix', { bugId: 'B-99' });
   assert.equal(missing.error.kind, 'not_found');
 });
+
+test('SCHEMA fix 5: 20 agent ids of 1000 characters and huge migration notes keep /api/state under 64 KB', async (t) => {
+  const w = await world(t);
+  const agents = {};
+  for (let i = 0; i < 20; i++) agents[`${String(i).padStart(2, '0')}${'a'.repeat(1000)}`] = { routable: true, model: '', effort: '' };
+  const junk = {};
+  for (let i = 0; i < 60; i++) junk[`k${i}`] = 'j'.repeat(2000);
+  writeFileSync(join(w.dir, 'mk-settings.json'), JSON.stringify({ schema: 1, agents, ...junk, general: 'g'.repeat(5000), routing: { tiers: { standard: `claude ${'m'.repeat(3000)} high` } } }));
+  const res = await get(w.svc, '/api/state');
+  const text = await res.text();
+  assert.ok(Buffer.byteLength(text) < 64 * 1024, `${Buffer.byteLength(text)} bytes`);
+  const st = JSON.parse(text).settings;
+  assert.ok(st.migrationNotes.every((n) => n.length <= 200), 'each note is cut to 200 characters');
+  assert.equal(Object.keys(st.schema).filter((k) => k.startsWith('agents.') && k.length > 100).length, 0, 'long agent ids get no schema rows');
+});

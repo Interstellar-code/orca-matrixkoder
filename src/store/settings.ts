@@ -9,6 +9,7 @@ import { copyFileSync, constants, existsSync, mkdirSync, readFileSync, renameSyn
 import { join } from 'node:path';
 import { dataDir } from './db.js';
 import { migrateV1 } from './settings-migrate.js';
+import { checkRoute } from './routes-check.js';
 
 export const SETTINGS_SCHEMA = 2;
 
@@ -83,6 +84,7 @@ export const MODEL_SEED: Record<string, ModelEntry[]> = {
   omp: [],
 };
 
+const DEFAULT_ROUTES = ['claude haiku low', 'claude sonnet medium', 'claude opus high'];
 const NEVER_RUN_DEFAULT = ['git reset --hard', 'git push --force', 'git clean -fdx', 'rm -rf ~', 'npm publish'];
 
 export function defaultSettings(): Settings {
@@ -213,10 +215,13 @@ const ENFORCED: Record<string, 'mk' | 'advisory'> = {
 
 const isObj = (v: unknown): v is { [k: string]: Json } => typeof v === 'object' && v !== null && !Array.isArray(v);
 
+/** Path segments that would reach Object.prototype; no settings path uses them. */
+export const UNSAFE_KEYS = ['__proto__', 'constructor', 'prototype'];
+
 export function getPath(root: Json | undefined, path: string[]): Json | undefined {
   let cur: Json | undefined = root;
   for (const p of path) {
-    if (!isObj(cur)) return undefined;
+    if (!isObj(cur) || UNSAFE_KEYS.includes(p)) return undefined;
     cur = cur[p];
   }
   return cur;
@@ -237,9 +242,9 @@ export function setting<T extends Json = Json>(s: Settings, path: string): T {
 
 /** The rule for a key, or undefined for an unknown key. */
 function ruleFor(key: string): Rule | undefined {
-  if (RULES[key]) return RULES[key];
+  if (Object.hasOwn(RULES, key)) return RULES[key];
   const p = key.split('.');
-  if (p[0] === 'agents' && p.length === 3) return RULES[`agents.*.${p[2]}`];
+  if (p[0] === 'agents' && p.length === 3 && Object.hasOwn(RULES, `agents.*.${p[2]}`)) return RULES[`agents.*.${p[2]}`];
   return undefined;
 }
 
@@ -278,8 +283,13 @@ function check(rule: Rule, v: Json | undefined, s: Settings, agentId = ''): stri
       if (v.length > 120) return 'must be at most 120 characters';
       const words = v.trim().split(/\s+/);
       if (words.length > 3) return 'must be "agent [model [effort]]"';
+      // a route the user never changed is not theirs to fix (a trimmed models list can orphan it; task.start still checks it)
+      if (DEFAULT_ROUTES.includes(v)) return null;
+      // C9, with every agent counted as routable: turning an agent off must never make a save fail
       const agents = getPath(s, ['agents']);
-      return isObj(agents) && isObj(agents[words[0]]) ? null : `agent "${words[0]}" is not a known agent`;
+      const routable = isObj(agents) ? Object.fromEntries(Object.entries(agents).map(([id, a]) => [id, isObj(a) ? { ...a, routable: true } : a])) : {};
+      const r = checkRoute(v, { ...s, agents: routable });
+      return r.ok ? null : r.issue;
     }
     case 'relpath': {
       if (typeof v !== 'string' || v.trim() === '') return 'must be a folder path relative to the repository';
@@ -398,6 +408,7 @@ export function normalizeValue(key: string, value: Json | undefined, s: Settings
 export function mergeSettings(base: Settings, patch: Settings): Settings {
   const out: Settings = { ...base };
   for (const [k, v] of Object.entries(patch)) {
+    if (UNSAFE_KEYS.includes(k)) continue;
     const cur = out[k];
     out[k] = isObj(cur) && isObj(v) ? mergeSettings(cur, v) : (structuredClone(v) as Json);
   }
@@ -439,7 +450,7 @@ export function describeSettings(settings?: Settings): Record<string, SettingDes
   const defaults = defaultSettings();
   const ids = new Set<string>(AGENT_IDS);
   const agents = settings ? getPath(settings, ['agents']) : undefined;
-  if (isObj(agents)) for (const id of Object.keys(agents).slice(0, 20)) ids.add(id);
+  if (isObj(agents)) for (const id of Object.keys(agents).filter((k) => k.length <= 40).slice(0, 20)) ids.add(id);
   const out: Record<string, SettingDescription> = {};
   for (const [path, rule] of Object.entries(RULES)) {
     const keys = path.includes('*') ? [...ids].map((id) => path.replace('*', id)) : [path];

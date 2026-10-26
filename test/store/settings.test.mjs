@@ -276,3 +276,13 @@ test('checkRoute: C9 rules', () => {
   assert.equal(r.ok, false);
   assert.match(r.issue, /not routable/);
 });
+
+test('describeSettings: agent ids over 40 characters get no schema rows, and 20 long ids stay under 64 KB', () => {
+  const agents = {};
+  for (let i = 0; i < 25; i++) agents[`${i}-${'x'.repeat(1000)}`] = { routable: true, model: '', effort: '' };
+  agents.shortid = { routable: true, model: '', effort: '' }; // after the long ones: they must not crowd it out
+  const d = describeSettings(mergeSettings(defaultSettings(), { agents }));
+  assert.ok(d['agents.shortid.model']);
+  assert.equal(Object.keys(d).filter((k) => k.length > 100).length, 0);
+  assert.ok(Buffer.byteLength(JSON.stringify({ schema: d })) < 64 * 1024);
+});
