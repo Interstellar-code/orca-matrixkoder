@@ -10,7 +10,7 @@ import { realOrca, type OrcaRunner } from '../store/cli.js';
 import { dataDir, openDb } from '../store/db.js';
 import { runMaintenance } from '../store/maintenance.js';
 import { Actions, ACTION_NAMES } from './actions.js';
-import { realClock, type ActionOutcome, type Clock, type CliProber, type GitRunner, type ServerCtx } from './common.js';
+import { readSettings, realClock, type ActionOutcome, type Clock, type CliProber, type GitRunner, type ServerCtx } from './common.js';
 import { Decisions } from './decisions.js';
 import { Notifier } from './notify.js';
 import { startHttp, type DashboardServer } from './http.js';
@@ -37,6 +37,7 @@ export interface ServiceOptions {
   loops?: boolean;
   fastMs?: number;
   slowMs?: number;
+  filesMs?: number;
   /** Called every 60 s so Orca does not reap the idle worker (a cheap host call). */
   keepAlive?: () => unknown;
   keepAliveMs?: number;
@@ -84,7 +85,7 @@ export async function startService(opts: ServiceOptions = {}): Promise<Service> 
     runner: opts.runner ?? execOrca,
     cliOrca: opts.cliOrca ?? realOrca,
     clock: opts.clock ?? realClock,
-    undoMs: opts.undoMs ?? 10_000,
+    undoMs: opts.undoMs,
     requestSync: () => sync.request(),
     notify: opts.notify,
     log,
@@ -104,7 +105,7 @@ export async function startService(opts: ServiceOptions = {}): Promise<Service> 
 
   let keep: NodeJS.Timeout | null = null;
   if (opts.loops !== false) {
-    sync.start({ fastMs: opts.fastMs, slowMs: opts.slowMs });
+    sync.start({ fastMs: opts.fastMs, slowMs: opts.slowMs, filesMs: opts.filesMs });
     if (opts.keepAlive) {
       const ping = opts.keepAlive;
       keep = setInterval(() => {
@@ -123,7 +124,7 @@ export async function startService(opts: ServiceOptions = {}): Promise<Service> 
   const replayed = await decisions.replay();
   if (replayed.ran || replayed.expired || replayed.scheduled) log(`[decisions] replay: ${replayed.ran} sent, ${replayed.expired} expired, ${replayed.scheduled} waiting`);
   try {
-    runMaintenance(db, dir, ctx.clock.now());
+    runMaintenance(db, dir, ctx.clock.now(), readSettings(ctx));
   } catch (e) {
     log(`[maintenance] ${(e as Error).message}`);
   }

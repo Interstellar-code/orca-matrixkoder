@@ -482,6 +482,11 @@ class Builder {
     return { new: n('new') + n('changed'), imported: n('imported'), archived: n('archived') };
   }
 
+  /** `plans.inboxDir`, relative to the repo root. */
+  private inboxRel(): string {
+    return setting<string>(this.settings as Settings, 'plans.inboxDir');
+  }
+
   private inboxFull(): Obj {
     const rows = all(
       this.db,
@@ -491,7 +496,7 @@ class Builder {
     );
     return {
       ...this.inboxCounts(),
-      dir: this.repo ? `${homeAbbrev(String(this.repo.path))}/.matrixkoder/inbox` : null,
+      dir: this.repo ? `${homeAbbrev(String(this.repo.path))}/${this.inboxRel()}` : null,
       files: rows.map((f) => ({
         id: Number(f.id), name: String(f.name), title: f.title === null ? null : cut(f.title, 120), editedAt: Number(f.mtime), check: String(f.fit),
         missing: parseJson<string[]>(f.missing, []).slice(0, 8).map((m) => cut(m, 80)), state: String(f.status), planId: f.plan_id ?? null, planSlug: f.plan_slug ?? null,
@@ -574,7 +579,7 @@ class Builder {
       })),
       baseBranch: this.repo?.base_ref ?? 'main',
       dataDir: homeAbbrev(this.c.dir),
-      inboxDir: this.repo ? `${homeAbbrev(String(this.repo.path))}/.matrixkoder/inbox` : null,
+      inboxDir: this.repo ? `${homeAbbrev(String(this.repo.path))}/${this.inboxRel()}` : null,
       version: this.info.version,
     };
   }

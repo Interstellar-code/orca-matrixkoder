@@ -16,10 +16,10 @@ import { fileURLToPath } from 'node:url';
 import type { ActionArgs } from '../orca/index.js';
 import { main as cliMain, realOrca } from '../store/cli.js';
 import { one, tx, type Row } from '../store/db.js';
-import { ImportError, importFile, scanInbox } from '../store/import.js';
+import { ImportError, importFile, inboxPlace, scanInbox, type InboxTarget } from '../store/import.js';
 import { droppedV1Key } from '../store/settings-migrate.js';
 import { loadSettings, resetSettings, saveSettings, setting, SettingsError, type Settings } from '../store/settings.js';
-import { CANCELLED_RESULT, cut, fail, J, parseJson, type ActionError, type ActionOutcome, type ServerCtx } from './common.js';
+import { CANCELLED_RESULT, cut, fail, J, parseJson, readSettings, type ActionError, type ActionOutcome, type ServerCtx } from './common.js';
 import { Decisions } from './decisions.js';
 import { Notifier } from './notify.js';
 import { orcaAgentId } from './providers.js';
@@ -142,7 +142,7 @@ export class Actions {
 
   private snooze(a: Args): ActionOutcome {
     const id = reqStr(a, 'askId');
-    const minutes = a.minutes === undefined ? 60 : reqInt(a, 'minutes');
+    const minutes = a.minutes === undefined ? setting<number>(readSettings(this.c), 'general.snoozeMinutes') : reqInt(a, 'minutes');
     if (minutes < 1 || minutes > 1440) refuse('bad_args', '"minutes" must be 1 to 1440');
     if (!one(this.c.db, 'SELECT 1 AS x FROM ask WHERE id = ?', id)) refuse('not_found', `no ask ${id}`);
     const until = this.c.clock.now() + minutes * 60_000;
@@ -159,6 +159,11 @@ export class Actions {
   private async planStart(planId: number): Promise<ActionOutcome> {
     const plan = this.plan(planId);
     if (plan.status !== 'imported') refuse('conflict', `plan ${plan.slug} is ${plan.status}; only an imported plan can be started`);
+    const cur = one(this.c.db, 'SELECT fit, missing FROM plan_version WHERE plan_id = ? AND version = ?', planId, plan.version as number);
+    if (cur?.fit === 'partial') {
+      const first = parseJson<string[]>(cur.missing, [])[0] ?? 'the plan does not fit';
+      refuse('conflict', `plan ${plan.slug} is only partly usable: ${first}. Fix the plan or Settings > Routing & Quota, then re-import it.`, { code: 'plan_partial', details: { missing: parseJson<string[]>(cur.missing, []).slice(0, 8) } });
+    }
     const attempt = parseJson<string[]>(plan.past_run_ids, []).length + 1;
     const r = await callOrca(this.c, 'run-create', { objective: cut(plan.title, 200), 'retry-request': `mk-plan-${planId}-run-${attempt}` });
     if (!r.ok) return orcaFailure('Orca could not create the run', r);
@@ -333,17 +338,22 @@ export class Actions {
     return String(r.path);
   }
 
+  /** The inbox of a repo under the current settings (`plans.inboxDir`, the agents the route check accepts). */
+  private target(repoId: string): InboxTarget {
+    return { repoId, repoPath: this.repoPath(repoId), settings: readSettings(this.c) };
+  }
+
   private inboxImport(a: Args, reimport: boolean): ActionOutcome {
     const repoId = reqStr(a, 'repoId');
     const name = planFile(reqStr(a, 'name'));
-    const repoPath = this.repoPath(repoId);
+    const t = this.target(repoId);
     if (reimport) {
-      scanInbox(this.c.db, { repoId, repoPath });
-      const f = one(this.c.db, 'SELECT plan_id FROM inbox_file WHERE repo_id = ? AND path = ?', repoId, `inbox/${name}`);
+      scanInbox(this.c.db, t);
+      const f = one(this.c.db, 'SELECT plan_id FROM inbox_file WHERE repo_id = ? AND path = ?', repoId, `${inboxPlace(t).prefix}/${name}`);
       if (!f?.plan_id) refuse('conflict', `${name} has no plan to update; use import`);
     }
     try {
-      const res = importFile(this.c.db, { repoId, repoPath }, name);
+      const res = importFile(this.c.db, t, name);
       return { ok: true, result: res };
     } catch (e) {
       if (e instanceof ImportError) return fail('conflict', e.message, { details: { conflicts: e.conflicts } });
@@ -351,9 +361,10 @@ export class Actions {
     }
   }
 
-  private inboxRoot(a: Args): { repoId: string; name: string; root: string } {
+  private inboxRoot(a: Args): { repoId: string; name: string; root: string; prefix: string; t: InboxTarget } {
     const repoId = reqStr(a, 'repoId');
-    return { repoId, name: planFile(reqStr(a, 'name')), root: join(this.repoPath(repoId), '.matrixkoder', 'inbox') };
+    const t = this.target(repoId);
+    return { repoId, name: planFile(reqStr(a, 'name')), root: inboxPlace(t).folder, prefix: inboxPlace(t).prefix, t };
   }
 
   private fileRow(repoId: string, path: string): Row | undefined {
@@ -361,24 +372,24 @@ export class Actions {
   }
 
   private inboxArchive(a: Args): ActionOutcome {
-    const { repoId, name, root } = this.inboxRoot(a);
+    const { repoId, name, root, prefix, t } = this.inboxRoot(a);
     const src = join(root, name);
     const dst = join(root, 'archive', name);
     if (!existsSync(src)) refuse('not_found', `${name} is not in the inbox`);
     if (existsSync(dst)) refuse('conflict', `${name} already exists in inbox/archive`);
-    scanInbox(this.c.db, { repoId, repoPath: this.repoPath(repoId) });
+    scanInbox(this.c.db, t);
     mkdirSync(join(root, 'archive'), { recursive: true });
     renameSync(src, dst);
     const at = this.c.clock.now();
     tx(this.c.db, () => {
-      this.c.db.prepare("DELETE FROM inbox_file WHERE repo_id = ? AND path = ? AND status IN ('missing','deleted')").run(repoId, `inbox/archive/${name}`);
-      this.c.db.prepare("UPDATE inbox_file SET path = ?, status = 'archived', status_at = ? WHERE repo_id = ? AND path = ?").run(`inbox/archive/${name}`, at, repoId, `inbox/${name}`);
+      this.c.db.prepare("DELETE FROM inbox_file WHERE repo_id = ? AND path = ? AND status IN ('missing','deleted')").run(repoId, `${prefix}/archive/${name}`);
+      this.c.db.prepare("UPDATE inbox_file SET path = ?, status = 'archived', status_at = ? WHERE repo_id = ? AND path = ?").run(`${prefix}/archive/${name}`, at, repoId, `${prefix}/${name}`);
     });
-    return { ok: true, file: this.fileRow(repoId, `inbox/archive/${name}`) ?? null };
+    return { ok: true, file: this.fileRow(repoId, `${prefix}/archive/${name}`) ?? null };
   }
 
   private inboxRestore(a: Args): ActionOutcome {
-    const { repoId, name, root } = this.inboxRoot(a);
+    const { repoId, name, root, prefix, t } = this.inboxRoot(a);
     const src = join(root, 'archive', name);
     const dst = join(root, name);
     if (!existsSync(src)) refuse('not_found', `${name} is not in inbox/archive`);
@@ -386,24 +397,24 @@ export class Actions {
     renameSync(src, dst);
     const at = this.c.clock.now();
     tx(this.c.db, () => {
-      this.c.db.prepare("DELETE FROM inbox_file WHERE repo_id = ? AND path = ? AND status IN ('missing','deleted')").run(repoId, `inbox/${name}`);
-      this.c.db.prepare('UPDATE inbox_file SET path = ?, status_at = ? WHERE repo_id = ? AND path = ?').run(`inbox/${name}`, at, repoId, `inbox/archive/${name}`);
+      this.c.db.prepare("DELETE FROM inbox_file WHERE repo_id = ? AND path = ? AND status IN ('missing','deleted')").run(repoId, `${prefix}/${name}`);
+      this.c.db.prepare('UPDATE inbox_file SET path = ?, status_at = ? WHERE repo_id = ? AND path = ?').run(`${prefix}/${name}`, at, repoId, `${prefix}/archive/${name}`);
     });
-    scanInbox(this.c.db, { repoId, repoPath: this.repoPath(repoId) }); // recompute new or changed
-    return { ok: true, file: this.fileRow(repoId, `inbox/${name}`) ?? null };
+    scanInbox(this.c.db, t); // recompute new or changed
+    return { ok: true, file: this.fileRow(repoId, `${prefix}/${name}`) ?? null };
   }
 
   /** Copy to inbox/.deleted/<name>-<time>/, check the copy is byte for byte the same, then remove the original. */
   private inboxDelete(a: Args): ActionOutcome {
-    const { repoId, name, root } = this.inboxRoot(a);
+    const { repoId, name, root, prefix, t } = this.inboxRoot(a);
     const where = a.location === 'archive' ? 'archive' : '';
     const src = join(root, where, name);
     if (!existsSync(src) || !statSync(src).isFile()) refuse('not_found', `${name} is not in the ${where ? 'archive' : 'inbox'}`);
-    scanInbox(this.c.db, { repoId, repoPath: this.repoPath(repoId) });
+    scanInbox(this.c.db, t);
     const at = this.c.clock.now();
     const base = `${name.replace(/\.md$/, '')}-${stamp(at)}`;
     let leaf = base;
-    for (let n = 2; existsSync(join(root, '.deleted', leaf)) || one(this.c.db, 'SELECT 1 AS x FROM inbox_file WHERE repo_id = ? AND path = ?', repoId, `inbox/.deleted/${leaf}/${name}`); n++) leaf = `${base}-${n}`;
+    for (let n = 2; existsSync(join(root, '.deleted', leaf)) || one(this.c.db, 'SELECT 1 AS x FROM inbox_file WHERE repo_id = ? AND path = ?', repoId, `${prefix}/.deleted/${leaf}/${name}`); n++) leaf = `${base}-${n}`;
     const folder = join(root, '.deleted', leaf);
     mkdirSync(folder, { recursive: true });
     const copy = join(folder, name);
@@ -412,10 +423,10 @@ export class Actions {
       rmSync(folder, { recursive: true, force: true });
       refuse('store_failed', `the copy of ${name} did not match; nothing was deleted`);
     }
-    const rel = `inbox/${where ? 'archive/' : ''}${name}`;
+    const rel = `${prefix}/${where ? 'archive/' : ''}${name}`;
     // row first (it can fail), then remove the original, so a failure never loses the file
     tx(this.c.db, () =>
-      this.c.db.prepare("UPDATE inbox_file SET status = 'deleted', path = ?, status_at = ? WHERE repo_id = ? AND path = ?").run(`inbox/.deleted/${leaf}/${name}`, at, repoId, rel),
+      this.c.db.prepare("UPDATE inbox_file SET status = 'deleted', path = ?, status_at = ? WHERE repo_id = ? AND path = ?").run(`${prefix}/.deleted/${leaf}/${name}`, at, repoId, rel),
     );
     rmSync(src);
     return { ok: true, deletedTo: folder };
@@ -528,7 +539,9 @@ export class Actions {
     const dropped = droppedV1Key(patch as Settings);
     if (dropped) refuse('bad_args', `"${dropped}" is a settings v1 key that no longer exists`, { details: { key: dropped } });
     try {
-      return { ok: true, settings: saveSettings(patch as Settings, this.c.dir) };
+      const settings = saveSettings(patch as Settings, this.c.dir);
+      this.sync.retime();
+      return { ok: true, settings };
     } catch (e) {
       if (e instanceof SettingsError) return fail('bad_args', e.message, { details: { issues: e.issues } });
       throw e;
@@ -538,7 +551,9 @@ export class Actions {
   private settingsReset(a: Args): ActionOutcome {
     const section = reqStr(a, 'section', 40);
     try {
-      return { ok: true, settings: resetSettings(section, this.c.dir) };
+      const settings = resetSettings(section, this.c.dir);
+      this.sync.retime();
+      return { ok: true, settings };
     } catch (e) {
       if (e instanceof SettingsError) return fail('bad_args', e.message, { details: { issues: e.issues } });
       throw e;

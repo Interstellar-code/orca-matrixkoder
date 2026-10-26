@@ -26,10 +26,10 @@ import type {
   RunListProjection, TaskListProjection, TerminalListProjection, WorkerListProjection, WorktreeListProjection, WorktreePsProjection,
 } from '../orca/index.js';
 import { all, one, tx, type Db } from '../store/db.js';
-import { scanInbox } from '../store/import.js';
+import { importFile, inboxPlace, scanInbox } from '../store/import.js';
 import { loadSettings, setting } from '../store/settings.js';
 import { Notifier } from './notify.js';
-import { CANCELLED_RESULT, cut, isoToMs, J, type CliProbe, type CliProber, type GitRunner, type ServerCtx } from './common.js';
+import { CANCELLED_RESULT, cut, isoToMs, J, readSettings, type CliProbe, type CliProber, type GitRunner, type ServerCtx } from './common.js';
 import { deriveLaneState, recomputeBugs, recomputePlanTasks } from './status.js';
 
 export const GONE_AFTER_COMPLETE_PULLS = 2;
@@ -85,6 +85,10 @@ export class Sync {
   private debounce: unknown = null;
   private wantSlow = false;
   private intervals: NodeJS.Timeout[] = [];
+  private startOpts: { fastMs?: number; slowMs?: number; filesMs?: number } = {};
+  /** The timer lengths now running ("fast/slow/files" in ms), and whether `start` has been called. */
+  private armed = '';
+  private running = false;
 
   constructor(ctx: ServerCtx, opts: SyncOptions = {}) {
     this.c = ctx;
@@ -109,24 +113,53 @@ export class Sync {
     return run;
   }
 
-  /** Start the timers. The first pull runs at once. */
-  start(opts: { fastMs?: number; slowMs?: number; filesMs?: number } = {}): void {
-    this.stop();
+  /** The three timer lengths: an explicit option (tests) wins over `sync.*`. */
+  private timing(): { fastMs: number; slowMs: number; filesMs: number } {
+    const o = this.startOpts;
+    const st = readSettings(this.c);
+    return {
+      fastMs: o.fastMs ?? setting<number>(st, 'sync.fastSeconds') * 1000,
+      slowMs: o.slowMs ?? setting<number>(st, 'sync.slowSeconds') * 1000,
+      filesMs: o.filesMs ?? setting<number>(st, 'sync.filesSeconds') * 1000,
+    };
+  }
+
+  private arm(): void {
+    for (const t of this.intervals) clearInterval(t);
+    this.intervals = [];
     const guard = (p: Promise<unknown>): void => void p.catch((e) => this.c.log(`[sync] ${(e as Error).message}`));
     const every = (ms: number, fn: () => Promise<unknown>): void => {
       const t = setInterval(() => guard(fn()), ms);
       t.unref?.();
       this.intervals.push(t);
     };
-    every(opts.fastMs ?? 10_000, () => this.pullFast());
-    every(opts.slowMs ?? 60_000, () => this.pullSlow());
-    every(opts.filesMs ?? 30_000, () => this.scanFiles());
-    guard(this.pullAll());
+    const tm = this.timing();
+    this.armed = `${tm.fastMs}/${tm.slowMs}/${tm.filesMs}`;
+    every(tm.fastMs, () => this.pullFast());
+    every(tm.slowMs, () => this.pullSlow());
+    every(tm.filesMs, () => this.scanFiles());
+  }
+
+  /** Start the timers. The first pull runs at once. */
+  start(opts: { fastMs?: number; slowMs?: number; filesMs?: number } = {}): void {
+    this.stop();
+    this.startOpts = opts;
+    this.arm();
+    this.running = true;
+    void this.pullAll().catch((e) => this.c.log(`[sync] ${(e as Error).message}`));
+  }
+
+  /** After a settings change: re-arm the timers only when a `sync.*` length actually changed. No pull. */
+  retime(): void {
+    if (!this.running) return;
+    const tm = this.timing();
+    if (`${tm.fastMs}/${tm.slowMs}/${tm.filesMs}` !== this.armed) this.arm();
   }
 
   stop(): void {
     for (const t of this.intervals) clearInterval(t);
     this.intervals = [];
+    this.running = false;
     if (this.debounce) this.c.clock.clearTimeout(this.debounce);
     this.debounce = null;
   }
@@ -876,14 +909,27 @@ export class Sync {
 
   // ---------------------------------------------------------------- plan files
 
-  /** inbox_file rows from disk, for each repo whose inbox folder exists. */
+  /** inbox_file rows from disk, for each repo whose inbox folder exists; then, when `plans.autoImport` is on, the new `pass` files. */
   async scanFiles(): Promise<void> {
     const t0 = this.now();
     let n = 0;
     try {
+      const settings = readSettings(this.c);
+      const auto = setting<boolean>(settings, 'plans.autoImport');
       for (const r of all(this.db, "SELECT id, path FROM repo WHERE gone_at IS NULL AND path <> ''")) {
-        if (!existsSync(join(String(r.path), '.matrixkoder', 'inbox'))) continue;
-        n += scanInbox(this.db, { repoId: String(r.id), repoPath: String(r.path) }, this.now()).length;
+        const target = { repoId: String(r.id), repoPath: String(r.path), settings };
+        const { folder, prefix } = inboxPlace(target);
+        if (!existsSync(folder)) continue;
+        n += scanInbox(this.db, target, this.now()).length;
+        if (!auto) continue;
+        const fresh = all(this.db, "SELECT name FROM inbox_file WHERE repo_id = ? AND status = 'new' AND fit = 'pass' AND path = ? || '/' || name", target.repoId, prefix);
+        for (const f of fresh) {
+          try {
+            importFile(this.db, target, String(f.name), this.now());
+          } catch (e) {
+            this.c.log(`[sync] auto-import of ${String(f.name)} failed: ${(e as Error).message}`);
+          }
+        }
       }
       this.record('files', t0, null, n);
     } catch (e) {

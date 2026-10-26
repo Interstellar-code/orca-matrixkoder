@@ -9,6 +9,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { basename } from 'node:path';
+import { loadSettings, setting } from './settings.js';
 import { all, dataDir, nextBugId, now, one, openDb, tx, type Db, type Row } from './db.js';
 
 /** Runs `orca <args>` and returns stdout. Throws an Error whose message is the CLI's own error text. */
@@ -174,12 +175,21 @@ function receiptId(stdout: string, kind: 'task' | 'run', what: string): string {
 
 // ---------------------------------------------------------------- bug
 
+/** `bugs.defaultRisk`, or 3 when the settings file cannot be read. */
+function defaultRisk(ctx: CliContext): number {
+  try {
+    return setting<number>(loadSettings(ctx.dir ?? dataDir(ctx.env)), 'bugs.defaultRisk');
+  } catch {
+    return 3;
+  }
+}
+
 function bugAdd(db: Db, p: Parsed, ctx: CliContext): BugOut {
   const title = need(p, 'title');
   const details = str(p, 'details') ?? '';
   const file = str(p, 'file') ?? null;
   const line = int(p, 'line', 1, 10_000_000) ?? null;
-  const risk = int(p, 'risk', 1, 5) ?? 3;
+  const risk = int(p, 'risk', 1, 5) ?? defaultRisk(ctx);
   const repo = resolveRepo(db, p, ctx);
   const by = str(p, 'reported-by') ?? ctx.env.MK_REPORTED_BY ?? 'agent';
   const t = now();
