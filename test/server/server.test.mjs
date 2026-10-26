@@ -629,7 +629,7 @@ test('R2.3 /api/state stays under 64 KB when the settings file holds a huge unkn
   // known keys that are themselves huge (a hand-edited list): the last guard drops the values, never sends over 64 KB
   const dir2 = tmpDir('big-known');
   mkdirSync(dir2, { recursive: true });
-  writeFileSync(join(dir2, 'mk-settings.json'), JSON.stringify({ schema: 1, safety: { neverRun: Array.from({ length: 100 }, (_, i) => `${i} ${'n'.repeat(3000)}`) } }));
+  writeFileSync(join(dir2, 'mk-settings.json'), JSON.stringify({ schema: 2, safety: { neverRun: Array.from({ length: 100 }, (_, i) => `${i} ${'n'.repeat(3000)}`) } }));
   await withService({ dir: dir2 }, async (svc) => {
     const { json, bytes } = await state(svc, '?screen=settings');
     assert.ok(bytes < LIMIT, `${bytes}`);

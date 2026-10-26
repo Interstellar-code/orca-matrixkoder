@@ -950,17 +950,18 @@ test('settings.save writes mk-settings.json in the data dir; a bad value is bad_
   assert.ok(bad.body.error.details.issues.some((i) => i.key === 'routing.maxLanes'));
   assert.ok(!existsSync(path), 'nothing written');
 
-  const ok = await w.act('settings.save', { patch: { routing: { maxLanes: 5 }, theme: { density: 'compact' } } });
+  const ok = await w.act('settings.save', { patch: { routing: { maxLanes: 5 }, look: { density: 'compact' } } });
   assert.equal(ok.ok, true);
   assert.equal(ok.settings.routing.maxLanes, 5);
   assert.ok(existsSync(path));
   const saved = JSON.parse(readFileSync(path, 'utf8'));
   assert.equal(saved.routing.maxLanes, 5);
-  assert.equal(saved.theme.density, 'compact');
-  assert.equal(saved.routing.useJev, true, 'defaults are kept');
+  assert.equal(saved.look.density, 'compact');
+  assert.equal(saved.routing.bySize.standard, 'claude sonnet medium', 'defaults are kept');
+  assert.equal(saved.schema, 2);
   const bytes = readFileSync(path);
 
-  for (const patch of [{ routing: { maxLanes: 0 } }, { theme: { density: 'huge' } }, { alerts: { quietHours: { from: '25:99' } } }, { general: { mode: 'nope' } }]) {
+  for (const patch of [{ routing: { maxLanes: 0 } }, { look: { density: 'huge' } }, { notify: { quietHours: { from: '25:99' } } }, { general: { mode: 'nope' } }]) {
     const r = await w.act('settings.save', { patch });
     assert.equal(r.ok, false, JSON.stringify(patch));
     assert.equal(r.error.kind, 'bad_args');
@@ -1011,6 +1012,7 @@ test('args that are not an object are bad_args; missing required args are bad_ar
     ['inbox.import', {}], ['inbox.reimport', { repoId: 'repo-1' }], ['inbox.archive', { name: NAME }], ['inbox.restore', {}], ['inbox.delete', {}],
     ['bug.add', {}], ['bug.add', { repoId: 'repo-1' }], ['bug.fix', {}], ['bug.close', {}], ['bug.reopen', {}],
     ['todo.add', {}], ['todo.done', {}], ['todo.makeTask', {}], ['settings.save', {}],
+    ['settings.reset', {}], ['ui.remember', {}],
   ];
   for (const [name, args] of missing) {
     const r = await w.act(name, args);
@@ -1064,14 +1066,149 @@ test('the Orca allowlist holds: no recorded argv is orchestration check, and onl
   noCheck(w);
 });
 
+test('T3: settings.save refuses a dropped v1 key with bad_args naming it, and writes nothing', async (t) => {
+  const w = await world(t);
+  const path = join(w.dir, 'mk-settings.json');
+  const cases = [
+    [{ routing: { useJev: false } }, 'routing.useJev'],
+    [{ routing: { tiers: { trivial: 'claude haiku low' } } }, 'routing.tiers'],
+    [{ safety: { blockDestructiveGit: false } }, 'safety.blockDestructiveGit'],
+    [{ safety: { scanDiffsForSecrets: false } }, 'safety.scanDiffsForSecrets'],
+    [{ alerts: { stallMinutes: 12 } }, 'alerts'],
+    [{ theme: { rain: { enabled: false } } }, 'theme'],
+    [{ shortcuts: { footer: [] } }, 'shortcuts'],
+    [{ routing: { maxLanes: 4 }, alerts: { desktop: false } }, 'alerts'],
+  ];
+  for (const [patch, key] of cases) {
+    const r = await w.act('settings.save', { patch });
+    assert.equal(r.ok, false, key);
+    assert.equal(r.error.kind, 'bad_args', key);
+    assert.ok(r.error.message.includes(`"${key}"`), `${key}: ${r.error.message}`);
+  }
+  assert.ok(!existsSync(path), 'nothing written');
+});
+
+test('T3: settings.reset removes one group so its defaults show, leaves the rest and never touches mk-data.db', async (t) => {
+  const w = await world(t);
+  const path = join(w.dir, 'mk-settings.json');
+  const db = join(w.dir, 'mk-data.db');
+  // no file: nothing to remove, nothing written
+  const none = await w.act('settings.reset', { section: 'look' });
+  assert.equal(none.ok, true);
+  assert.equal(none.settings.look.density, 'comfy');
+  assert.ok(!existsSync(path), 'a reset with no file creates no file');
+
+  await w.act('settings.save', { patch: { look: { density: 'compact', textSize: 'L' }, routing: { maxLanes: 6 }, futureThing: 1 } });
+  const dbBefore = statSync(db).mtimeMs;
+  const r = await w.act('settings.reset', { section: 'look' });
+  assert.equal(r.ok, true);
+  assert.equal(r.settings.look.density, 'comfy');
+  assert.equal(r.settings.look.textSize, 'M');
+  assert.equal(r.settings.routing.maxLanes, 6, 'other groups stay');
+  const onDisk = JSON.parse(readFileSync(path, 'utf8'));
+  assert.equal(onDisk.look, undefined, 'the group is removed from the file');
+  assert.equal(onDisk.routing.maxLanes, 6);
+  assert.equal(onDisk.futureThing, 1, 'unknown keys stay');
+  assert.equal(onDisk.schema, 2);
+  assert.equal(statSync(db).mtimeMs, dbBefore, 'mk-data.db is not touched');
+  assert.equal((await get(w.svc, '/api/state').then((x) => x.json())).settings.values.look.density, 'comfy');
+
+  // every group name works; agents comes back with its seeded model lists
+  await w.act('settings.save', { patch: { agents: { claude: { models: [{ id: 'sonnet', efforts: [], note: '' }], model: 'sonnet', effort: '' } } } });
+  const ag = await w.act('settings.reset', { section: 'agents' });
+  assert.equal(ag.ok, true);
+  assert.deepEqual(ag.settings.agents.claude.models.map((m) => m.id), ['haiku', 'sonnet', 'opus', 'fable']);
+  for (const section of ['general', 'data', 'sync', 'routing', 'quota', 'lanes', 'bugs', 'plans', 'work', 'safety', 'notify', 'look']) {
+    const x = await w.act('settings.reset', { section });
+    assert.equal(x.ok, true, section);
+    assert.equal(JSON.parse(readFileSync(path, 'utf8'))[section], undefined, section);
+  }
+
+  // refusals
+  const bytes = readFileSync(path);
+  for (const args of [{ section: 'alerts' }, { section: 'theme' }, { section: 'schema' }, { section: 'nope' }, { section: 'look.rain' }, {}, { section: 5 }]) {
+    const x = await w.act('settings.reset', args);
+    assert.equal(x.ok, false, JSON.stringify(args));
+    assert.equal(x.error.kind, 'bad_args', JSON.stringify(args));
+  }
+  assert.ok(readFileSync(path).equals(bytes), 'a refused reset changes nothing');
+  assert.match((await w.act('settings.reset', { section: 'nope' })).error.message, /section/);
+});
+
+test('T3: settings.export returns the effective settings, and a v1 file shows up migrated', async (t) => {
+  const w = await world(t);
+  const fresh = await w.act('settings.export', {});
+  assert.equal(fresh.ok, true);
+  assert.equal(fresh.settings.schema, 2);
+  assert.equal(fresh.settings.routing.maxLanes, 3);
+  assert.ok(!existsSync(join(w.dir, 'mk-settings.json')), 'export writes nothing');
+  await w.act('settings.save', { patch: { routing: { maxLanes: 7 } } });
+  assert.equal((await w.act('settings.export')).settings.routing.maxLanes, 7);
+  assert.equal((await w.http('settings.export', {})).body.settings.routing.maxLanes, 7);
+
+  const v1 = await world(t);
+  writeFileSync(join(v1.dir, 'mk-settings.json'), JSON.stringify({ schema: 1, routing: { maxLanes: 5 }, alerts: { stallMinutes: 3 } }));
+  const x = await v1.act('settings.export', {});
+  assert.equal(x.settings.routing.maxLanes, 5);
+  assert.equal(x.settings.lanes.stallMinutes, 5);
+  assert.equal(x.settings.alerts, undefined);
+  assert.deepEqual(readdirSync(v1.dir).filter((f) => f.startsWith('mk-settings')), ['mk-settings.json'], 'export of a v1 file writes no backup');
+});
+
+test('T3: ui.remember writes kv panel.lastScreen and the snapshot carries it as settings.lastScreen', async (t) => {
+  const w = await world(t);
+  const state = async () => (await get(w.svc, '/api/state').then((x) => x.json()));
+  assert.equal((await state()).settings.lastScreen, null);
+  const r = await w.act('ui.remember', { screen: 'lanes' });
+  assert.equal(r.ok, true);
+  assert.equal(q1(w.svc, "SELECT value FROM kv WHERE key = 'panel.lastScreen'").value, 'lanes');
+  assert.equal((await state()).settings.lastScreen, 'lanes');
+  await w.act('ui.remember', { screen: 'plan' });
+  assert.equal(q(w.svc, "SELECT value FROM kv WHERE key = 'panel.lastScreen'").length, 1);
+  assert.equal((await state()).settings.lastScreen, 'plan');
+  for (const args of [{ screen: 'nowhere' }, { screen: '' }, { screen: 7 }, {}]) {
+    const x = await w.act('ui.remember', args);
+    assert.equal(x.ok, false, JSON.stringify(args));
+    assert.equal(x.error.kind, 'bad_args', JSON.stringify(args));
+  }
+  assert.equal((await state()).settings.lastScreen, 'plan');
+});
+
+test('T3: the snapshot settings block carries values, schema, migrationNotes and the spec template placeholder', async (t) => {
+  const w = await world(t);
+  const st = (await get(w.svc, '/api/state').then((x) => x.json())).settings;
+  assert.equal(st.values.general.openOnStart, 'last');
+  assert.equal(st.values.routing.maxLanes, 3);
+  assert.equal(st.schema['routing.maxLanes'].max, 12);
+  assert.equal(st.schema['orca.notifications'].owner, 'orca');
+  assert.deepEqual(st.migrationNotes, []);
+  assert.deepEqual(Object.keys(st.specTemplates), ['investigate', 'implement', 'subdispatch', 'review', 'fix']);
+  for (const v of Object.values(st.specTemplates)) assert.deepEqual(v, { path: '', source: 'builtin', ok: true, issue: null });
+  writeFileSync(join(w.dir, 'mk-settings.json'), JSON.stringify({ schema: 1, alerts: { stallMinutes: 3 } }));
+  const migrated = (await get(w.svc, '/api/state').then((x) => x.json())).settings;
+  assert.equal(migrated.values.lanes.stallMinutes, 5);
+  assert.ok(migrated.migrationNotes.some((n) => n.includes('lanes.stallMinutes')));
+});
+
+test('T3: notify.test is a stub that refuses with conflict / not_ready and sends nothing', async (t) => {
+  const w = await world(t);
+  const r = await w.act('notify.test', {});
+  assert.equal(r.ok, false);
+  assert.equal(r.error.kind, 'conflict');
+  assert.equal(r.error.code, 'not_ready');
+  assert.match(r.error.message, /notifier not built yet/);
+  assert.equal(w.runner.calls.length, 0);
+});
+
 // ------------------------------------------------------------------------------------------------ coverage
 
 test('every name in ACTION_NAMES was exercised in this file', () => {
-  assert.equal(ACTION_NAMES.length, 25);
+  assert.equal(ACTION_NAMES.length, 29);
   assert.deepEqual([...ACTION_NAMES], [
     'approve', 'rework', 'answer', 'undo', 'ask.snooze', 'plan.start', 'plan.park', 'plan.resume', 'plan.markMerged',
     'task.start', 'task.retry', 'task.cancel', 'inbox.import', 'inbox.reimport', 'inbox.archive', 'inbox.restore', 'inbox.delete',
     'bug.add', 'bug.fix', 'bug.close', 'bug.reopen', 'todo.add', 'todo.done', 'todo.makeTask', 'settings.save',
+    'settings.reset', 'settings.export', 'ui.remember', 'notify.test',
   ]);
   const untested = ACTION_NAMES.filter((n) => !used.has(n));
   assert.deepEqual(untested, [], `actions never exercised: ${untested.join(', ')}`);
@@ -1218,4 +1355,19 @@ else { console.error('unexpected ' + a.join(' ')); process.exit(1); }
   // a failing command through the child keeps its typed error
   const missing = await w.act('bug.fix', { bugId: 'B-99' });
   assert.equal(missing.error.kind, 'not_found');
+});
+
+test('SCHEMA fix 5: 20 agent ids of 1000 characters and huge migration notes keep /api/state under 64 KB', async (t) => {
+  const w = await world(t);
+  const agents = {};
+  for (let i = 0; i < 20; i++) agents[`${String(i).padStart(2, '0')}${'a'.repeat(1000)}`] = { routable: true, model: '', effort: '' };
+  const junk = {};
+  for (let i = 0; i < 60; i++) junk[`k${i}`] = 'j'.repeat(2000);
+  writeFileSync(join(w.dir, 'mk-settings.json'), JSON.stringify({ schema: 1, agents, ...junk, general: 'g'.repeat(5000), routing: { tiers: { standard: `claude ${'m'.repeat(3000)} high` } } }));
+  const res = await get(w.svc, '/api/state');
+  const text = await res.text();
+  assert.ok(Buffer.byteLength(text) < 64 * 1024, `${Buffer.byteLength(text)} bytes`);
+  const st = JSON.parse(text).settings;
+  assert.ok(st.migrationNotes.every((n) => n.length <= 200), 'each note is cut to 200 characters');
+  assert.equal(Object.keys(st.schema).filter((k) => k.startsWith('agents.') && k.length > 100).length, 0, 'long agent ids get no schema rows');
 });

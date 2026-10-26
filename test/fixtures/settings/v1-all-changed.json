@@ -1,0 +1,155 @@
+{
+  "schema": 1,
+  "futureThing": {
+    "a": [
+      1,
+      2
+    ]
+  },
+  "general": {
+    "mode": "solo",
+    "openOnStart": "Projects",
+    "activeRepo": "repo-1",
+    "extra": "keep"
+  },
+  "agents": {
+    "claude": {
+      "routable": false,
+      "model": "opus",
+      "effort": "max"
+    },
+    "codex": {
+      "routable": true,
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh"
+    },
+    "agy": {
+      "routable": true,
+      "model": "not-a-model",
+      "effort": "low"
+    },
+    "opencode": {
+      "routable": true,
+      "model": "glm-5",
+      "effort": ""
+    },
+    "gemini": {
+      "routable": false,
+      "model": "g-1",
+      "effort": "low"
+    }
+  },
+  "routing": {
+    "useJev": false,
+    "lowConfidence": "higher",
+    "askBeforeDestructive": false,
+    "tiers": {
+      "trivial": "codex gpt-6-luna low",
+      "standard": "agy gemini-3.1-pro-high",
+      "complex": "claude opus max",
+      "finalReview": "claude haiku low"
+    },
+    "maxLanes": 5,
+    "spareClaudeBelowPct": 55
+  },
+  "safety": {
+    "blockDestructiveGit": false,
+    "blockDeleteOutsideWorktree": false,
+    "askBeforePush": false,
+    "scanDiffsForSecrets": false,
+    "protectedBranches": [
+      "trunk"
+    ],
+    "neverRun": [
+      "cmd 0",
+      "cmd 1",
+      "cmd 2",
+      "cmd 3",
+      "cmd 4",
+      "cmd 5",
+      "cmd 6",
+      "cmd 7",
+      "cmd 8",
+      "cmd 9",
+      "cmd 10",
+      "cmd 11",
+      "cmd 12",
+      "cmd 13",
+      "cmd 14",
+      "cmd 15",
+      "cmd 16",
+      "cmd 17",
+      "cmd 18",
+      "cmd 19",
+      "cmd 20",
+      "cmd 21",
+      "cmd 22",
+      "cmd 23",
+      "cmd 24",
+      "cmd 25",
+      "cmd 26",
+      "cmd 27",
+      "cmd 28",
+      "cmd 29",
+      "cmd 30",
+      "cmd 31",
+      "cmd 32",
+      "cmd 33",
+      "cmd 34",
+      "cmd 35",
+      "cmd 36",
+      "cmd 37",
+      "cmd 38",
+      "cmd 39",
+      "cmd 40",
+      "cmd 41",
+      "cmd 42",
+      "cmd 43",
+      "cmd 44",
+      "cmd 45",
+      "cmd 46",
+      "cmd 47",
+      "cmd 48",
+      "cmd 49"
+    ]
+  },
+  "alerts": {
+    "events": {
+      "ask": false,
+      "laneDone": false,
+      "gateFail": false,
+      "runDone": false,
+      "stall": true
+    },
+    "desktop": false,
+    "quietHours": {
+      "enabled": true,
+      "from": "23:00",
+      "to": "06:30"
+    },
+    "wakeOrchestrator": true,
+    "stallMinutes": 3,
+    "dashboard": {
+      "autoOpen": false,
+      "chip": false,
+      "toasts": false
+    },
+    "usagePollMin": 200
+  },
+  "theme": {
+    "rain": {
+      "enabled": false,
+      "brightness": 20,
+      "speed": "fast"
+    },
+    "reduceMotion": true,
+    "textSize": "L",
+    "density": "compact"
+  },
+  "shortcuts": {
+    "footer": [
+      "a",
+      "b"
+    ]
+  }
+}

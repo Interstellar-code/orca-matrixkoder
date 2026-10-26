@@ -17,10 +17,12 @@ import type { ActionArgs } from '../orca/index.js';
 import { main as cliMain, realOrca } from '../store/cli.js';
 import { one, tx, type Row } from '../store/db.js';
 import { ImportError, importFile, scanInbox } from '../store/import.js';
-import { loadSettings, saveSettings, SettingsError, type Settings } from '../store/settings.js';
+import { droppedV1Key } from '../store/settings-migrate.js';
+import { loadSettings, resetSettings, saveSettings, setting, SettingsError, type Settings } from '../store/settings.js';
 import { CANCELLED_RESULT, cut, fail, J, parseJson, type ActionError, type ActionOutcome, type ServerCtx } from './common.js';
 import { Decisions } from './decisions.js';
 import { callOrca, orcaFailure, receiptId } from './orca-call.js';
+import { SCREENS } from './snapshot.js';
 import type { Sync } from './sync.js';
 
 export const ACTION_NAMES = [
@@ -30,7 +32,7 @@ export const ACTION_NAMES = [
   'inbox.import', 'inbox.reimport', 'inbox.archive', 'inbox.restore', 'inbox.delete',
   'bug.add', 'bug.fix', 'bug.close', 'bug.reopen',
   'todo.add', 'todo.done', 'todo.makeTask',
-  'settings.save',
+  'settings.save', 'settings.reset', 'settings.export', 'ui.remember', 'notify.test',
 ] as const;
 export type ActionName = (typeof ACTION_NAMES)[number];
 
@@ -124,6 +126,10 @@ export class Actions {
       case 'todo.done': return this.todoDone(a);
       case 'todo.makeTask': return this.todoMakeTask(a);
       case 'settings.save': return this.settingsSave(a);
+      case 'settings.reset': return this.settingsReset(a);
+      case 'settings.export': return { ok: true, settings: loadSettings(this.c.dir) };
+      case 'ui.remember': return this.uiRemember(a);
+      case 'notify.test': return fail('conflict', 'notifier not built yet', { code: 'not_ready' });
     }
   }
 
@@ -240,7 +246,7 @@ export class Actions {
     const model = optStr(a, 'model', 80) ?? route[1];
     const effort = optStr(a, 'effort', 20) ?? route[2];
 
-    const max = Number(((loadSettings(this.c.dir).routing ?? {}) as { maxLanes?: unknown }).maxLanes ?? 3);
+    const max = setting<number>(loadSettings(this.c.dir), 'routing.maxLanes');
     const live = Number(one(this.c.db, "SELECT COUNT(*) AS n FROM lane WHERE ended_at IS NULL AND state IN ('working','waiting','blocked')")!.n);
     if (live >= max) refuse('conflict', `${live} lanes are already running (the limit is ${max}); raise "Lanes at once" in Settings or wait`, { code: 'max_lanes' });
 
@@ -486,6 +492,8 @@ export class Actions {
     const patch = a.patch;
     if (patch === null || typeof patch !== 'object' || Array.isArray(patch)) refuse('bad_args', '"patch" must be an object of settings to change');
     if (J(patch).length > SETTINGS_PATCH_MAX) refuse('too_large', `"patch" is too large (limit ${SETTINGS_PATCH_MAX} characters)`);
+    const dropped = droppedV1Key(patch as Settings);
+    if (dropped) refuse('bad_args', `"${dropped}" is a settings v1 key that no longer exists`, { details: { key: dropped } });
     try {
       return { ok: true, settings: saveSettings(patch as Settings, this.c.dir) };
     } catch (e) {
@@ -493,5 +501,24 @@ export class Actions {
       throw e;
     }
   }
-}
 
+  private settingsReset(a: Args): ActionOutcome {
+    const section = reqStr(a, 'section', 40);
+    try {
+      return { ok: true, settings: resetSettings(section, this.c.dir) };
+    } catch (e) {
+      if (e instanceof SettingsError) return fail('bad_args', e.message, { details: { issues: e.issues } });
+      throw e;
+    }
+  }
+
+  private uiRemember(a: Args): ActionOutcome {
+    const screen = reqStr(a, 'screen', 40);
+    if (!(SCREENS as readonly string[]).includes(screen)) refuse('bad_args', `"screen" must be one of ${SCREENS.join(', ')}`);
+    const at = this.c.clock.now();
+    this.c.db
+      .prepare("INSERT INTO kv(key, value, updated_at) VALUES('panel.lastScreen', ?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at")
+      .run(screen, at);
+    return { ok: true, screen };
+  }
+}
