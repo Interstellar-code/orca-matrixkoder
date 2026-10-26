@@ -10,7 +10,7 @@
     "build:panel": "node scripts/build-panel.mjs",
     "watch": "tsc -w",
     "sync:orca": "bash scripts/sync-orca-upstream.sh",
-    "test": "node --test \"test/**/*.test.mjs\""
+    "test": "node --test --test-global-setup=./test/global-setup.mjs \"test/**/*.test.mjs\""
   },
   "devDependencies": {
     "typescript": "^5.4.0",

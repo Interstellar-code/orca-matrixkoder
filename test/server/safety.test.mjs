@@ -4,11 +4,11 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { copyFileSync, mkdirSync, mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { copyFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { saveSettings } from '../../out/store/settings.js';
 import { fakeClock, startTestService, stubRunner } from './helpers.mjs';
+import { tempDir } from '../tmp.mjs';
 
 const REAL_PLAN = new URL('../../.matrixkoder/inbox/orca-dashboard-wiring.md', import.meta.url).pathname;
 const NAME = 'orca-dashboard-wiring.md';
@@ -27,7 +27,7 @@ async function world(t) {
   });
   const svc = await startTestService({ runner, clock });
   t.after(() => svc.close());
-  const repoPath = mkdtempSync(join(tmpdir(), 'mk-safety-repo-'));
+  const repoPath = tempDir('mk-safety-repo-');
   mkdirSync(join(repoPath, '.matrixkoder', 'inbox'), { recursive: true });
   copyFileSync(REAL_PLAN, join(repoPath, '.matrixkoder', 'inbox', NAME));
   const at = clock.now();

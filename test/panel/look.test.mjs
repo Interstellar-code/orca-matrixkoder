@@ -8,11 +8,11 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { readFileSync, mkdtempSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tmpdir } from 'node:os';
 import { createDevServer } from '../../scripts/dev-snapshot-server.mjs';
+import { dispose, stopProcess, tempDir } from '../tmp.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -29,11 +29,18 @@ describe('Appearance and look integration tests (T10)', () => {
       const handler = (e) => {
         const msg = JSON.parse(e.data);
         if (msg.id === id) {
+          clearTimeout(timer);
           ws.removeEventListener('message', handler);
           if (msg.error) reject(new Error(msg.error.message || JSON.stringify(msg.error)));
           else resolve(msg.result);
         }
       };
+      // A dead Chrome never answers; fail the call instead of hanging the run.
+      const timer = setTimeout(() => {
+        ws.removeEventListener('message', handler);
+        reject(new Error(`CDP ${method} got no reply in 15 s`));
+      }, 15000);
+      timer.unref?.();
       ws.addEventListener('message', handler);
       ws.send(JSON.stringify({ id, method, params }));
     });
@@ -58,7 +65,7 @@ describe('Appearance and look integration tests (T10)', () => {
     devServer = await createDevServer({ verbose: false });
 
     // 2. Launch Chrome headless with CDP
-    userDataDir = mkdtempSync(join(tmpdir(), 'chrome-look-t10-'));
+    userDataDir = tempDir('chrome-look-t10-');
     const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
     chromeProcess = spawn(chromePath, [
       '--headless',
@@ -72,7 +79,7 @@ describe('Appearance and look integration tests (T10)', () => {
 
     // Wait for DevToolsActivePort
     let cdpPort = 0;
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 300; i++) {
       try {
         const portFile = readFileSync(join(userDataDir, 'DevToolsActivePort'), 'utf8');
         const lines = portFile.split('\n');
@@ -112,9 +119,11 @@ describe('Appearance and look integration tests (T10)', () => {
     } catch (_) {}
 
     try {
-      if (chromeProcess && !chromeProcess.killed) {
-        chromeProcess.kill('SIGTERM');
-      }
+      await stopProcess(chromeProcess);
+    } catch (_) {}
+
+    try {
+      if (userDataDir) dispose(userDataDir);
     } catch (_) {}
 
     if (devServer) {
@@ -408,14 +417,22 @@ describe('Appearance and look integration tests (T10)', () => {
     snap.settings.lastScreen = 'waiting';
     devServer.setSnapshot(snap);
 
+    // The visible screen after boot; polled, since a loaded machine can take longer than a fixed sleep to boot the page.
+    const screenAfterBoot = async (expected) => {
+      let shown = null;
+      for (let i = 0; i < 50 && shown !== expected; i++) {
+        await new Promise((r) => setTimeout(r, 100));
+        shown = await evaluate(`(() => {
+          const active = Array.from(document.querySelectorAll('.mk-screen')).find(el => !el.hidden);
+          return active ? active.dataset.screen : null;
+        })()`).catch(() => null); // the page may still be navigating
+      }
+      return shown;
+    };
+
     // Navigate to empty url (no hash) so MK_BOOT runs with resolveStartScreen()
     await sendCDP('Page.navigate', { url: devServer.url });
-    await new Promise((r) => setTimeout(r, 800));
-
-    const currentScreenWaiting = await evaluate(`(() => {
-      const active = Array.from(document.querySelectorAll('.mk-screen')).find(el => !el.hidden);
-      return active ? active.dataset.screen : null;
-    })()`);
+    const currentScreenWaiting = await screenAfterBoot('Waiting');
     assert.equal(currentScreenWaiting, 'Waiting', 'openOnStart: last should open Waiting when settings.lastScreen is waiting');
 
     // 3. Test openOnStart: 'last' with settings.lastScreen = '' (default projects)
@@ -423,12 +440,7 @@ describe('Appearance and look integration tests (T10)', () => {
     devServer.setSnapshot(snap);
 
     await sendCDP('Page.navigate', { url: devServer.url });
-    await new Promise((r) => setTimeout(r, 800));
-
-    const currentScreenProjects = await evaluate(`(() => {
-      const active = Array.from(document.querySelectorAll('.mk-screen')).find(el => !el.hidden);
-      return active ? active.dataset.screen : null;
-    })()`);
+    const currentScreenProjects = await screenAfterBoot('Projects');
     assert.equal(currentScreenProjects, 'Projects', 'openOnStart: last should open Projects when settings.lastScreen is empty');
   });
 });

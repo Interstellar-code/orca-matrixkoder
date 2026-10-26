@@ -8,14 +8,14 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { readdirSync, readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync, copyFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tmpdir } from 'node:os';
 import { startService, ACTION_NAMES } from '../../out/server/index.js';
 import { openDb } from '../../out/store/db.js';
 import { settingsPath } from '../../out/store/settings.js';
 import { scanInbox } from '../../out/store/import.js';
+import { stopProcess, tempDir as makeTempDir } from '../tmp.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..', '..');
@@ -67,11 +67,18 @@ describe('Live contract tests in headless Chrome against real server', () => {
       const handler = (e) => {
         const msg = JSON.parse(e.data);
         if (msg.id === id) {
+          clearTimeout(timer);
           ws.removeEventListener('message', handler);
           if (msg.error) reject(new Error(msg.error.message || JSON.stringify(msg.error)));
           else resolve(msg.result);
         }
       };
+      // A dead Chrome never answers; fail the call instead of hanging the run.
+      const timer = setTimeout(() => {
+        ws.removeEventListener('message', handler);
+        reject(new Error(`CDP ${method} got no reply in 15 s`));
+      }, 15000);
+      timer.unref?.();
       ws.addEventListener('message', handler);
       ws.send(JSON.stringify({ id, method, params }));
     });
@@ -91,8 +98,8 @@ describe('Live contract tests in headless Chrome against real server', () => {
 
   before(async () => {
     // 1. Temp dir for data and repo
-    tempDir = mkdtempSync(join(tmpdir(), 'mk-contract-data-'));
-    repoDir = mkdtempSync(join(tmpdir(), 'mk-contract-repo-'));
+    tempDir = makeTempDir('mk-contract-data-');
+    repoDir = makeTempDir('mk-contract-repo-');
 
     // Copy plan file into repo's inbox
     const inboxDir = join(repoDir, '.matrixkoder', 'inbox');
@@ -159,7 +166,7 @@ describe('Live contract tests in headless Chrome against real server', () => {
     });
 
     // 3. Launch Chrome headless with CDP
-    userDataDir = mkdtempSync(join(tmpdir(), 'chrome-contract-'));
+    userDataDir = makeTempDir('chrome-contract-');
     const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
     chromeProcess = spawn(
       chromePath,
@@ -176,7 +183,7 @@ describe('Live contract tests in headless Chrome against real server', () => {
     );
 
     let cdpPort = 0;
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 300; i++) {
       try {
         const portFile = readFileSync(join(userDataDir, 'DevToolsActivePort'), 'utf8');
         const lines = portFile.split('\n');
@@ -215,7 +222,7 @@ describe('Live contract tests in headless Chrome against real server', () => {
 
   after(async () => {
     try { if (ws) ws.close(); } catch (_) {}
-    try { if (chromeProcess && !chromeProcess.killed) chromeProcess.kill('SIGTERM'); } catch (_) {}
+    try { await stopProcess(chromeProcess); } catch (_) {}
     try { if (userDataDir) rmSync(userDataDir, { recursive: true, force: true }); } catch (_) {}
     try { if (svc) await svc.close(); } catch (_) {}
     try { if (tempDir) rmSync(tempDir, { recursive: true, force: true }); } catch (_) {}

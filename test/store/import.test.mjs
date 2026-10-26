@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { openDb } from '../../out/store/db.js';
 import { scanInbox, importFile, ImportError } from '../../out/store/import.js';
 import { parsePlan, parseToml } from '../../out/store/plan-parse.js';
 import { tmpDataDir } from './helpers.mjs';
+import { tempDir } from '../tmp.mjs';
 
 const REAL_PLAN = new URL('../../.matrixkoder/inbox/orca-dashboard-wiring.md', import.meta.url).pathname;
 const NAME = 'orca-dashboard-wiring.md';
@@ -14,7 +14,7 @@ const planText = () => readFileSync(REAL_PLAN, 'utf8');
 
 /** A temp repo whose inbox holds a copy of the real plan, and a fresh database. Never touches the real inbox. */
 function setup(text = planText()) {
-  const repoPath = mkdtempSync(join(tmpdir(), 'mk-repo-'));
+  const repoPath = tempDir('mk-repo-');
   const inbox = join(repoPath, '.matrixkoder', 'inbox');
   mkdirSync(inbox, { recursive: true });
   if (text === planText()) copyFileSync(REAL_PLAN, join(inbox, NAME));
@@ -50,7 +50,7 @@ test('the real plan scans as a pass and imports into 6 phases, every task and th
   const plan = q1(db, 'SELECT * FROM plan');
   assert.equal(plan.slug, 'orca-dashboard-wiring');
   assert.equal(plan.status, 'imported');
-  assert.equal(plan.file_status, 'draft');
+  assert.equal(plan.file_status, 'shipped');
   assert.equal(plan.integration_branch, 'main');
   assert.equal(plan.pushed, 0);
   assert.equal(plan.title, 'the MatrixKoder dashboard shows real Orca and MK data, served by the plugin worker');
@@ -107,7 +107,7 @@ test('the real plan scans as a pass and imports into 6 phases, every task and th
 
   // items
   const kinds = Object.fromEntries(q(db, 'SELECT kind, COUNT(*) AS n FROM plan_item GROUP BY kind').map((k) => [k.kind, k.n]));
-  assert.deepEqual(kinds, { goal: 4, meta: 3, contract: 8, test: 11, assumption: 8, rollout: 2, setting: 6, gate: 3, risk: 17, question: 11, log: 11 });
+  assert.deepEqual(kinds, { goal: 4, meta: 3, contract: 8, test: 11, assumption: 8, rollout: 2, setting: 6, gate: 3, risk: 17, question: 11, log: 19 });
   const gates = q(db, "SELECT code, data FROM plan_item WHERE kind='gate' ORDER BY ord").map((g) => [g.code, json(g.data).command, json(g.data).extra, json(g.data).timeout]);
   assert.deepEqual(gates, [['unit', 'npm test', true, 600], ['types', 'npx tsc --noEmit', true, 600], ['bundle', 'npm run build', true, 600]]);
   const k14 = q1(db, "SELECT * FROM plan_item WHERE kind='risk' AND code='K14'");

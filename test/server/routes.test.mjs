@@ -5,14 +5,14 @@
 import { test } from 'node:test';
 import { DatabaseSync } from 'node:sqlite';
 import assert from 'node:assert/strict';
-import { copyFileSync, mkdirSync, mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { copyFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { resolveRoute, checkQuota } from '../../out/server/routes.js';
 import { orcaAgentId, providerOf } from '../../out/server/providers.js';
 import { checkRoute } from '../../out/store/routes-check.js';
 import { defaultSettings, mergeSettings, saveSettings } from '../../out/store/settings.js';
 import { fakeClock, startTestService, stubRunner } from './helpers.mjs';
+import { tempDir } from '../tmp.mjs';
 
 const REAL_PLAN = new URL('../../.matrixkoder/inbox/orca-dashboard-wiring.md', import.meta.url).pathname;
 const NAME = 'orca-dashboard-wiring.md';
@@ -107,7 +107,7 @@ async function world(t) {
   });
   const svc = await startTestService({ runner, clock });
   t.after(() => svc.close());
-  const repoPath = mkdtempSync(join(tmpdir(), 'mk-routes-repo-'));
+  const repoPath = tempDir('mk-routes-repo-');
   mkdirSync(join(repoPath, '.matrixkoder', 'inbox'), { recursive: true });
   copyFileSync(REAL_PLAN, join(repoPath, '.matrixkoder', 'inbox', NAME));
   const at = clock.now();

@@ -1,10 +1,8 @@
-import { mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { tempDir } from '../tmp.mjs';
 
 /** A fresh MK_DATA_DIR for one test. Tests never touch the real ~/.matrixkoder. */
 export function tmpDataDir(label = 'store') {
-  return mkdtempSync(join(tmpdir(), `mk-${label}-`));
+  return tempDir(`mk-${label}-`);
 }
 
 export const TABLES = [

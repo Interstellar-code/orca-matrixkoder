@@ -5,11 +5,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { writeFileSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { defaultSettings } from '../../out/store/settings.js';
+import { tempDir } from '../tmp.mjs';
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const SUITES = ['routes', 'notify', 'safety', 'consumers', 'spec-templates'].map((n) => `test/server/${n}.test.mjs`);
@@ -50,7 +50,7 @@ const text = (files) => files.map((f) => readFileSync(f, 'utf8')).join('\n');
 const C1 = leaves(defaultSettings()).filter((k) => k !== 'schema');
 
 test('T8a: every C1 key the server owns is read through setting() by the T4-T7 and T11 suites', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'mk-deadkey-'));
+  const dir = tempDir('mk-deadkey-');
   const log = join(dir, 'setting.log');
   writeFileSync(log, '');
   const hooks = join(dir, 'hooks.mjs');

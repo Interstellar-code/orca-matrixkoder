@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync, existsSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { chmodSync, mkdirSync, readFileSync, realpathSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { tmpDataDir } from './helpers.mjs';
+import { tempDir } from '../tmp.mjs';
 
 const BIN = new URL('../../bin/mk.mjs', import.meta.url).pathname;
 const STUB = new URL('./fixtures/orca-stub.mjs', import.meta.url).pathname;
@@ -13,7 +13,7 @@ const STUB = new URL('./fixtures/orca-stub.mjs', import.meta.url).pathname;
 /** A sandbox: fresh data dir, a PATH dir whose `orca` is the stub, and a log of the stub's argv. */
 function sandbox() {
   const dir = tmpDataDir('cli');
-  const bindir = mkdtempSync(join(tmpdir(), 'mk-stubbin-'));
+  const bindir = tempDir('mk-stubbin-');
   const orca = join(bindir, 'orca');
   writeFileSync(orca, `#!${process.execPath}\nimport ${JSON.stringify(STUB)};\n`);
   chmodSync(orca, 0o755);
@@ -233,7 +233,7 @@ test('mk ask note sets the recommendation (and only for an existing ask)', () =>
 
 test('the repo is found from the working directory: mk-data.db first, then orca repo list', () => {
   const s = sandbox();
-  const repo = realpathSync(mkdtempSync(join(tmpdir(), 'mk-gitrepo-')));
+  const repo = realpathSync(tempDir('mk-gitrepo-'));
   assert.equal(spawnSync('git', ['init', '-q', repo]).status, 0);
   // 1. unknown to the db and to orca: a clear error
   const none = s.mk(['bug', 'add', '--title', 't'], { cwd: repo });

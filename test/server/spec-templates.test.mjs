@@ -4,15 +4,15 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, readFileSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SPEC_BUILTIN } from '../../out/store/spec-builtin.js';
 import { SPEC_SCENARIOS, defaultSettings, mergeSettings } from '../../out/store/settings.js';
 import { listValue, loadTemplate, pickScenario, renderSpec, rulesLines, templateStatuses } from '../../out/store/spec-templates.js';
+import { tempDir } from '../tmp.mjs';
 
 const ROOT = new URL('../../', import.meta.url).pathname;
-const tmp = (p) => mkdtempSync(join(tmpdir(), `mk-tpl-${p}-`));
+const tmp = (p) => tempDir(`mk-tpl-${p}-`);
 const withTpl = (patch) => mergeSettings(defaultSettings(), { work: { specTemplates: patch } });
 
 function world() {

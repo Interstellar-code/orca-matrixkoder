@@ -1,9 +1,9 @@
-import { mkdtempSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { startService } from '../../out/server/index.js';
+import { tempDir } from '../tmp.mjs';
 
-export const tmpDir = (label = 'srv') => mkdtempSync(join(tmpdir(), `mk-${label}-`));
+export const tmpDir = (label = 'srv') => tempDir(`mk-${label}-`);
 
 /** A recorded Orca JSON envelope from test/fixtures/orca/<name>.json. */
 export const fx = (name) => JSON.parse(readFileSync(new URL(`../fixtures/orca/${name}.json`, import.meta.url), 'utf8'));

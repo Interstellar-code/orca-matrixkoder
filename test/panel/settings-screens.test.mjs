@@ -10,11 +10,11 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { readFileSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tmpdir } from 'node:os';
 import { createDevServer } from '../../scripts/dev-snapshot-server.mjs';
+import { stopProcess, tempDir } from '../tmp.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -30,11 +30,18 @@ describe('Settings screens integration tests (T9)', () => {
       const handler = (e) => {
         const msg = JSON.parse(e.data);
         if (msg.id === id) {
+          clearTimeout(timer);
           ws.removeEventListener('message', handler);
           if (msg.error) reject(new Error(msg.error.message || JSON.stringify(msg.error)));
           else resolve(msg.result);
         }
       };
+      // A dead Chrome never answers; fail the call instead of hanging the run.
+      const timer = setTimeout(() => {
+        ws.removeEventListener('message', handler);
+        reject(new Error(`CDP ${method} got no reply in 15 s`));
+      }, 15000);
+      timer.unref?.();
       ws.addEventListener('message', handler);
       ws.send(JSON.stringify({ id, method, params }));
     });
@@ -57,7 +64,7 @@ describe('Settings screens integration tests (T9)', () => {
     devServer = await createDevServer({ verbose: false });
 
     // 2. Launch Chrome headless with CDP
-    userDataDir = mkdtempSync(join(tmpdir(), 'chrome-settings-t9-'));
+    userDataDir = tempDir('chrome-settings-t9-');
     const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
     chromeProcess = spawn(chromePath, [
       '--headless',
@@ -71,7 +78,7 @@ describe('Settings screens integration tests (T9)', () => {
 
     // Wait for DevToolsActivePort
     let cdpPort = 0;
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 300; i++) {
       try {
         const portFile = readFileSync(join(userDataDir, 'DevToolsActivePort'), 'utf8');
         const lines = portFile.split('\n');
@@ -111,9 +118,7 @@ describe('Settings screens integration tests (T9)', () => {
     } catch (_) {}
 
     try {
-      if (chromeProcess && !chromeProcess.killed) {
-        chromeProcess.kill('SIGTERM');
-      }
+      await stopProcess(chromeProcess);
     } catch (_) {}
 
     try {
@@ -1139,15 +1144,17 @@ describe('Settings screens integration tests (T9)', () => {
     assert.equal(firstStartAction.name, 'task.start');
     assert.equal(Boolean(firstStartAction.args?.confirm), false, 'Initial task.start must not have confirm: true');
 
-    // Wait for UI to display confirm dialog
-    await new Promise((r) => setTimeout(r, 200));
-
-    const dialogShown = await evaluate(`(() => {
-      const host = document.querySelector('[data-screen="Plan"]');
-      if (!host || !host.shadowRoot) return false;
-      const dialog = host.shadowRoot.querySelector('[role="dialog"][aria-modal="true"]');
-      return dialog !== null;
-    })()`);
+    // Wait for UI to display confirm dialog (polled: a loaded machine can take longer than a fixed sleep)
+    let dialogShown = false;
+    for (let i = 0; i < 50 && !dialogShown; i++) {
+      await new Promise((r) => setTimeout(r, 100));
+      dialogShown = await evaluate(`(() => {
+        const host = document.querySelector('[data-screen="Plan"]');
+        if (!host || !host.shadowRoot) return false;
+        const dialog = host.shadowRoot.querySelector('[role="dialog"][aria-modal="true"]');
+        return dialog !== null;
+      })()`);
+    }
     assert.equal(dialogShown, true, 'Confirm dialog must be displayed on needs_confirm');
 
     // Click the Confirm & Start button in dialog

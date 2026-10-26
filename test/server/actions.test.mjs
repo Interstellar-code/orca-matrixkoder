@@ -5,12 +5,12 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { appendFileSync, chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { appendFileSync, chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ACTION_NAMES } from '../../out/server/index.js';
 import { safeToType } from '../../out/server/orca-call.js';
 import { fakeClock, get, post, startTestService, stubRunner, tmpDir } from './helpers.mjs';
+import { tempDir } from '../tmp.mjs';
 
 const REAL_PLAN = new URL('../../.matrixkoder/inbox/orca-dashboard-wiring.md', import.meta.url).pathname;
 const NAME = 'orca-dashboard-wiring.md';
@@ -67,7 +67,7 @@ async function world(t, o = {}) {
   t.after(close);
 
   // a temp repo whose .matrixkoder/inbox holds a copy of the real plan, registered as repo-1
-  const repoPath = mkdtempSync(join(tmpdir(), 'mk-act-repo-'));
+  const repoPath = tempDir('mk-act-repo-');
   const inbox = join(repoPath, '.matrixkoder', 'inbox');
   mkdirSync(inbox, { recursive: true });
   if (o.plan !== false) copyFileSync(REAL_PLAN, join(inbox, NAME));
@@ -1317,7 +1317,7 @@ test('R2.10 bug actions need an id like B-12: "--help" and friends are bad_args 
 });
 
 test('R2.6 bug.fix runs the mk CLI in a child process: a slow orca call does not stop /api/ping', async (t) => {
-  const bin = mkdtempSync(join(tmpdir(), 'mk-slowbin-'));
+  const bin = tempDir('mk-slowbin-');
   const orca = join(bin, 'orca');
   // answers run-create and task-create after 1.2 s; the wait is synchronous, as the real CLI's spawnSync is
   writeFileSync(orca, `#!${process.execPath}

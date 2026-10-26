@@ -5,8 +5,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { main } from '../../out/store/cli.js';
 import { openDb } from '../../out/store/db.js';
@@ -14,6 +13,7 @@ import { importFile, scanInbox } from '../../out/store/import.js';
 import { dataLimits, prune, runMaintenance } from '../../out/store/maintenance.js';
 import { defaultSettings, mergeSettings, saveSettings } from '../../out/store/settings.js';
 import { fakeClock, get, startTestService, stubRunner, tmpDir } from './helpers.mjs';
+import { tempDir } from '../tmp.mjs';
 
 const REAL_PLAN = new URL('../../.matrixkoder/inbox/orca-dashboard-wiring.md', import.meta.url).pathname;
 const NAME = 'orca-dashboard-wiring.md';
@@ -25,7 +25,7 @@ async function world(t, o = {}) {
   const clock = fakeClock();
   const svc = await startTestService({ clock, runner: stubRunner({ 'orchestration run-create': () => ({ ok: true, result: { run: { id: 'run_p' } } }) }), ...o });
   t.after(() => svc.close());
-  const repoPath = mkdtempSync(join(tmpdir(), 'mk-cons-repo-'));
+  const repoPath = tempDir('mk-cons-repo-');
   const at = clock.now();
   svc.ctx.db.prepare('INSERT INTO repo(id, path, display_name, first_seen_at, last_seen_at) VALUES(?,?,?,?,?)').run('repo-1', repoPath, 'r', at, at);
   const put = (rel, text) => {
@@ -278,7 +278,7 @@ test('T7 import: the check reads the settings given; a clean plan is pass and st
   assert.equal(r.ok, true, JSON.stringify(r));
 
   // direct store call: settings in the target are what the check uses
-  const dir = mkdtempSync(join(tmpdir(), 'mk-cons-direct-'));
+  const dir = tempDir('mk-cons-direct-');
   const db = openDb(tmpDir('direct'));
   db.prepare("INSERT INTO repo(id, path, display_name, first_seen_at, last_seen_at) VALUES('r', ?, 'r', 1, 1)").run(dir);
   mkdirSync(join(dir, '.matrixkoder', 'inbox'), { recursive: true });
