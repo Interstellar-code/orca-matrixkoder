@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.2 - 2026-10-26
+
+Test suite cleanup. No change to what the plugin does.
+
+- `npm test` no longer leaves temp folders behind: each run works in its own `mk-run-<pid>-*` folder, removes it at the end, and clears folders left by runs that were killed. A new test checks this even when a test file fails.
+- Fixed flaky screen tests: headless Chrome gets 30 s to start, a Chrome that stops answering fails the test after 15 s instead of hanging the run, and two screen checks wait for the page instead of a fixed pause.
+- Version 0.3.2 in `package.json`, `package-lock.json`, `orca-plugin.json` and `orca-marketplace.json` (`ref` `v0.3.2`).
+
 ## 0.3.1 - 2026-10-26
 
 Sidebar launcher panel.
